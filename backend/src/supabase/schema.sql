@@ -4,6 +4,7 @@ create table users (
     email text unique not null,
     avatar text default 'https://th.bing.com/th/id/R.e6453f9d07601043e5b928d25e129948?rik=JPSLKIXFf8DmmQ&pid=ImgRaw&r=0',
     role text check (role in ('candidate', 'employer', 'admin')) not null,
+    username text,
     created_at timestamp default now(),
     updated_at timestamp default now()
 );
