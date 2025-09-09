@@ -37,7 +37,7 @@ create table employers (
     company_size text,
     industry text,
     contact_person text,
-    position text
+    description text
 );
 
 -- cv : Lưu thông tin CV
@@ -53,6 +53,10 @@ create table jobs (
     salary text,
     location text,
     job_type text check (job_type in ('fulltime', 'parttime', 'internship', 'freelance')),
+    quantity numeric,
+    expired_date timestamp,
+    position text,
+    education text,
     created_at timestamp default now(),
     updated_at timestamp default now()
 );

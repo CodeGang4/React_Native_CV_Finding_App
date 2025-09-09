@@ -43,12 +43,7 @@ class AuthController {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: {
-                data: {
-                    username,
-                    // Mặc định là candidate, có thể thay đổi sau
-                },
-            },
+
         });
 
         if (error) {
@@ -71,13 +66,18 @@ class AuthController {
             }
         }
         if (user) {
-            await supabase.from('users').insert({
-                id: user.id,
-                email: user.email,
-                username: user.user_metadata.username,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
+            try {
+                await supabase.from('users').upsert({
+                    id: user.id,
+                    email: user.email,
+                    username: username,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+
+            } catch (err) {
+                console.error('Insert error:', err);
+            }
         }
 
         res.status(201).json({ user });
@@ -109,8 +109,22 @@ class AuthController {
                 return res.status(403).json({ error: "Please confirm your email before logging in." });
             }
 
+            // First login flag logic
+            const firstLoginKey = `firstlogin:${user.id || email}`;
+            const now = new Date().toISOString();
+            let isFirstLogin = false;
+            try {
+                const exists = await redis.get(firstLoginKey);
+                if (!exists) {
+                    await redis.set(firstLoginKey, now);
+                    isFirstLogin = true;
+                    console.log('Saved first login time:', now);
+                }
+            } catch (err) {
+                console.error('Redis error saving first login:', err);
+            }
 
-            res.status(200).json({ user: data.user, access_token: data.session.access_token });
+            res.status(200).json({ user: data.user, access_token: data.session.access_token, isFirstLogin: isFirstLogin });
         } catch (error) {
             return res.status(500).json({ error: "Login failed unexpectedly." });
         }
