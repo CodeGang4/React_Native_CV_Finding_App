@@ -46,19 +46,20 @@ create table employers (
 -- Bảng jobs: tin tuyển dụng
 create table jobs (
     id uuid primary key default gen_random_uuid(),
-    employer_id uuid references employers(id) on delete cascade,
+    employer_id uuid references employers(user_id) on delete cascade,
     title text not null,
     description text,
-    requirements text,
+    requirements jsonb,
     salary text,
     location text,
     job_type text check (job_type in ('fulltime', 'parttime', 'internship', 'freelance')),
     quantity numeric,
-    expired_date timestamp,
+    exprired_date timestamp,
     position text,
     education text,
     created_at timestamp default now(),
-    updated_at timestamp default now()
+    updated_at timestamp default now(),
+    isAccepted boolean default false
 );
 
 -- Bảng applications: ứng viên nộp CV
