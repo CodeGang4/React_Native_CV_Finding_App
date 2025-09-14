@@ -3,8 +3,10 @@ const UserRouter = require('./ClientRoutes/UserRouter');
 const CandidatesRouter = require('./ClientRoutes/CandidatesRoutes');
 const EmployerRouter = require('./EmployerRoutes/EmployerRoutes')
 const JobRouter = require('./EmployerRoutes/JobRouter')
+const saveJobRouter = require('./ClientRoutes/SaveJobRouter')
 function route(app) {
     // Client Routes
+    app.use('/client/saveJobs', saveJobRouter)
     app.use('/client/user', UserRouter);
     app.use('/client/auth', AuthRouter);
     app.use('/client/candidates', CandidatesRouter);

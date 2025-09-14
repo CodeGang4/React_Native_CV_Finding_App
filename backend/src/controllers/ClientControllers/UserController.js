@@ -1,4 +1,5 @@
 const supabase = require('../../supabase/config');
+const redis = require('../../redis/config');
 const { createClient } = require('@supabase/supabase-js');
 const supabaseStorage = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -13,6 +14,12 @@ class UserController {
                 return res.status(400).json({ error: error.message });
             }
 
+            // Redis log
+            try {
+                await redis.setEx(`log:getUserProfile:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'getUserProfile', userId, time: new Date().toISOString() }));
+            } catch (err) {
+                console.error('Redis log error (getUserProfile):', err);
+            }
             res.status(200).json({ user: data });
         } catch (err) {
             res.status(500).json({ error: 'Server error' });
@@ -52,6 +59,12 @@ class UserController {
                 });
             }
 
+            // Redis log
+            try {
+                await redis.setEx(`log:updateUserRole:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'updateUserRole', userId, role, time: new Date().toISOString() }));
+            } catch (err) {
+                console.error('Redis log error (updateUserRole):', err);
+            }
             res.status(200).json({ user: updatedUser });
         } catch (err) {
             res.status(500).json({ error: 'Server error' });
@@ -96,6 +109,12 @@ class UserController {
         if (!data || data.length === 0) {
             return res.status(404).json({ error: 'Candidate not found or not updated' });
         }
+        // Redis log
+        try {
+            await redis.setEx(`log:updateProfile:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'updateProfile', userId, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (updateProfile):', err);
+        }
         res.status(200).json(data[0]);
     }
 
@@ -120,6 +139,12 @@ class UserController {
         await supabase.from('candidates').update({ cv_url: publicURL }).eq('user_id', userId);
         console.log('CV uploaded and URL saved:', publicURL);
 
+        // Redis log
+        try {
+            await redis.setEx(`log:uploadCV:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'uploadCV', userId, cv_url: publicURL, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (uploadCV):', err);
+        }
         res.status(200).json({ cv_url: publicURL });
     }
     async uploadPortfolio(req, res) {
@@ -142,6 +167,12 @@ class UserController {
         await supabase.from('candidates').update({ portfolio: publicURL }).eq('user_id', userId);
         console.log('Portfolio uploaded and URL saved:', publicURL);
 
+        // Redis log
+        try {
+            await redis.setEx(`log:uploadPortfolio:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'uploadPortfolio', userId, portfolio_url: publicURL, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (uploadPortfolio):', err);
+        }
         res.status(200).json({ portfolio_url: publicURL });
     }
     async uploadCompanyLogo(req, res) {
@@ -164,6 +195,12 @@ class UserController {
         await supabase.from('candidates').update({ portfolio: publicURL }).eq('user_id', userId);
         console.log('Portfolio uploaded and URL saved:', publicURL);
 
+        // Redis log
+        try {
+            await redis.setEx(`log:uploadCompanyLogo:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'uploadCompanyLogo', userId, portfolio_url: publicURL, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (uploadCompanyLogo):', err);
+        }
         res.status(200).json({ portfolio_url: publicURL });
     }
 }

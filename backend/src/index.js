@@ -1,21 +1,45 @@
-const express = require('express')
-const app = express()
-require('dotenv').config()
-const cors = require('cors')
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-const route = require('./routes/index')
+const express = require('express');
+const app = express();
+const helmet = require('helmet');
+const rateLimit = require("express-rate-limit");
+require('dotenv').config();
 
-route(app)
+const route = require('./routes/index');
 
-// app.use(cors({
-//     origin: 'http://localhost:5173', // Allow requests from your frontend
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-//     credentials: true, // Allow cookies or auth headers if needed
-// }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Security middlewares
+app.use(helmet());
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "https://fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https://images.unsplash.com"],
+        },
+    })
+);
 
 
-const port = process.env.PORT || 3000
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 phút
+    max: 100, // tối đa 100 request / IP trong 15 phút
+    message: "Too many requests, please try again later.",
+    standardHeaders: true, // gửi thông tin giới hạn trong header
+    legacyHeaders: false,  // tắt x-ratelimit-*
+});
+app.use(limiter);
+route(app);
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
+
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`)
-})
+    console.log(`Server is running on http://localhost:${port}`);
+});

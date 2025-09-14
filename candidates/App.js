@@ -10,6 +10,8 @@ const Stack = createStackNavigator();
 
 function MainNavigator() {
   const { user } = useAuth();
+
+
   return (
     <NavigationContainer>
       <Stack.Navigator>

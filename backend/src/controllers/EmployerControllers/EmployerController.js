@@ -1,7 +1,7 @@
 const supabase = require('../../supabase/config');
 const { createClient } = require('@supabase/supabase-js');
 const supabaseStorage = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-
+const redis = require('../../redis/config');
 class EmployerController {
 
     async updateInfo(req, res) {
@@ -33,6 +33,13 @@ class EmployerController {
         if (!data || data.length === 0) {
             return res.status(404).json({ error: 'Employer not found or not updated' });
         }
+
+        // Redis log
+        try {
+            await redis.setEx(`log:updateInfo:${companyId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'updateInfo', companyId, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (updateInfo):', err);
+        }
         res.status(200).json(data[0]);
     }
 
@@ -63,6 +70,12 @@ class EmployerController {
 
         console.log('Company logo uploaded and URL saved:', publicURL);
 
+        // Redis log
+        try {
+            await redis.setEx(`log:uploadCompanyLogo:${companyId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'uploadCompanyLogo', companyId, logo_url: publicURL, time: new Date().toISOString() }));
+        } catch (err) {
+            console.error('Redis log error (uploadCompanyLogo):', err);
+        }
         res.status(200).json({ logo_url: publicURL });
     }
 

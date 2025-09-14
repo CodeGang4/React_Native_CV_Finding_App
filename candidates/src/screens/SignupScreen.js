@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, KeyboardAvoidingView, Platform, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -74,7 +74,7 @@ export default function SignupScreen({ navigation }) {
                         <Text style={styles.link}> Chính sách bảo mật của TopCV.</Text>
                     </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.button} onPress={() => signup(email, password)} disabled={loading}>
+                <TouchableOpacity style={styles.button} onPress={() => signup(email, password, recheckPassword, username)} disabled={loading}>
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (

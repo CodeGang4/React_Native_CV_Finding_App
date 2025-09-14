@@ -4,10 +4,27 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginScreen({ navigation }) {
-    const { login, loading } = useAuth();
+    const { login, loginWithFaceID, loading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+    // Hàm xử lý đăng nhập FaceID
+    const handleFaceIDLogin = async () => {
+        try {
+            const { data, error } = await loginWithFaceID();
+            if (error) {
+                alert(error.message || 'Đăng nhập FaceID thất bại');
+                return;
+            }
+            if (!(data && data.user)) {
+                alert('Không lấy được thông tin người dùng sau khi đăng nhập FaceID');
+            }
+            // Không cần chuyển hướng, navigator sẽ tự động chuyển khi user được cập nhật
+        } catch (e) {
+            alert(e.message || 'Xác thực FaceID thất bại');
+        }
+    };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -48,8 +65,11 @@ export default function LoginScreen({ navigation }) {
                         <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#888" />
                     </TouchableOpacity>
                 </View>
-                <View style={styles.ForgetPassword}>
-                    <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <View style={styles.footer}>
+                    <TouchableOpacity style={{ marginBottom: 13 }} onPress={handleFaceIDLogin}>
+                        <Text style={{ fontSize: 14 }}>Đăng nhập bằng FaceID</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ marginBottom: 13 }} onPress={() => navigation.navigate('ForgotPassword')}>
                         <Text style={{ fontSize: 14 }}>Quên mật khẩu?</Text>
                     </TouchableOpacity>
                 </View>
