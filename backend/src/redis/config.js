@@ -6,13 +6,19 @@ const client = createClient({
     password: process.env.REDIS_PASSWORD,
     socket: {
         host: process.env.REDIS_HOST,
-        port: process.env.REDIS_PORT
-    }
+        port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined,
+    },
 });
 
-client.on('error', err => console.log('Redis Client Error', err));
+client.on('error', err => console.error('Redis Client Error', err));
 
-await client.connect();
+(async () => {
+    try {
+        await client.connect();
+        console.log('Redis connected');
+    } catch (err) {
+        console.error('Redis connection error', err);
+    }
+})();
 
-
-export default client;
+module.exports = client;

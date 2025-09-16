@@ -4,18 +4,39 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pretty": "lint-staged"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "lint-staged": {
+    "*.{js,json,css,md}": [
+      "prettier --single-quote --trailing-comma all --write --tab-width 4"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
+    "axios": "^1.12.0",
+    "bcrypt": "^5.1.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "nodemon": "^3.1.10"
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "pretty": "^2.0.0",
+    "redis": "^4.6.7"
   }
 }
