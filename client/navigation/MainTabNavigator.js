@@ -11,7 +11,7 @@ const Tab = createBottomTabNavigator();
 // Placeholder components cho các tabs khác
 const CVPage = () => (
   <View style={styles.placeholder}>
-    <Text style={styles.placeholderText}>Tạo & Sửa CV</Text>
+    <Text style={styles.placeholderText}>Đăng tin</Text>
   </View>
 );
 
