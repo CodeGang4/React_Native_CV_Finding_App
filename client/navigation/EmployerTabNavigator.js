@@ -1,9 +1,9 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import HomeScreen from "../features/home/screens/HomeScreen";
-import EmployerAccountScreen from "../features/account/screens/EmployerAccountScreen";
+import AccountStack from "../features/account/screens/AccountStack";
 import NotificationScreen from "../features/notifications/screens/NotificationScreen";
-import ConnectScreen from "../features/connect/screens/ConnectScreen";
+import ConnectStack from "../features/connect/screens/ConnectStack";
 import JobPostingScreen from "../features/jobPosting/screens/JobPostingScreen";
 import EmployerTabBar from "../shared/components/ui/TabBar/EmployerTabBar";
 
@@ -29,7 +29,7 @@ export default function EmployerTabNavigator() {
       />
       <Tab.Screen
         name="Connect"
-        component={ConnectScreen}
+        component={ConnectStack}
         options={{
           headerShown: false,
           tabBarLabel: "Ứng viên",
@@ -46,7 +46,7 @@ export default function EmployerTabNavigator() {
       />
       <Tab.Screen
         name="Account"
-        component={EmployerAccountScreen}
+        component={AccountStack}
         options={{ headerShown: false, tabBarLabel: "Tài khoản" }}
       />
     </Tab.Navigator>

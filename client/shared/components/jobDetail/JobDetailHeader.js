@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 
+// Shared Job Detail Header
+// Props: { job: { title, company, salary, location, deadline }, onBack: () => void }
 export default function JobDetailHeader({ job, onBack }) {
   return (
     <LinearGradient colors={["#4CAF50", "#45a049"]} style={styles.header}>
@@ -15,20 +17,24 @@ export default function JobDetailHeader({ job, onBack }) {
         </View>
       </View>
       <View style={styles.jobHeaderInfo}>
-        <Text style={styles.jobTitle}>{job.title}</Text>
-        <Text style={styles.companyName}>{job.company}</Text>
+        <Text style={styles.jobTitle}>
+          {job?.title || "Chi tiết tuyển dụng"}
+        </Text>
+        {!!job?.company && (
+          <Text style={styles.companyName}>{job.company}</Text>
+        )}
         <View style={styles.jobStats}>
           <View style={styles.statItem}>
             <MaterialIcons name="attach-money" size={20} color="#fff" />
-            <Text style={styles.statValue}>{job.salary}</Text>
+            <Text style={styles.statValue}>{job?.salary || "—"}</Text>
           </View>
           <View style={styles.statItem}>
             <MaterialIcons name="location-on" size={20} color="#fff" />
-            <Text style={styles.statValue}>{job.location}</Text>
+            <Text style={styles.statValue}>{job?.location || "—"}</Text>
           </View>
           <View style={styles.statItem}>
             <MaterialIcons name="schedule" size={20} color="#fff" />
-            <Text style={styles.statValue}>{job.deadline}</Text>
+            <Text style={styles.statValue}>{job?.deadline || "—"}</Text>
           </View>
         </View>
       </View>

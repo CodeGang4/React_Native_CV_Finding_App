@@ -8,59 +8,72 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
+// Shared Overview Section
+// Props: { job, onEdit: () => void, onDelete: () => void }
 export default function JobOverviewSection({ job, onEdit, onDelete }) {
   return (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <MaterialIcons name="visibility" size={24} color="#2196F3" />
-          <Text style={styles.statNumber}>{job.views}</Text>
+          <Text style={styles.statNumber}>{job?.views ?? 0}</Text>
           <Text style={styles.statLabel}>Lượt xem</Text>
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="people" size={24} color="#4CAF50" />
-          <Text style={styles.statNumber}>{job.applications}</Text>
+          <Text style={styles.statNumber}>{job?.applications ?? 0}</Text>
           <Text style={styles.statLabel}>Ứng viên</Text>
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="star" size={24} color="#FF9800" />
-          <Text style={styles.statNumber}>{job.shortlisted}</Text>
+          <Text style={styles.statNumber}>{job?.shortlisted ?? 0}</Text>
           <Text style={styles.statLabel}>Được chọn</Text>
         </View>
       </View>
 
       <View style={styles.infoSection}>
         <Text style={styles.sectionTitle}>Thông tin công việc</Text>
-        <InfoRow icon="work" label="Vị trí" value={job.title} />
-        <InfoRow icon="attach-money" label="Mức lương" value={job.salary} />
-        <InfoRow icon="location-on" label="Địa điểm" value={job.location} />
-        <InfoRow icon="schedule" label="Hạn nộp" value={job.deadline} />
+        <InfoRow icon="work" label="Vị trí" value={job?.title || "—"} />
+        <InfoRow
+          icon="attach-money"
+          label="Mức lương"
+          value={job?.salary || "—"}
+        />
+        <InfoRow
+          icon="location-on"
+          label="Địa điểm"
+          value={job?.location || "—"}
+        />
+        <InfoRow icon="schedule" label="Hạn nộp" value={job?.deadline || "—"} />
         <InfoRow
           icon="business-center"
           label="Kinh nghiệm"
-          value={job.experience}
+          value={job?.experience || "—"}
         />
       </View>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.sectionTitle}>Mô tả công việc</Text>
-        <Text style={styles.descriptionText}>{job.description}</Text>
-      </View>
+      {job?.description ? (
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Mô tả công việc</Text>
+          <Text style={styles.descriptionText}>{job.description}</Text>
+        </View>
+      ) : null}
 
-      <BulletedSection title="Yêu cầu công việc" data={job.requirements} />
-      <BulletedSection title="Quyền lợi" data={job.benefits} />
+      <BulletedSection title="Yêu cầu công việc" data={job?.requirements} />
+      <BulletedSection title="Quyền lợi" data={job?.benefits} />
 
-      <View style={styles.infoSection}>
-        <Text style={styles.sectionTitle}>Kỹ năng yêu cầu</Text>
-        <View style={styles.skillsContainer}>
-          {job.skills &&
-            job.skills.map((skill, index) => (
+      {Array.isArray(job?.skills) && job.skills.length > 0 ? (
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Kỹ năng yêu cầu</Text>
+          <View style={styles.skillsContainer}>
+            {job.skills.map((skill, index) => (
               <View key={index} style={styles.skillTag}>
                 <Text style={styles.skillText}>{skill}</Text>
               </View>
             ))}
+          </View>
         </View>
-      </View>
+      ) : null}
 
       <View style={styles.actionButtonsContainer}>
         <TouchableOpacity style={styles.editJobButton} onPress={onEdit}>
@@ -90,16 +103,16 @@ function InfoRow({ icon, label, value }) {
 }
 
 function BulletedSection({ title, data }) {
+  if (!Array.isArray(data) || data.length === 0) return null;
   return (
     <View style={styles.infoSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {data &&
-        data.map((item, index) => (
-          <View key={index} style={styles.requirementItem}>
-            <Text style={styles.requirementBullet}>•</Text>
-            <Text style={styles.requirementText}>{item}</Text>
-          </View>
-        ))}
+      {data.map((item, index) => (
+        <View key={index} style={styles.requirementItem}>
+          <Text style={styles.requirementBullet}>•</Text>
+          <Text style={styles.requirementText}>{item}</Text>
+        </View>
+      ))}
     </View>
   );
 }

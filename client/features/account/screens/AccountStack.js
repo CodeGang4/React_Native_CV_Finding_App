@@ -1,16 +1,14 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import JobPostingPage from "./jobPosting/JobPostingPage";
-import JobDetailPage from "./jobPosting/JobDetailPage";
+import EmployerAccountPage from "./EmployerAccountPage";
 import CandidateDetailScreen from "../../../shared/screens/CandidateDetailScreen";
 
 const Stack = createStackNavigator();
 
-export default function JobPostingScreen() {
+export default function AccountStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="JobPostingMain" component={JobPostingPage} />
-      <Stack.Screen name="JobDetail" component={JobDetailPage} />
+      <Stack.Screen name="AccountMain" component={EmployerAccountPage} />
       <Stack.Screen name="CandidateDetail" component={CandidateDetailScreen} />
     </Stack.Navigator>
   );

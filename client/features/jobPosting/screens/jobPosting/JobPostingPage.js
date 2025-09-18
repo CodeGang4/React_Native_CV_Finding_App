@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import {
+  registerCallbacks,
+  unregisterCallbacks,
+} from "../../../../shared/utils/callbackRegistry";
 import CommonHeader from "../../../../shared/components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/constants/layout";
 import StatsBar from "../../components/StatsBar";
+import JobFiltersBar from "../../components/JobFiltersBar";
 import ActionsBar from "../../components/ActionsBar";
 import JobItem from "../../components/JobItem";
 import CreateJobModal from "../../components/CreateJobModal";
@@ -13,30 +18,79 @@ export default function JobPostingPage() {
   const navigation = useNavigation();
   const [showCreate, setShowCreate] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Seed data adapted from legacy page (status mapped to VI labels)
   const [jobs, setJobs] = useState([
     {
       id: 1,
-      title: "React Native Developer",
-      status: "Đang tuyển",
-      applications: 25,
-      views: 150,
-      createdDate: "15/09/2025",
-      deadline: "30/09/2025",
-      salary: "15-25 triệu",
+      title: "Senior React Native Developer",
+      company: "Công ty Cổ phần TCC & Partners",
+      salary: "15 - 25 triệu",
       location: "Hà Nội",
+      experience: "2-3 năm",
+      deadline: "30/09/2025",
+      postedDate: "10/09/2025",
+      status: "Đang tuyển",
+      views: 156,
+      applications: 8,
+      shortlisted: 2,
+      rejected: 3,
+      pending: 3,
+      jobType: "Toàn thời gian",
+      description:
+        "Chúng tôi đang tìm kiếm một Senior React Native Developer có kinh nghiệm để tham gia phát triển các ứng dụng mobile chất lượng cao...",
+      requirements: [
+        "Có ít nhất 2 năm kinh nghiệm với React Native",
+        "Thành thạo JavaScript, TypeScript",
+        "Kinh nghiệm với Redux, Context API",
+        "Hiểu biết về Native Modules",
+        "Kỹ năng giao tiếp tốt",
+      ],
+      benefits: [
+        "Mức lương cạnh tranh 15-25 triệu",
+        "Thưởng hiệu suất hàng quý",
+        "Bảo hiểm đầy đủ theo quy định",
+        "Môi trường làm việc năng động",
+        "Cơ hội học hỏi và phát triển",
+      ],
+      skills: ["React Native", "JavaScript", "TypeScript", "Redux"],
+      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
+      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
     },
     {
       id: 2,
-      title: "Senior PHP Developer",
-      status: "Hết hạn",
-      applications: 18,
-      views: 89,
-      createdDate: "10/09/2025",
+      title: "Junior PHP Developer",
+      company: "Công ty Cổ phần TCC & Partners",
+      salary: "8 - 12 triệu",
+      location: "Hà Nội",
+      experience: "Không yêu cầu",
       deadline: "25/09/2025",
-      salary: "20-30 triệu",
-      location: "TP.HCM",
+      postedDate: "05/09/2025",
+      status: "Đang tuyển",
+      views: 247,
+      applications: 12,
+      shortlisted: 3,
+      rejected: 7,
+      pending: 2,
+      jobType: "Toàn thời gian",
+      description:
+        "Chúng tôi đang tìm kiếm một PHP Developer để tham gia vào team phát triển sản phẩm...",
+      requirements: [
+        "Hiểu biết về PHP, MySQL, HTML, CSS, Javascript",
+        "Khả năng làm việc nhóm tốt",
+        "Chịu được áp lực công việc",
+      ],
+      benefits: [
+        "Mức lương cạnh tranh 8-12 triệu",
+        "Thưởng hiệu suất hàng quý",
+        "Bảo hiểm đầy đủ theo quy định",
+        "Môi trường làm việc năng động",
+        "Cơ hội học hỏi và phát triển",
+      ],
+      skills: ["PHP", "MySQL", "HTML", "CSS", "Javascript"],
+      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
+      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
     },
   ]);
 
@@ -108,6 +162,18 @@ export default function JobPostingPage() {
     0
   );
 
+  const filteredJobs = jobs.filter((j) => {
+    const matchStatus =
+      statusFilter === "all" ? true : (j.status || "").trim() === statusFilter;
+    const q = searchText.trim().toLowerCase();
+    const matchQuery =
+      q.length === 0 ||
+      (j.title || "").toLowerCase().includes(q) ||
+      (j.company || "").toLowerCase().includes(q) ||
+      (j.location || "").toLowerCase().includes(q);
+    return matchStatus && matchQuery;
+  });
+
   return (
     <View style={styles.container}>
       <CommonHeader
@@ -129,19 +195,26 @@ export default function JobPostingPage() {
           onCreatePress={handleCreatePress}
           onManageTemplatesPress={handleManageTemplatesPress}
         />
+        <JobFiltersBar
+          searchText={searchText}
+          onChangeSearch={setSearchText}
+          status={statusFilter}
+          onChangeStatus={setStatusFilter}
+        />
         <Text style={styles.sectionTitle}>Tin tuyển dụng gần đây</Text>
         <View>
-          {jobs.map((job) => (
+          {filteredJobs.map((job) => (
             <JobItem
               key={job.id}
               job={job}
-              onPress={(j) =>
-                navigation.navigate("JobDetail", {
-                  job: j,
+              onPress={(j) => {
+                const cbKey = `jobdetail:${j.id}`;
+                registerCallbacks(cbKey, {
                   onEdit: handleEditJob,
                   onDelete: handleDeleteJob,
-                })
-              }
+                });
+                navigation.navigate("JobDetail", { job: j, cbKey });
+              }}
             />
           ))}
         </View>
