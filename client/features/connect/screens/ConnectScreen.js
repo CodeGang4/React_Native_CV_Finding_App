@@ -8,6 +8,7 @@ import SearchFiltersBar from "../components/SearchFiltersBar";
 import CandidatePreviewSheet from "../components/CandidatePreviewSheet";
 import AiSuggestionsModal from "../components/AiSuggestionsModal";
 import { colors } from "../../../shared/constants/colors";
+import mockCandidates from "../data/mockCandidates";
 import {
   rankCandidates,
   findSimilarCandidates,
@@ -23,35 +24,7 @@ export default function ConnectScreen({ navigation }) {
   const [inviteCandidate, setInviteCandidate] = useState(null);
   const [showAi, setShowAi] = useState(false);
 
-  const candidates = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      title: "React Native Developer",
-      level: "senior",
-      experience: "4 năm",
-      location: "Hà Nội",
-      skills: ["React Native", "TypeScript", "Redux"],
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      title: "Frontend Developer",
-      level: "mid",
-      experience: "2 năm",
-      location: "TP.HCM",
-      skills: ["React", "JavaScript", "Tailwind"],
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      title: "Backend Developer",
-      level: "junior",
-      experience: "1 năm",
-      location: "Đà Nẵng",
-      skills: ["Node.js", "Express", "MongoDB"],
-    },
-  ];
+  const candidates = mockCandidates;
 
   const allSkills = useMemo(
     () =>

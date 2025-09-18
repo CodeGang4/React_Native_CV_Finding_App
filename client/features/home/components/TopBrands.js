@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import SectionHeader from "../../../components/common/SectionHeader";
-import BrandCard from "../../../components/cards/BrandCard";
+import SectionHeader from "../../../shared/components/common/SectionHeader";
+import BrandCard from "../../../shared/components/cards/BrandCard";
 
 const brandsList = [
   {

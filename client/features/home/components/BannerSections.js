@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import GradientBanner from "../../../components/common/GradientBanner";
+import GradientBanner from "../../../shared/components/common/GradientBanner";
 
 export default function BannerSections() {
   return (

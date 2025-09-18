@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import JobCard from "./cards/JobCard";
-import SectionHeader from "../../../components/common/SectionHeader";
+import SectionHeader from "../../../shared/components/common/SectionHeader";
 
 const suggestionList = [
   {

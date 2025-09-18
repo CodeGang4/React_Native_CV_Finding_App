@@ -52,11 +52,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  tagText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  tagText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
   logoContainer: {
     width: 50,
     height: 50,
@@ -67,9 +63,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
-  logoEmoji: {
-    fontSize: 24,
-  },
+  logoEmoji: { fontSize: 24 },
   brandName: {
     fontWeight: "600",
     fontSize: 14,
@@ -77,11 +71,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 18,
   },
-  brandCategory: {
-    color: "#666",
-    fontSize: 12,
-    marginBottom: 12,
-  },
+  brandCategory: { color: "#666", fontSize: 12, marginBottom: 12 },
   followButton: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -91,9 +81,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     alignSelf: "flex-start",
   },
-  followText: {
-    color: "#00b14f",
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  followText: { color: "#00b14f", fontSize: 12, fontWeight: "600" },
 });
