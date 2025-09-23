@@ -80,3 +80,82 @@ create table saved_jobs (
     saved_at timestamp default now(),
     unique(job_id) -- không lưu trùng job
 );
+
+
+-- Bảng questions: câu hỏi phỏng vấn
+create table questions (
+    id uuid primary key default gen_random_uuid(),
+    industry text,
+    question text,
+    level text check (level in ('intern', 'fresher', 'junior', 'middle', 'senior')),
+    created_by text default 'AI',
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+
+-- Bảng interviews_practices_results: lưu kết quả luyện tập phỏng vấn
+create table interviews_practices_results {
+    id uuid primary key default gen_random_uuid(),
+    candidate_id uuid references candidates(user_id) on delete cascade,
+    question_id uuid references questions(id) on delete cascade,
+    answer text,
+    score numeric,
+    created_at timestamp default now(),
+    audio_url text,
+    updated_at timestamp default now()
+}
+
+-- Bảng interview_schedules: lịch phỏng vấn
+create table interview_schedules (
+    id uuid primary key default gen_random_uuid(),
+    candidate_id uuid references candidates(user_id) on delete cascade,
+    job_id uuid references jobs(id) on delete cascade,
+    employer_id uuid references employers(user_id) on delete cascade,
+
+    -- Thông tin phỏng vấn
+    interview_datetime timestamp not null,
+    location text,
+
+    -- Trạng thái lịch
+    status text check (status in ('scheduled', 'completed', 'canceled')) default 'scheduled',
+
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+
+-- Bảng email_templates: mẫu email
+create table email_templates (
+    id uuid primary key default gen_random_uuid(),
+    candidate_id uuid references candidates(user_id) on delete cascade,
+    employer_id uuid references employers(user_id) on delete cascade,
+    name text not null, -- VD: "Interview Invitation"
+    type text ,
+    subject text not null, 
+    template text not null,  -- Nội dung, có placeholder
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+
+-- Bảng interview_emails: lưu lịch sử email gửi cho ứng viên về phỏng vấn
+create table interview_emails (
+    id uuid primary key default gen_random_uuid(),
+    interview_schedule_id uuid references interview_schedules(id) on delete cascade,
+
+    candidate_id uuid references candidates(user_id) on delete cascade,
+    employer_id uuid references employers(user_id) on delete cascade,
+
+    -- Tham chiếu template (có thể null nếu soạn tay)
+    template_id uuid references email_templates(id),
+
+    -- Cho phép override nội dung từ template
+    subject text not null,
+    body text not null,
+
+    -- Trạng thái email
+    status text check (status in ('pending', 'sent', 'failed')) default 'pending',
+    sent_at timestamp,
+
+    note text,
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
