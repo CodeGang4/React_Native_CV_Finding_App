@@ -121,15 +121,23 @@ export const AuthProvider = ({ children }) => {
             const res = await fetch(`${API}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, recheckPassword, userName })
+                body: JSON.stringify({
+                    email,
+                    password,
+                    recheckPassword,
+                    username: userName // Backend expects 'username', not 'userName'
+                })
             });
             const data = await res.json();
+            console.log('Signup response:', data); // Add logging to see the actual error
             if (res.ok && data.user) {
                 setUser(data.user);
+                Alert.alert('Success', 'Account created successfully!');
             } else {
-                Alert.alert('Signup failed', data.message || 'Could not create account');
+                Alert.alert('Signup failed', data.error || data.message || 'Could not create account');
             }
         } catch (e) {
+            console.error('Signup error:', e);
             Alert.alert('Error', 'Network error');
         }
         setLoading(false);
