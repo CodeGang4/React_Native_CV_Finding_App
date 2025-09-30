@@ -43,7 +43,8 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import EmployerTabNavigator from "./navigation/EmployerTabNavigator";
+// Import from new architecture structure
+import EmployerTabNavigator from "./src/ui/navigation/EmployerTabNavigator";
 
 export default function App() {
   return (
