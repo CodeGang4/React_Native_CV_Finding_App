@@ -1,46 +1,72 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
-import CandidateHomeScreen from "../screens/CandidateHomeScreen";
-import JobSearchScreen from "../screens/JobSearchScreen";
-import ApplicationsScreen from "../screens/ApplicationsScreen";
-import ProfileScreen from "../../shared/screens/auth/ProfileScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "react-native";
 
-const Stack = createStackNavigator();
+import CandidateHomeScreen from "../screens/CandidateHomeScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
+import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
+import ProfileScreen from "../../shared/screens/auth/ProfileScreen";
+import { useAuth } from "../../shared/contexts/AuthContext";
+
+const Tab = createBottomTabNavigator();
 
 export default function CandidateNavigator() {
+  const { user } = useAuth();
+
   return (
-    <Stack.Navigator
+    <Tab.Navigator
       initialRouteName="CandidateHome"
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: "#00b14f",
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === "Profile" && user?.avatarUrl) {
+            return (
+              <Image
+                source={{ uri: user.avatarUrl }}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  borderWidth: 2,
+                  borderColor: color,
+                }}
+              />
+            );
+          }
+
+          let iconName;
+          if (route.name === "CandidateHome") iconName = "home";
+          else if (route.name === "Notifications") iconName = "notifications";
+          else if (route.name === "InterviewPractice") iconName = "question-answer";
+          else iconName = "person";
+
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
-        headerTintColor: "#fff",
-        headerTitleStyle: {
-          fontWeight: "bold",
-        },
-      }}
+        tabBarActiveTintColor: "#00b14f",
+        tabBarInactiveTintColor: "gray",
+        headerShown: false,
+      })}
     >
-      <Stack.Screen
+      <Tab.Screen
         name="CandidateHome"
         component={CandidateHomeScreen}
         options={{ title: "Trang chủ" }}
       />
-      <Stack.Screen
-        name="JobSearch"
-        component={JobSearchScreen}
-        options={{ title: "Tìm việc làm" }}
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: "Thông báo" }}
       />
-      <Stack.Screen
-        name="Applications"
-        component={ApplicationsScreen}
-        options={{ title: "Đơn ứng tuyển" }}
+      <Tab.Screen
+        name="InterviewPractice"
+        component={InterviewPracticeScreen}
+        options={{ title: "Luyện phỏng vấn" }}
       />
-      <Stack.Screen
+      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{ title: "Hồ sơ" }}
       />
-    </Stack.Navigator>
+    </Tab.Navigator>
   );
 }

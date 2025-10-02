@@ -25,6 +25,27 @@ export class CandidateApiService {
     return response.data;
   }
 
+  // Upload avatar
+  static async uploadAvatar(candidateId, avatarUri) {
+    const formData = new FormData();
+    formData.append("avatar", {
+      uri: avatarUri,
+      name: "avatar.jpg",
+      type: "image/jpeg",
+    });
+
+    const response = await apiClient.post(
+      `${this.endpoint}/${candidateId}/avatar`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  }
+
   // Update candidate profile
   static async updateCandidateProfile(candidateId, profileData) {
     const response = await apiClient.put(
