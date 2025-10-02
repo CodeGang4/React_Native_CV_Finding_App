@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const signup = async (email, password, recheckPassword, userName) => {
+    const signup = async (email, password, recheckPassword, userName, navigation) => {
         setLoading(true);
         try {
             const res = await fetch(`${API}/auth/register`, {
@@ -131,8 +131,12 @@ export const AuthProvider = ({ children }) => {
             const data = await res.json();
             console.log('Signup response:', data); // Add logging to see the actual error
             if (res.ok && data.user) {
-                setUser(data.user);
-                Alert.alert('Success', 'Account created successfully!');
+                Alert.alert('Success', 'Đăng ký thành công! Vui lòng đăng nhập.', [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.navigate('Login')
+                    }
+                ]);
             } else {
                 Alert.alert('Signup failed', data.error || data.message || 'Could not create account');
             }

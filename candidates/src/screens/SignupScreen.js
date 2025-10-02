@@ -74,7 +74,7 @@ export default function SignupScreen({ navigation }) {
                         <Text style={styles.link}> Chính sách bảo mật của TopCV.</Text>
                     </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.button} onPress={() => signup(email, password, recheckPassword, username)} disabled={loading}>
+                <TouchableOpacity style={styles.button} onPress={() => signup(email, password, recheckPassword, username, navigation)} disabled={loading}>
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (

@@ -3,3 +3,4 @@ node_modules/
 .history/
 .expo/
 .expo/
+app.config.js

@@ -5,4 +5,4 @@
 export * from "./colors.js";
 export * from "./layout.js";
 export * from "./routes.js";
-export * from "./assets.js";
+export * from "./safeAssets.js";

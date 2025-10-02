@@ -23,7 +23,7 @@ class AuthController {
         }
     }
     async register(req, res) {
-        const { email, password, recheckPassword, username } = req.body;
+        const { email, password, recheckPassword, username, role = 'candidate' } = req.body;
         console.log('register request body:', req.body);
 
         if (!email || !password || !recheckPassword || !username) {
@@ -43,7 +43,6 @@ class AuthController {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
-
         });
 
         if (error) {
@@ -56,7 +55,11 @@ class AuthController {
         // Lưu cache redis (nếu cần)
         if (user) {
             const key = `user:${user.id || email || username}`;
-            const value = JSON.stringify({ email, createdAt: new Date().toISOString() });
+            const value = JSON.stringify({ 
+                email, 
+                role,
+                createdAt: new Date().toISOString() 
+            });
             const ttlSeconds = 60 * 60 * 24; // 24h
             try {
                 await redis.setEx(key, ttlSeconds, value);
@@ -65,28 +68,34 @@ class AuthController {
                 console.error('Redis write failed during registration:', err);
             }
         }
+        
         if (user) {
             try {
                 await supabase.from('users').upsert({
                     id: user.id,
                     email: user.email,
                     username: username,
+                    role: role,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 });
-
             } catch (err) {
                 console.error('Insert error:', err);
             }
         }
 
-        res.status(201).json({ user });
+        // Add role to user object before sending response
+        const userWithRole = user ? { ...user, role: role } : null;
+
+        res.status(201).json({ user: userWithRole });
     }
 
     async login(req, res) {
         try {
-            const { email, password } = req.body;
+            const { email, password, role = 'candidate' } = req.body;
             console.log('login request body:', req.body);
+            console.log('login with role:', role);
+            
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (!data || !data.user) {
                 return res.status(401).json({ error: 'Invalid email or password' });
@@ -97,7 +106,11 @@ class AuthController {
             // Write login info to Redis (do not block login on Redis errors)
             const user = data.user;
             const key = `login:${user.id || email}`;
-            const value = JSON.stringify({ email, loginAt: new Date().toISOString() });
+            const value = JSON.stringify({ 
+                email, 
+                role, 
+                loginAt: new Date().toISOString() 
+            });
             const ttlSeconds = 60 * 60 * 24; // 24 hours
             try {
                 await redis.setEx(key, ttlSeconds, value);
@@ -105,6 +118,7 @@ class AuthController {
             } catch (err) {
                 console.error('Redis write failed during login:', err);
             }
+            
             if (!user.confirmed_at) {
                 return res.status(403).json({ error: "Please confirm your email before logging in." });
             }
@@ -124,7 +138,18 @@ class AuthController {
                 console.error('Redis error saving first login:', err);
             }
 
-            res.status(200).json({ user: data.user, access_token: data.session.access_token, isFirstLogin: isFirstLogin });
+            // Add role to user object
+            const userWithRole = {
+                ...data.user,
+                role: role
+            };
+
+            res.status(200).json({ 
+                user: userWithRole, 
+                access_token: data.session.access_token, 
+                token: data.session.access_token,
+                isFirstLogin: isFirstLogin 
+            });
         } catch (error) {
             return res.status(500).json({ error: "Login failed unexpectedly." });
         }
