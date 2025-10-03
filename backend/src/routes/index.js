@@ -9,6 +9,7 @@ const InterviewPracticeRouter = require('./ClientRoutes/InterviewPracticeRouter'
 const EmailRouter = require('./EmployerRoutes/EmailRouter');
 const EmailTemplatesRouter = require('./EmployerRoutes/EmailTemplateRouter');
 const InterviewScheduleRouter = require('./EmployerRoutes/InterviewScheduleRouter');
+const ApplicationRouter = require('./ClientRoutes/ApplicationRouter');
 function route(app) {
     // Client Routes
     app.use('/client/saveJobs', saveJobRouter);
@@ -20,9 +21,11 @@ function route(app) {
         res.status(200).json({ message: 'Client route' });
     });
 
-    //Admin Routes
-
+    //Admin Routes || Shared Routes
     app.use('/admin/questions', QuestionRouter);
+
+    //Shared Routes
+    app.use('/application', ApplicationRouter);
 
     //Employer Routes
     app.use('/job', JobRouter);

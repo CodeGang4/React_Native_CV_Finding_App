@@ -56,11 +56,9 @@ class QuestionController {
         const questionId = req.params.id;
         const { industry, level, question } = req.body;
         if (!questionId || !industry || !level || !question) {
-            return res
-                .status(400)
-                .json({
-                    error: 'Missing question ID, industry, level, or question',
-                });
+            return res.status(400).json({
+                error: 'Missing question ID, industry, level, or question',
+            });
         }
         const { data, error } = await supabase
             .from('questions')
@@ -84,7 +82,7 @@ class QuestionController {
         if (!industry || !level) {
             return res.status(400).json({ error: 'Missing industry or level' });
         }
-        const prompt = `You are an expert in ${industry}. Create 1 interview questions for a ${level} position.  do not include any introductions, explanations, or extra text.`;
+        const prompt = `Bạn là 1 chuyên gia tuyển dụng trong lĩnh vực ${industry}. Hãy tạo 1 câu hỏi phỏng vấn cho vị trí ${level}. Không bao gồm bất kỳ phần giới thiệu, giải thích hoặc văn bản bổ sung nào. Câu hỏi bằng tiếng Việt`;
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         try {
@@ -106,11 +104,9 @@ class QuestionController {
             return res.status(200).json(data);
         } catch (error) {
             if (error.status === 429) {
-                return res
-                    .status(429)
-                    .json({
-                        error: 'Quota exceeded. Please check your plan and billing.',
-                    });
+                return res.status(429).json({
+                    error: 'Quota exceeded. Please check your plan and billing.',
+                });
             }
             console.error('Gemini API error:', error.message || error);
             return res
@@ -134,6 +130,22 @@ class QuestionController {
         }
         res.status(200).json(data);
     }
+    async getQuestionsByIndustry(req, res) {
+        const { industry } = req.body;
+        if (!industry) {
+            return res.status(400).json({ error: 'Missing industry' });
+        }
+        const { data, error } = await supabase
+            .from('questions')
+            .select()
+            .eq('industry', industry);
+        if (error) {
+            console.error('Supabase fetch error:', error);
+            return res.status(500).json({ error: 'Failed to fetch questions' });
+        }
+        res.status(200).json(data);
+    }
+
     async getAllQuestions(req, res) {
         const { data, error } = await supabase.from('questions').select('*');
         if (error) {

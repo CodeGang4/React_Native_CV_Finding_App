@@ -115,14 +115,38 @@ class InterviewPracticeController {
                 ? 'audio/mpeg'
                 : 'audio/wav';
 
-            // Gọi Deepgram API v3
-            const { result, error: dgError } =
-                await deepgram.listen.prerecorded.transcribeFile(audioBuffer, {
-                    model: 'nova-3',
+            // Gọi Deepgram API v3 với cấu hình phù hợp cho tiếng Việt
+            let transcribeOptions = {
+                model: 'nova-2',
+                language: 'vi',
+                smart_format: true,
+                mimetype,
+            };
+
+            let { result, error: dgError } =
+                await deepgram.listen.prerecorded.transcribeFile(
+                    audioBuffer,
+                    transcribeOptions,
+                );
+
+            // Nếu lỗi với nova-2 + vi, thử fallback
+            if (dgError) {
+                console.log('Retrying with fallback configuration...');
+                transcribeOptions = {
+                    model: 'base',
                     language: 'en',
                     smart_format: true,
                     mimetype,
-                });
+                };
+
+                const fallbackResult =
+                    await deepgram.listen.prerecorded.transcribeFile(
+                        audioBuffer,
+                        transcribeOptions,
+                    );
+                result = fallbackResult.result;
+                dgError = fallbackResult.error;
+            }
 
             if (dgError) {
                 console.error('Deepgram API error:', dgError);
@@ -312,11 +336,9 @@ class InterviewPracticeController {
             return res.status(200).json(updateResult);
         } catch (error) {
             if (error.status === 429) {
-                return res
-                    .status(429)
-                    .json({
-                        error: 'Quota exceeded. Please check your plan and billing.',
-                    });
+                return res.status(429).json({
+                    error: 'Quota exceeded. Please check your plan and billing.',
+                });
             }
             console.error('Gemini API error:', error.message || error);
             return res.status(500).json({ error: 'Failed to grade content' });

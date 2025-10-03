@@ -6,11 +6,15 @@ router.use(express.urlencoded({ extended: true }));
 
 router.post('/create', QuestionController.createQuestion);
 router.delete('/delete/:id', QuestionController.deleteQuestion);
-router.put('/update/:id', QuestionController.updateQuestion);
+router.patch('/update/:id', QuestionController.updateQuestion);
 router.post('/generate', QuestionController.generate);
 router.get(
     '/getQuestionsByIndustryAndLevel',
     QuestionController.getQuestionsByIndustryAndLevel,
+);
+router.get(
+    '/getQuestionsByIndustry',
+    QuestionController.getQuestionsByIndustry,
 );
 router.get('/getQuestions', QuestionController.getAllQuestions);
 module.exports = router;

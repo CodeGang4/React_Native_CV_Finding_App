@@ -250,14 +250,7 @@ class InterviewScheduleController {
         try {
             const { data, error } = await supabase
                 .from('interview_schedules')
-                .select(
-                    `
-                    *,
-                    candidates(full_name, users(email)),
-                    jobs(title, position),
-                    employers(company_name)
-                `,
-                )
+                .select('*')
                 .eq('employer_id', employer_id)
                 .order('interview_datetime', { ascending: true });
 
@@ -397,6 +390,71 @@ class InterviewScheduleController {
                 success: false,
                 error: 'Failed to get interview schedule detail',
             });
+        }
+    }
+
+    async updateScheduleStatus(req, res) {
+        const { status } = req.body;
+        const { scheduleId } = req.params;
+        if (!scheduleId) {
+            return res.status(400).json({ error: 'Schedule ID is required' });
+        }
+        if (!['scheduled', 'completed', 'canceled'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+        try {
+            const { data, error } = await supabase
+                .from('interview_schedules')
+                .update({ status, updated_at: new Date().toISOString() })
+                .eq('id', scheduleId)
+                .select();
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: 'Schedule not found or not updated' });
+            }
+            return res.status(200).json(data[0]);
+        } catch (err) {
+            console.error('Error updating schedule status:', err);
+            return res
+                .status(500)
+                .json({ error: 'Failed to update schedule status' });
+        }
+    }
+
+    async getScheduleByStatus(req, res) {
+        const { status } = req.body;
+        if (!['scheduled', 'completed', 'canceled'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+        const { company_id } = req.params;
+        if (!company_id) {
+            return res.status(400).json({ error: 'Company ID is required' });
+        }
+        try {
+            const { data, error } = await supabase
+                .from('interview_schedules')
+                .select('*')
+                .eq('status', status)
+                .eq('employer_id', company_id)
+                .order('interview_datetime', { ascending: true });
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: 'No schedules found for the given status' });
+            }
+            return res.status(200).json(data);
+        } catch (err) {
+            console.error('Error getting schedules by status:', err);
+            return res
+                .status(500)
+                .json({ error: 'Failed to get schedules by status' });
         }
     }
 }

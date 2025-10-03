@@ -5,11 +5,15 @@ const AuthController = require('../../controllers/ClientControllers/AuthControll
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-router.post('/google-login', AuthController.googleLogin)
+router.post('/google-login', AuthController.googleLogin);
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
 router.post('/logout', verifyToken, AuthController.logout);
 router.post('/reset-password', AuthController.resetPasswordForEmail);
+
+// Debug routes
+router.get('/debug/candidates', AuthController.checkCandidates);
+router.get('/debug/users', AuthController.checkUsers);
 router.get('/confirmed', (req, res) => {
     res.send(`
 		<html>
@@ -35,4 +39,4 @@ router.get('/confirmed', (req, res) => {
 	`);
 });
 
-module.exports = router
+module.exports = router;

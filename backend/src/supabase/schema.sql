@@ -23,7 +23,9 @@ create table candidates (
     skills jsonb, -- lưu danh sách kỹ năng
     cv_url text,
     portfolio text,
-    job_preferences jsonb -- mong muốn công việc
+    job_preferences jsonb, -- mong muốn công việc
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 
 -- Bảng employers: thông tin nhà tuyển dụng
@@ -37,7 +39,9 @@ create table employers (
     company_size text,
     industry text,
     contact_person text,
-    description text
+    description text,
+    created_at timestamp default now(),
+    updated_at timestamp default now()
 );
 
 -- cv : Lưu thông tin CV
@@ -94,7 +98,7 @@ create table questions (
 );
 
 -- Bảng interviews_practices_results: lưu kết quả luyện tập phỏng vấn
-create table interviews_practices_results {
+create table interviews_practices_results (
     id uuid primary key default gen_random_uuid(),
     candidate_id uuid references candidates(user_id) on delete cascade,
     question_id uuid references questions(id) on delete cascade,
@@ -103,7 +107,7 @@ create table interviews_practices_results {
     created_at timestamp default now(),
     audio_url text,
     updated_at timestamp default now()
-}
+);
 
 -- Bảng interview_schedules: lịch phỏng vấn
 create table interview_schedules (

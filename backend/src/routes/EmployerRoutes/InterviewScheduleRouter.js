@@ -5,10 +5,18 @@ const InterviewScheduleController = require('../../controllers/EmployerControlle
 
 // Lấy tất cả lịch phỏng vấn
 router.patch(
+    '/update-status/:scheduleId',
+    InterviewScheduleController.updateScheduleStatus,
+);
+router.patch(
     '/update/:scheduleId',
     InterviewScheduleController.updateInterviewSchedule,
 );
 router.post('/create', InterviewScheduleController.createInterviewSchedule);
+router.get(
+    '/getSchedulesByStatus/:company_id',
+    InterviewScheduleController.getScheduleByStatus,
+);
 router.get(
     '/:employer_id',
     InterviewScheduleController.getInterviewSchedulesByCompany,
