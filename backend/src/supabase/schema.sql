@@ -41,7 +41,8 @@ create table employers (
     contact_person text,
     description text,
     created_at timestamp default now(),
-    updated_at timestamp default now()
+    updated_at timestamp default now(),
+    isVerified boolean default false
 );
 
 -- cv : Lưu thông tin CV

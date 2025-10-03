@@ -7,8 +7,19 @@ const EmployerController = require('../../controllers/EmployerControllers/Employ
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-router.post('/uploadCompanyLogo/:companyId', upload.single('companyLogo'), EmployerController.uploadCompanyLogo);
-router.post('/updateInfor/:companyId', EmployerController.updateInfo);
+router.patch(
+    '/updateCompanyName/:companyId',
+    EmployerController.updateCompanyName,
+);
+router.patch('/verified/:companyId', EmployerController.verifyCompany);
+router.post(
+    '/uploadCompanyLogo/:companyId',
+    upload.single('companyLogo'),
+    EmployerController.uploadCompanyLogo,
+);
+router.put('/updateInfor/:companyId', EmployerController.updateInfo);
+router.get('/getCompanyInfo/:companyId', EmployerController.getCompanyInfo);
+router.get('/getAllCompany', EmployerController.getAllCompany);
+router.get('/getVerifiedCompany', EmployerController.getVerifiedCompany);
 
-
-module.exports = router
+module.exports = router;

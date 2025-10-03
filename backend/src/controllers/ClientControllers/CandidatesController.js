@@ -169,21 +169,6 @@ class CandidatesController {
             .eq('user_id', userId);
         console.log('CV uploaded and URL saved:', publicURL);
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:uploadCV:${userId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'uploadCV',
-                    userId,
-                    cv_url: publicURL,
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (uploadCV):', err);
-        }
         res.status(200).json({ cv_url: publicURL });
     }
     async uploadPortfolio(req, res) {
@@ -213,21 +198,6 @@ class CandidatesController {
             .eq('user_id', userId);
         console.log('Portfolio uploaded and URL saved:', publicURL);
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:uploadPortfolio:${userId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'uploadPortfolio',
-                    userId,
-                    portfolio_url: publicURL,
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (uploadPortfolio):', err);
-        }
         res.status(200).json({ portfolio_url: publicURL });
     }
 }

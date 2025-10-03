@@ -6,6 +6,95 @@ const supabaseStorage = createClient(
 );
 const redis = require('../../redis/config');
 class EmployerController {
+    async getCompanyInfo(req, res) {
+        const companyId = req.params.companyId;
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .select('*')
+                .eq('user_id', companyId)
+                .single();
+            if (error) {
+                throw error;
+            }
+            if (!data) {
+                return res.status(404).json({ error: 'Company not found' });
+            }
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error fetching company info:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    // select all company without pagination and ordering. Suit for Admin dashboard
+    async getAllCompany(req, res) {
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .select('*');
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res.status(404).json({ error: 'No companies found' });
+            }
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error fetching all companies:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    // select all verified company for client and employer listing
+    async getVerifiedCompany(req, res) {
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .select('*')
+                .eq('isverified', true);
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: 'No verified companies found' });
+            }
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error fetching verified companies:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    async verifyCompany(req, res) {
+        const companyId = req.params.companyId;
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .update({
+                    isverified: true,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('user_id', companyId)
+                .select();
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: 'Company not found or not updated' });
+            }
+            res.status(200).json(data[0]);
+        } catch (error) {
+            console.error('Error verifying company:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
     async updateInfo(req, res) {
         const companyId = req.params.companyId;
         const {
@@ -104,6 +193,43 @@ class EmployerController {
             console.error('Redis log error (uploadCompanyLogo):', err);
         }
         res.status(200).json({ logo_url: publicURL });
+    }
+
+    async updateCompanyName(req, res) {
+        const companyId = req.params.companyId;
+        const { company_name } = req.body;
+        if (!company_name) {
+            return res.status(400).json({ error: 'Company name is required' });
+        }
+        const { data, error } = await supabase
+            .from('employers')
+            .update({ company_name })
+            .eq('user_id', companyId)
+            .select();
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+        if (!data || data.length === 0) {
+            return res
+                .status(404)
+                .json({ error: 'Employer not found or not updated' });
+        }
+
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .update({ username: company_name })
+            .eq('id', companyId)
+            .select();
+        if (userError) {
+            return res.status(400).json({ error: userError.message });
+        }
+        if (!userData || userData.length === 0) {
+            return res
+                .status(404)
+                .json({ error: 'User not found or not updated' });
+        }
+
+        res.status(200).json(data[0]);
     }
 }
 
