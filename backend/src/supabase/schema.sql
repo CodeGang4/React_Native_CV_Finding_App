@@ -163,3 +163,20 @@ create table interview_emails (
     created_at timestamp default now(),
     updated_at timestamp default now()
 );
+
+
+create table podcast(
+    id int8 primary key default gen_random_uuid(),
+    title text not null,
+    podcast_url text not null,
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+)
+
+create table save_podcast(
+    id int8 primary key default gen_random_uuid(),
+    candidate_id uuid references candidates(user_id) on delete cascade,
+    podcast_id int8 references podcast(id) on delete cascade,
+    saved_at timestamp default now(),
+    unique(podcast_id) -- không lưu trùng podcast
+)

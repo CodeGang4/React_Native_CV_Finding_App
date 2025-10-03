@@ -10,6 +10,7 @@ const EmailRouter = require('./EmployerRoutes/EmailRouter');
 const EmailTemplatesRouter = require('./EmployerRoutes/EmailTemplateRouter');
 const InterviewScheduleRouter = require('./EmployerRoutes/InterviewScheduleRouter');
 const ApplicationRouter = require('./ClientRoutes/ApplicationRouter');
+const PodcastRouter = require('./ClientRoutes/PodcastRouter');
 function route(app) {
     // Client Routes
     app.use('/client/saveJobs', saveJobRouter);
@@ -17,6 +18,7 @@ function route(app) {
     app.use('/client/auth', AuthRouter);
     app.use('/client/interview-practice', InterviewPracticeRouter);
     app.use('/client/candidates', CandidatesRouter);
+    app.use('/client/podcast', PodcastRouter);
     app.use('/client', (req, res) => {
         res.status(200).json({ message: 'Client route' });
     });
