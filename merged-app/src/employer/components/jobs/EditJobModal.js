@@ -9,36 +9,60 @@ import {
   TextInput,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-export default function EditJobModal({ visible, onClose, job, onSubmit }) {
+export default function EditJobModal({
+  visible,
+  onClose,
+  job,
+  onSubmit,
+  loading = false,
+}) {
   const [formData, setFormData] = useState({
     id: undefined,
     title: "",
+    position: "",
     salary: "",
     location: "",
-    experience: "",
+    education: "",
     deadline: "",
-    jobType: "",
+    jobType: "Toàn thời gian",
     description: "",
     requirements: "",
     benefits: "",
     skills: "",
+    quantity: "1",
   });
 
   useEffect(() => {
     if (job && visible) {
+      // Format deadline từ ISO string về dd/mm/yyyy
+      const formatDeadline = (dateString) => {
+        if (!dateString) return "";
+        try {
+          const date = new Date(dateString);
+          const day = date.getDate().toString().padStart(2, "0");
+          const month = (date.getMonth() + 1).toString().padStart(2, "0");
+          const year = date.getFullYear();
+          return `${day}/${month}/${year}`;
+        } catch (error) {
+          return "";
+        }
+      };
+
       setFormData({
         id: job.id,
         title: job.title || "",
+        position: job.position || job.title || "",
         salary: job.salary || "",
         location: job.location || "",
-        experience: job.experience || "",
-        deadline: job.deadline || "",
-        jobType: job.jobType || "",
+        education: job.education || "",
+        deadline: formatDeadline(job.deadline || job.exprired_date),
+        jobType: job.jobType || "Toàn thời gian",
         description: job.description || "",
         requirements: Array.isArray(job.requirements)
           ? job.requirements.join("\n")
@@ -49,27 +73,76 @@ export default function EditJobModal({ visible, onClose, job, onSubmit }) {
         skills: Array.isArray(job.skills)
           ? job.skills.join(", ")
           : job.skills || "",
+        quantity: job.quantity?.toString() || "1",
       });
     }
   }, [job, visible]);
 
   const handleSave = () => {
-    if (!formData.title || !formData.salary || !formData.location) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin bắt buộc");
+    // Validation - Check required fields theo backend API
+    const requiredFields = [
+      { field: "title", label: "Tiêu đề công việc" },
+      { field: "position", label: "Vị trí ứng tuyển" },
+      { field: "salary", label: "Mức lương" },
+      { field: "location", label: "Địa điểm làm việc" },
+      { field: "description", label: "Mô tả công việc" },
+      { field: "requirements", label: "Yêu cầu công việc" },
+      { field: "education", label: "Trình độ học vấn" },
+      { field: "deadline", label: "Hạn nộp hồ sơ" },
+      { field: "quantity", label: "Số lượng tuyển dụng" },
+    ];
+
+    const missingFields = requiredFields.filter(
+      ({ field }) => !formData[field] || formData[field].trim() === ""
+    );
+
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map(({ label }) => label).join(", ");
+      Alert.alert("Lỗi", `Vui lòng điền đầy đủ thông tin: ${missingLabels}`);
       return;
     }
-    const updated = {
-      ...job,
-      ...formData,
-      requirements: formData.requirements.split("\n").filter((x) => x.trim()),
-      benefits: formData.benefits.split("\n").filter((x) => x.trim()),
-      skills: formData.skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-    onSubmit && onSubmit(updated);
-    onClose && onClose();
+
+    // Validate deadline format (dd/mm/yyyy)
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.deadline)) {
+      Alert.alert(
+        "Lỗi",
+        "Hạn nộp hồ sơ phải có định dạng dd/mm/yyyy (ví dụ: 31/12/2024)"
+      );
+      return;
+    }
+
+    try {
+      // Parse deadline từ dd/mm/yyyy sang ISO string
+      const [day, month, year] = formData.deadline.split("/");
+      const expiryDate = new Date(year, month - 1, day);
+
+      if (expiryDate < new Date()) {
+        Alert.alert("Lỗi", "Hạn nộp hồ sơ phải là ngày trong tương lai");
+        return;
+      }
+
+      // Format data cho API backend theo đúng cấu trúc
+      const jobData = {
+        id: formData.id,
+        title: formData.title.trim(),
+        position: formData.position.trim(),
+        salary: formData.salary.trim(),
+        location: formData.location.trim(),
+        education: formData.education.trim(),
+        jobType: formData.jobType,
+        description: formData.description.trim(),
+        requirements: formData.requirements.trim(),
+        quantity: parseInt(formData.quantity) || 1,
+        deadline: expiryDate.toISOString(),
+        isAccepted: job.isAccepted !== false, // Giữ nguyên trạng thái hiện tại
+      };
+
+      onSubmit && onSubmit(jobData);
+    } catch (error) {
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi xử lý dữ liệu. Vui lòng thử lại.");
+      console.error("Form data processing error:", error);
+    }
   };
 
   return (
@@ -89,14 +162,27 @@ export default function EditJobModal({ visible, onClose, job, onSubmit }) {
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {/* Tên vị trí */}
+            {/* Tiêu đề công việc */}
             <View style={styles.group}>
-              <Text style={styles.label}>Tên vị trí *</Text>
+              <Text style={styles.label}>Tiêu đề công việc *</Text>
               <TextInput
                 style={styles.input}
                 value={formData.title}
                 onChangeText={(text) =>
                   setFormData({ ...formData, title: text })
+                }
+                placeholder="VD: Tuyển dụng Senior React Native Developer"
+              />
+            </View>
+
+            {/* Vị trí ứng tuyển */}
+            <View style={styles.group}>
+              <Text style={styles.label}>Vị trí ứng tuyển *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.position}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, position: text })
                 }
                 placeholder="VD: Senior React Native Developer"
               />
@@ -128,50 +214,101 @@ export default function EditJobModal({ visible, onClose, job, onSubmit }) {
               </View>
             </View>
 
-            {/* Kinh nghiệm & Hạn nộp */}
+            {/* Trình độ học vấn & Hạn nộp */}
             <View style={styles.row}>
               <View style={[styles.group, { flex: 1, marginRight: 10 }]}>
-                <Text style={styles.label}>Kinh nghiệm</Text>
+                <Text style={styles.label}>Trình độ học vấn *</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.experience}
+                  value={formData.education}
                   onChangeText={(text) =>
-                    setFormData({ ...formData, experience: text })
+                    setFormData({ ...formData, education: text })
                   }
-                  placeholder="VD: 2-3 năm"
+                  placeholder="VD: Đại học"
                 />
               </View>
               <View style={[styles.group, { flex: 1, marginLeft: 10 }]}>
-                <Text style={styles.label}>Hạn nộp</Text>
+                <Text style={styles.label}>Hạn nộp *</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.deadline}
                   onChangeText={(text) =>
                     setFormData({ ...formData, deadline: text })
                   }
-                  placeholder="VD: 30/09/2025"
+                  placeholder="VD: 30/12/2024"
                 />
               </View>
             </View>
 
-            {/* Loại hình công việc */}
-            <View style={styles.group}>
-              <Text style={styles.label}>Loại hình công việc</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.jobType}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, jobType: text })
-                }
-                placeholder="VD: Toàn thời gian"
-              />
+            {/* Loại hình công việc & Số lượng */}
+            <View style={styles.row}>
+              <View style={[styles.group, { flex: 1, marginRight: 10 }]}>
+                <Text style={styles.label}>Loại hình công việc *</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => {
+                      Alert.alert("Chọn loại hình công việc", "", [
+                        {
+                          text: "Toàn thời gian",
+                          onPress: () =>
+                            setFormData({
+                              ...formData,
+                              jobType: "Toàn thời gian",
+                            }),
+                        },
+                        {
+                          text: "Bán thời gian",
+                          onPress: () =>
+                            setFormData({
+                              ...formData,
+                              jobType: "Bán thời gian",
+                            }),
+                        },
+                        {
+                          text: "Thực tập",
+                          onPress: () =>
+                            setFormData({ ...formData, jobType: "Thực tập" }),
+                        },
+                        {
+                          text: "Freelance",
+                          onPress: () =>
+                            setFormData({ ...formData, jobType: "Freelance" }),
+                        },
+                        { text: "Hủy", style: "cancel" },
+                      ]);
+                    }}
+                  >
+                    <Text style={styles.pickerText}>
+                      {formData.jobType || "Chọn loại hình"}
+                    </Text>
+                    <MaterialIcons
+                      name="arrow-drop-down"
+                      size={24}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={[styles.group, { flex: 1, marginLeft: 10 }]}>
+                <Text style={styles.label}>Số lượng tuyển *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.quantity}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, quantity: text })
+                  }
+                  placeholder="VD: 2"
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
 
-            {/* Mô tả */}
+            {/* Mô tả công việc */}
             <View style={styles.group}>
-              <Text style={styles.label}>Mô tả công việc</Text>
+              <Text style={styles.label}>Mô tả công việc *</Text>
               <TextInput
-                style={[styles.input, styles.textarea]}
+                style={[styles.input, styles.multilineInput]}
                 value={formData.description}
                 onChangeText={(text) =>
                   setFormData({ ...formData, description: text })
@@ -182,40 +319,40 @@ export default function EditJobModal({ visible, onClose, job, onSubmit }) {
               />
             </View>
 
-            {/* Yêu cầu */}
+            {/* Yêu cầu công việc */}
             <View style={styles.group}>
-              <Text style={styles.label}>Yêu cầu công việc</Text>
-              <Text style={styles.note}>Mỗi yêu cầu trên một dòng</Text>
+              <Text style={styles.label}>Yêu cầu công việc *</Text>
+              <Text style={styles.note}>Mô tả chi tiết yêu cầu</Text>
               <TextInput
-                style={[styles.input, styles.textarea]}
+                style={[styles.input, styles.multilineInput]}
                 value={formData.requirements}
                 onChangeText={(text) =>
                   setFormData({ ...formData, requirements: text })
                 }
-                placeholder={`Có ít nhất 2 năm kinh nghiệm với React Native\nThành thạo JavaScript, TypeScript\nKinh nghiệm với Redux, Context API`}
+                placeholder="Có ít nhất 2 năm kinh nghiệm với React Native. Thành thạo JavaScript, TypeScript..."
                 multiline
                 numberOfLines={5}
               />
             </View>
 
-            {/* Quyền lợi */}
+            {/* Phúc lợi */}
             <View style={styles.group}>
-              <Text style={styles.label}>Quyền lợi</Text>
-              <Text style={styles.note}>Mỗi quyền lợi trên một dòng</Text>
+              <Text style={styles.label}>Phúc lợi</Text>
+              <Text style={styles.note}>Mô tả các phúc lợi cho nhân viên</Text>
               <TextInput
-                style={[styles.input, styles.textarea]}
+                style={[styles.input, styles.multilineInput]}
                 value={formData.benefits}
                 onChangeText={(text) =>
                   setFormData({ ...formData, benefits: text })
                 }
-                placeholder={`Mức lương cạnh tranh\nThưởng hiệu suất hàng quý\nBảo hiểm đầy đủ theo quy định`}
+                placeholder="Lương tháng 13, bảo hiểm sức khỏe, làm việc từ xa..."
                 multiline
-                numberOfLines={4}
+                numberOfLines={5}
               />
             </View>
 
             {/* Kỹ năng */}
-            <View className="group" style={styles.group}>
+            <View style={styles.group}>
               <Text style={styles.label}>Kỹ năng yêu cầu</Text>
               <Text style={styles.note}>Phân tách bằng dấu phẩy</Text>
               <TextInput
@@ -233,14 +370,29 @@ export default function EditJobModal({ visible, onClose, job, onSubmit }) {
             <TouchableOpacity
               style={[styles.btn, styles.btnSecondary]}
               onPress={onClose}
+              disabled={loading}
             >
               <Text style={styles.btnSecondaryText}>Hủy</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.btn, styles.btnPrimary]}
+              style={[
+                styles.btn,
+                styles.btnPrimary,
+                loading && styles.disabledButton,
+              ]}
               onPress={handleSave}
+              disabled={loading}
             >
-              <Text style={styles.btnPrimaryText}>Lưu</Text>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="white" />
+                  <Text style={[styles.btnPrimaryText, { marginLeft: 8 }]}>
+                    Đang lưu...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.btnPrimaryText}>Lưu thay đổi</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -299,4 +451,27 @@ const styles = StyleSheet.create({
   btnSecondary: { backgroundColor: "#f0f0f0" },
   btnPrimaryText: { color: "#fff", fontWeight: "700" },
   btnSecondaryText: { color: "#555", fontWeight: "700" },
+  disabledButton: { backgroundColor: "#cccccc" },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  multilineInput: { height: 100, textAlignVertical: "top" },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 8,
+  },
+  pickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  pickerText: {
+    fontSize: 14,
+    color: "#333",
+  },
 });

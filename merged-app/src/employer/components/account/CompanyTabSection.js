@@ -11,11 +11,21 @@ export default function CompanyTabSection({
   allowContactFromCandidates,
   onToggleAllowContact,
   onEditCompany,
+  loading = false,
+  updating = false,
 }) {
   return (
     <View style={styles.container}>
-      <CompanyInfoSection companyInfo={companyInfo} onEdit={onEditCompany} />
-      <CompanyAboutSection description={companyInfo.description} />
+      <CompanyInfoSection
+        companyInfo={companyInfo}
+        onEdit={onEditCompany}
+        loading={loading}
+        updating={updating}
+      />
+      <CompanyAboutSection
+        description={companyInfo.description}
+        loading={loading}
+      />
       <RecruitmentSettingsSection
         isRecruiting={isRecruiting}
         onToggleRecruiting={onToggleRecruiting}

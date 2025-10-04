@@ -1,11 +1,20 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-export default function CompanyAboutSection({ description }) {
+export default function CompanyAboutSection({ description, loading = false }) {
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>Giới thiệu công ty</Text>
-      <Text style={styles.descriptionText}>{description}</Text>
+      <Text
+        style={[
+          styles.descriptionText,
+          (description === "Chưa có mô tả về công ty" ||
+            description === "Chưa có mô tả") &&
+            styles.placeholderText,
+        ]}
+      >
+        {loading ? "Đang tải..." : description}
+      </Text>
     </View>
   );
 }
@@ -28,5 +37,9 @@ const styles = StyleSheet.create({
     color: "#666",
     lineHeight: 22,
     marginTop: 10,
+  },
+  placeholderText: {
+    color: "#999",
+    fontStyle: "italic",
   },
 });

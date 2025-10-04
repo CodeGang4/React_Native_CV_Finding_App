@@ -1,3 +1,5 @@
+import { errorTracker } from "../../utils/ErrorTracker";
+
 /**
  * API Client Configuration
  */
@@ -107,6 +109,8 @@ class ApiClient {
           statusText: response.statusText,
           data: await this.parseResponseData(response),
         };
+        // Thêm config vào error để có thể check trong interceptor
+        error.config = requestConfig;
         throw error;
       }
 
@@ -122,7 +126,11 @@ class ApiClient {
 
       // Apply response interceptors
       for (const interceptor of this.interceptors.response) {
-        result = await interceptor(result);
+        if (typeof interceptor === "function") {
+          result = await interceptor(result);
+        } else if (interceptor.onFulfilled) {
+          result = await interceptor.onFulfilled(result);
+        }
       }
 
       return result;
@@ -131,6 +139,14 @@ class ApiClient {
       for (const interceptor of this.interceptors.response) {
         if (interceptor.onError) {
           error = await interceptor.onError(error);
+        } else if (typeof interceptor === "function") {
+          // Nếu là function, gọi để handle error
+          try {
+            error = await interceptor(error);
+          } catch (e) {
+            // Interceptor có thể throw error mới
+            error = e;
+          }
         }
       }
       throw error;
@@ -219,7 +235,32 @@ apiClient.addResponseInterceptor({
     return response;
   },
   onError: async (error) => {
-    console.error(`[API Error] ${error.message}`);
+    // Chỉ skip log cho DELETE job với 404 (specific case)
+    const isDeleteJob404 =
+      error.config?.skipErrorLog === true &&
+      error.response?.status === 404 &&
+      error.config?.method === "DELETE" &&
+      error.config?.url?.includes("/job/deleteJob/");
+
+    if (isDeleteJob404) {
+      console.debug(
+        `[Expected Behavior] Delete job returned 404 (backend logic issue but job deleted successfully)`
+      );
+
+      // Không track expected behavior để giảm noise
+      // Nếu cần debug có thể uncomment dòng dưới:
+      // errorTracker.track(error, { type: 'EXPECTED_DELETE_JOB_404', severity: 'warning' });
+    } else {
+      // Log tất cả errors khác bình thường
+      console.error(`[API Error] ${error.message}`);
+
+      // Track tất cả API errors để debug sau này
+      errorTracker.trackAPIError(
+        error,
+        error.config?.url,
+        error.config?.method
+      );
+    }
 
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
@@ -228,7 +269,7 @@ apiClient.addResponseInterceptor({
       // You might want to redirect to login or refresh token here
     }
 
-    return Promise.reject(error);
+    throw error; // Re-throw error thay vì return Promise.reject
   },
 });
 

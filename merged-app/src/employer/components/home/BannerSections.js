@@ -10,11 +10,6 @@ export default function BannerSections() {
         title="Cùng chia sẻ - Cùng vươn xa"
         icon="📈"
       />
-      <GradientBanner
-        colors={["#2c5f41", "#00b14f"]}
-        title="Thêm công cụ - Thêm vượt trội"
-        icon="🛠️"
-      />
 
       <View style={styles.section}>
         <View style={styles.toolCardGreen}>

@@ -1,20 +1,50 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
-export default function CompanyProfileCard({ companyInfo, onUpgrade }) {
+export default function CompanyProfileCard({
+  companyInfo,
+  loading = false,
+  onUpgrade,
+}) {
   return (
     <View style={styles.companyCard}>
       <View style={styles.companyHeader}>
         <View style={styles.companyLogoContainer}>
-          <Image
-            source={{ uri: companyInfo.logo }}
-            style={styles.companyLogo}
-          />
+          {loading ? (
+            <ActivityIndicator size="small" color="#4CAF50" />
+          ) : companyInfo.logo ? (
+            <Image
+              source={{ uri: companyInfo.logo }}
+              style={styles.companyLogo}
+              onError={() => console.log("Failed to load company logo")}
+            />
+          ) : (
+            <MaterialIcons name="business" size={30} color="#ccc" />
+          )}
         </View>
         <View style={styles.companyInfo}>
-          <Text style={styles.companyName}>{companyInfo.name}</Text>
-          <Text style={styles.companyCode}>{companyInfo.code}</Text>
-          <Text style={styles.companyEmployees}>{companyInfo.employees}</Text>
+          <Text
+            style={[
+              styles.companyName,
+              companyInfo.name === "Chưa cập nhật" && styles.placeholderText,
+            ]}
+          >
+            {loading ? "Đang tải..." : companyInfo.name}
+          </Text>
+          <Text style={styles.companyWebsite}>
+            {loading ? "..." : companyInfo.website}
+          </Text>
+          <Text style={styles.companyEmployees}>
+            {loading ? "..." : companyInfo.employees}
+          </Text>
         </View>
       </View>
       <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
@@ -45,7 +75,7 @@ const styles = StyleSheet.create({
   companyLogoContainer: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 20,
     backgroundColor: "#f0f0f0",
     alignItems: "center",
     justifyContent: "center",
@@ -53,9 +83,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   companyLogo: {
-    width: 40,
-    height: 40,
+    width: 60,
+    height: 60,
     borderRadius: 20,
+    resizeMode: "contain",
+    borderWidth: 1,
+    borderColor: "#4CAF50",
   },
   companyInfo: { flex: 1, minWidth: 0 },
   companyName: {
@@ -65,8 +98,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     flexWrap: "wrap",
   },
-  companyCode: { fontSize: 14, color: "#666", marginBottom: 2 },
+  companyWebsite: { fontSize: 14, color: "#666", marginBottom: 2 },
   companyEmployees: { fontSize: 14, color: "#666" },
+  placeholderText: {
+    color: "#999",
+    fontStyle: "italic",
+  },
   upgradeButton: {
     backgroundColor: "#f5f5f5",
     paddingVertical: 10,

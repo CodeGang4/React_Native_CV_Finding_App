@@ -1,5 +1,11 @@
-import React, { useState, useRef } from "react";
-import { View, StyleSheet, Animated, Alert } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import JobDetailPage from "./JobDetailPage";
 import CreateJobModal from "../../components/jobs/CreateJobModal";
 import AccountTabs from "../../components/account/AccountTabs";
@@ -8,8 +14,32 @@ import CompanyTabSection from "../../components/account/CompanyTabSection";
 import JobsTabSection from "../../components/account/JobsTabSection";
 import AccountSettingsSection from "../../components/account/AccountSettingsSection";
 import EditCompanyModal from "../../components/account/EditCompanyModal";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useCompanyInfo } from "../../../shared/hooks/useCompanyInfo";
+import { useEmployerJobs } from "../../../shared/hooks/useEmployerJobs";
 
 const EmployerAccountPage = () => {
+  const { user } = useAuth();
+  const {
+    companyInfo,
+    loading,
+    error,
+    updating,
+    updateCompanyInfoWithFeedback,
+    refreshCompanyInfo,
+  } = useCompanyInfo();
+
+  const {
+    jobs,
+    jobStats,
+    loading: jobsLoading,
+    creating: jobsCreating,
+    updating: jobsUpdating,
+    createJobWithFeedback,
+    updateJobWithFeedback,
+    deleteJobWithConfirmation,
+  } = useEmployerJobs();
+
   const [activeTab, setActiveTab] = useState(0);
   const [isRecruiting, setIsRecruiting] = useState(true);
   const [allowContactFromCandidates, setAllowContactFromCandidates] =
@@ -21,79 +51,6 @@ const EmployerAccountPage = () => {
   const [currentPage, setCurrentPage] = useState("main"); // main, jobDetail
   const [selectedJob, setSelectedJob] = useState(null);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
-  // const [showEditJobModal, setShowEditJobModal] = useState(false); // not used
-  const [jobsList, setJobsList] = useState([
-    {
-      id: 1,
-      title: "Senior React Native Developer",
-      company: "Công ty Cổ phần TCC & Partners",
-      salary: "15 - 25 triệu",
-      location: "Hà Nội",
-      experience: "2-3 năm",
-      deadline: "30/09/2025",
-      postedDate: "10/09/2025",
-      status: "Đang tuyển",
-      views: 156,
-      applications: 8,
-      shortlisted: 2,
-      rejected: 3,
-      pending: 3,
-      jobType: "Toàn thời gian",
-      description:
-        "Chúng tôi đang tìm kiếm một Senior React Native Developer có kinh nghiệm để tham gia phát triển các ứng dụng mobile chất lượng cao...",
-      requirements: [
-        "Có ít nhất 2 năm kinh nghiệm với React Native",
-        "Thành thạo JavaScript, TypeScript",
-        "Kinh nghiệm với Redux, Context API",
-        "Hiểu biết về Native Modules",
-        "Kỹ năng giao tiếp tốt",
-      ],
-      benefits: [
-        "Mức lương cạnh tranh 15-25 triệu",
-        "Thưởng hiệu suất hàng quý",
-        "Bảo hiểm đầy đủ theo quy định",
-        "Môi trường làm việc năng động",
-        "Cơ hội học hỏi và phát triển",
-      ],
-      skills: ["React Native", "JavaScript", "TypeScript", "Redux"],
-      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
-      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
-    },
-    {
-      id: 2,
-      title: "Junior PHP Developer",
-      company: "Công ty Cổ phần TCC & Partners",
-      salary: "8 - 12 triệu",
-      location: "Hà Nội",
-      experience: "Không yêu cầu",
-      deadline: "25/09/2025",
-      postedDate: "05/09/2025",
-      status: "Đang tuyển",
-      views: 247,
-      applications: 12,
-      shortlisted: 3,
-      rejected: 7,
-      pending: 2,
-      jobType: "Toàn thời gian",
-      description:
-        "Chúng tôi đang tìm kiếm một PHP Developer để tham gia vào team phát triển sản phẩm...",
-      requirements: [
-        "Hiểu biết về PHP, MySQL, HTML, CSS, Javascript",
-        "Khả năng làm việc nhóm tốt",
-        "Chịu được áp lực công việc",
-      ],
-      benefits: [
-        "Mức lương cạnh tranh 8-12 triệu",
-        "Thưởng hiệu suất hàng quý",
-        "Bảo hiểm đầy đủ theo quy định",
-        "Môi trường làm việc năng động",
-        "Cơ hội học hỏi và phát triển",
-      ],
-      skills: ["PHP", "MySQL", "HTML", "CSS", "Javascript"],
-      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
-      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
-    },
-  ]);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -117,24 +74,60 @@ const EmployerAccountPage = () => {
 
   const tabs = ["Công ty", "Tin tuyển dụng", "Cài đặt"];
 
-  const companyInfo = {
-    name: "Công ty Cổ phần TCC & Partners",
-    code: "NTD123456",
-    employees: "25-99 nhân viên",
-    logo: "https://via.placeholder.com/80x80/cccccc/666666?text=TCC",
-    address: "Số 132 Nguyễn Thái Học, phường Điện Biên, quận Ba Đình, Hà Nội",
-    website: "https://tcc-agency.com/",
-    description:
-      "TCC & Partners là đơn vị Marketing thuê ngoài độc lập chuyên cung cấp giải pháp chiến lược và triển khai hoạt động Marketing nhằm tối ưu hóa chi phí và hiệu quả hoạt động cho các đơn vị đối tác.",
+  // Default company info nếu chưa có dữ liệu
+  const defaultCompanyInfo = {
+    name: "Chưa cập nhật",
+    code: "N/A",
+    employees: "Chưa cập nhật",
+    logo: null,
+    address: "Chưa cập nhật",
+    website: "Chưa cập nhật",
+    description: "Chưa có mô tả về công ty",
   };
 
+  // Sử dụng dữ liệu từ API hoặc default
+  const displayCompanyInfo = companyInfo || defaultCompanyInfo;
+
   const handleEditCompany = () => {
-    setEditedCompanyInfo({ ...companyInfo });
+    if (companyInfo) {
+      // Transform dữ liệu cho form edit
+      const editData = {
+        name: companyInfo.name,
+        address: companyInfo.address,
+        website: companyInfo.website,
+        description: companyInfo.description,
+        company_size: companyInfo.employees,
+        industry: companyInfo.industry,
+        contact_person: companyInfo.contactPerson,
+      };
+      setEditedCompanyInfo(editData);
+    }
     setShowEditModal(true);
   };
 
-  const handleSaveCompany = () => {
-    setShowEditModal(false);
+  const handleSaveCompany = async (formData) => {
+    if (!formData) {
+      setShowEditModal(false);
+      return;
+    }
+
+    try {
+      // Transform form data để phù hợp với API
+      const updateData = {
+        company_website: formData.website,
+        company_size: formData.company_size || formData.employees,
+        industry: formData.industry,
+        company_address: formData.address,
+        contact_person: formData.contact_person,
+        description: formData.description,
+      };
+
+      await updateCompanyInfoWithFeedback(updateData);
+      setShowEditModal(false);
+    } catch (error) {
+      // Error đã được handle trong hook
+      console.error("Save company error:", error);
+    }
   };
 
   const handleJobPress = (job) => {
@@ -146,36 +139,56 @@ const EmployerAccountPage = () => {
     setShowCreateJobModal(true);
   };
 
-  const handleJobSubmit = (newJob) => {
-    const job = {
-      ...newJob,
-      id: Date.now(),
-      company: companyInfo.name,
-      postedDate: new Date().toLocaleDateString("vi-VN"),
-      status: "Đang tuyển",
-      views: 0,
-      applications: 0,
-      shortlisted: 0,
-      rejected: 0,
-      pending: 0,
-      workLocation: companyInfo.address,
-      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
-    };
-    setJobsList((prevJobs) => [job, ...prevJobs]);
-    setShowCreateJobModal(false);
+  const handleJobSubmit = async (newJob) => {
+    try {
+      console.log("Submitting new job:", newJob);
+
+      // Dữ liệu đã được format đúng từ CreateJobModal, chỉ cần submit
+      const jobData = {
+        ...newJob,
+        // Có thể thêm các thông tin bổ sung nếu cần
+      };
+
+      await createJobWithFeedback(jobData);
+      setShowCreateJobModal(false);
+    } catch (error) {
+      // Error đã được handle trong hook
+      console.error("Submit job error:", error);
+    }
   };
 
-  const handleEditJob = (updatedJob) => {
-    setJobsList((prevJobs) =>
-      prevJobs.map((job) => (job.id === updatedJob.id ? updatedJob : job))
-    );
-    setSelectedJob(updatedJob);
+  const handleEditJob = async (updatedJob) => {
+    try {
+      const result = await updateJobWithFeedback(updatedJob.id, updatedJob);
+      if (result) {
+        setSelectedJob(result);
+      }
+    } catch (error) {
+      // Error đã được handle trong hook
+      console.error("Edit job error:", error);
+    }
   };
 
-  const handleDeleteJob = (jobId) => {
-    setJobsList((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-    setCurrentPage("main");
-    setSelectedJob(null);
+  const handleDeleteJob = async (jobId) => {
+    try {
+      const job = jobs.find((j) => j.id === jobId);
+      const jobTitle = job ? job.title : "tin tuyển dụng này";
+
+      // Navigate về trang chính ngay khi user confirm delete
+      // để tránh lỗi "job not found" nếu user ở lại trang detail
+      const deleted = await deleteJobWithConfirmation(jobId, jobTitle);
+      if (deleted) {
+        // Navigate về trang chính ngay lập tức
+        setCurrentPage("main");
+        setSelectedJob(null);
+      }
+    } catch (error) {
+      // Error đã được handle trong hook
+      console.error("Delete job error:", error);
+      // Nếu có lỗi, vẫn navigate về trang chính để tránh stuck
+      setCurrentPage("main");
+      setSelectedJob(null);
+    }
   };
 
   const handleBackPress = () => {
@@ -186,18 +199,23 @@ const EmployerAccountPage = () => {
 
   const renderCompanyTab = () => (
     <CompanyTabSection
-      companyInfo={companyInfo}
+      companyInfo={displayCompanyInfo}
       isRecruiting={isRecruiting}
       onToggleRecruiting={setIsRecruiting}
       allowContactFromCandidates={allowContactFromCandidates}
       onToggleAllowContact={setAllowContactFromCandidates}
       onEditCompany={handleEditCompany}
+      loading={loading}
+      updating={updating}
     />
   );
 
   const renderJobsTab = () => (
     <JobsTabSection
-      jobs={jobsList}
+      jobs={jobs}
+      jobStats={jobStats}
+      loading={jobsLoading}
+      creating={jobsCreating}
       onCreatePress={handleCreateJobPress}
       onJobPress={handleJobPress}
     />
@@ -218,14 +236,36 @@ const EmployerAccountPage = () => {
     }
   };
 
-  if (currentPage === "jobDetail" && selectedJob) {
+  if (currentPage === "jobDetail") {
+    // Nếu selectedJob không tồn tại (có thể đã bị xóa), tự động quay về trang chính
+    if (!selectedJob) {
+      setTimeout(() => {
+        setCurrentPage("main");
+      }, 0);
+      return (
+        <View style={[styles.container, styles.loadingContainer]}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+        </View>
+      );
+    }
+
     return (
       <JobDetailPage
         job={selectedJob}
         onBack={handleBackPress}
         onEdit={handleEditJob}
         onDelete={handleDeleteJob}
+        loading={jobsUpdating}
       />
+    );
+  }
+
+  // Hiển thị loading khi đang tải dữ liệu lần đầu
+  if (loading && !companyInfo) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
     );
   }
 
@@ -259,7 +299,8 @@ const EmployerAccountPage = () => {
           />
 
           <CompanyProfileCard
-            companyInfo={companyInfo}
+            companyInfo={displayCompanyInfo}
+            loading={loading}
             onUpgrade={() =>
               Alert.alert(
                 "Nâng cấp",
@@ -281,16 +322,16 @@ const EmployerAccountPage = () => {
       <EditCompanyModal
         visible={showEditModal}
         initialInfo={editedCompanyInfo}
+        loading={updating}
         onClose={() => setShowEditModal(false)}
-        onSave={() => {
-          handleSaveCompany();
-        }}
+        onSave={handleSaveCompany}
       />
 
       <CreateJobModal
         visible={showCreateJobModal}
         onClose={() => setShowCreateJobModal(false)}
         onSubmit={handleJobSubmit}
+        loading={jobsCreating}
       />
     </View>
   );
@@ -300,6 +341,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   companyCardWrapper: {
     paddingHorizontal: 20,

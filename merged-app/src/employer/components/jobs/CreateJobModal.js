@@ -9,69 +9,129 @@ import {
   TextInput,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-export default function CreateJobModal({ visible, onClose, onSubmit }) {
+export default function CreateJobModal({
+  visible,
+  onClose,
+  onSubmit,
+  loading = false,
+}) {
   const [formData, setFormData] = useState({
     title: "",
+    position: "",
     salary: "",
     location: "",
-    experience: "",
+    education: "",
     deadline: "",
-    jobType: "",
+    jobType: "Toàn thời gian",
     description: "",
     requirements: "",
     benefits: "",
     skills: "",
+    quantity: "1",
   });
 
   const handleSubmit = () => {
-    if (!formData.title || !formData.salary || !formData.location) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin bắt buộc");
+    // Validation - Check required fields theo backend API
+    const requiredFields = [
+      { field: "title", label: "Tiêu đề công việc" },
+      { field: "position", label: "Vị trí ứng tuyển" },
+      { field: "salary", label: "Mức lương" },
+      { field: "location", label: "Địa điểm làm việc" },
+      { field: "description", label: "Mô tả công việc" },
+      { field: "requirements", label: "Yêu cầu công việc" },
+      { field: "education", label: "Trình độ học vấn" },
+      { field: "deadline", label: "Hạn nộp hồ sơ" },
+      { field: "quantity", label: "Số lượng tuyển dụng" },
+    ];
+
+    const missingFields = requiredFields.filter(
+      ({ field }) => !formData[field] || formData[field].trim() === ""
+    );
+
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map(({ label }) => label).join(", ");
+      Alert.alert("Lỗi", `Vui lòng điền đầy đủ thông tin: ${missingLabels}`);
       return;
     }
 
-    const jobData = {
-      ...formData,
-      requirements: formData.requirements.split("\n").filter((x) => x.trim()),
-      benefits: formData.benefits.split("\n").filter((x) => x.trim()),
-      skills: formData.skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
+    // Validate deadline format (dd/mm/yyyy)
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.deadline)) {
+      Alert.alert(
+        "Lỗi",
+        "Hạn nộp hồ sơ phải có định dạng dd/mm/yyyy (ví dụ: 31/12/2024)"
+      );
+      return;
+    }
 
-    onSubmit && onSubmit(jobData);
-    setFormData({
-      title: "",
-      salary: "",
-      location: "",
-      experience: "",
-      deadline: "",
-      jobType: "",
-      description: "",
-      requirements: "",
-      benefits: "",
-      skills: "",
-    });
-    onClose && onClose();
+    // Format data cho API backend theo đúng cấu trúc required
+    try {
+      // Parse deadline từ dd/mm/yyyy sang ISO string
+      const [day, month, year] = formData.deadline.split("/");
+      const expiryDate = new Date(year, month - 1, day);
+
+      if (expiryDate < new Date()) {
+        Alert.alert("Lỗi", "Hạn nộp hồ sơ phải là ngày trong tương lai");
+        return;
+      }
+
+      const jobData = {
+        title: formData.title.trim(),
+        position: formData.position.trim(),
+        salary: formData.salary.trim(),
+        location: formData.location.trim(),
+        education: formData.education.trim(),
+        jobType: formData.jobType, // Sử dụng jobType thay vì job_type để phù hợp với validation
+        description: formData.description.trim(),
+        requirements: formData.requirements.trim(),
+        quantity: parseInt(formData.quantity) || 1,
+        deadline: expiryDate.toISOString(), // Sử dụng deadline thay vì exprired_date
+        isAccepted: true, // Mặc định được chấp nhận
+      };
+
+      onSubmit && onSubmit(jobData);
+
+      // Reset form
+      setFormData({
+        title: "",
+        position: "",
+        salary: "",
+        location: "",
+        education: "",
+        deadline: "",
+        jobType: "Toàn thời gian",
+        description: "",
+        requirements: "",
+        benefits: "",
+        skills: "",
+        quantity: "1",
+      });
+    } catch (error) {
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi xử lý dữ liệu. Vui lòng thử lại.");
+      console.error("Form data processing error:", error);
+    }
   };
 
   const handleClose = () => {
     setFormData({
       title: "",
+      position: "",
       salary: "",
       location: "",
-      experience: "",
+      education: "",
       deadline: "",
-      jobType: "",
+      jobType: "Toàn thời gian",
       description: "",
       requirements: "",
       benefits: "",
       skills: "",
+      quantity: "1",
     });
     onClose && onClose();
   };
@@ -96,14 +156,27 @@ export default function CreateJobModal({ visible, onClose, onSubmit }) {
             style={styles.modalBody}
             showsVerticalScrollIndicator={false}
           >
-            {/* Tên vị trí */}
+            {/* Tiêu đề công việc */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Tên vị trí *</Text>
+              <Text style={styles.inputLabel}>Tiêu đề công việc *</Text>
               <TextInput
                 style={styles.textInput}
                 value={formData.title}
                 onChangeText={(text) =>
                   setFormData({ ...formData, title: text })
+                }
+                placeholder="VD: Tuyển dụng Senior React Native Developer"
+              />
+            </View>
+
+            {/* Vị trí ứng tuyển */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Vị trí ứng tuyển *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={formData.position}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, position: text })
                 }
                 placeholder="VD: Senior React Native Developer"
               />
@@ -135,48 +208,99 @@ export default function CreateJobModal({ visible, onClose, onSubmit }) {
               </View>
             </View>
 
-            {/* Kinh nghiệm & Hạn nộp */}
+            {/* Trình độ học vấn & Hạn nộp */}
             <View style={styles.formRow}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-                <Text style={styles.inputLabel}>Kinh nghiệm</Text>
+                <Text style={styles.inputLabel}>Trình độ học vấn *</Text>
                 <TextInput
                   style={styles.textInput}
-                  value={formData.experience}
+                  value={formData.education}
                   onChangeText={(text) =>
-                    setFormData({ ...formData, experience: text })
+                    setFormData({ ...formData, education: text })
                   }
-                  placeholder="VD: 2-3 năm"
+                  placeholder="VD: Đại học"
                 />
               </View>
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
-                <Text style={styles.inputLabel}>Hạn nộp</Text>
+                <Text style={styles.inputLabel}>Hạn nộp *</Text>
                 <TextInput
                   style={styles.textInput}
                   value={formData.deadline}
                   onChangeText={(text) =>
                     setFormData({ ...formData, deadline: text })
                   }
-                  placeholder="VD: 30/09/2025"
+                  placeholder="VD: 30/12/2024"
                 />
               </View>
             </View>
 
-            {/* Loại hình công việc */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Loại hình công việc</Text>
-              <TextInput
-                style={styles.textInput}
-                value={formData.jobType}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, jobType: text })
-                }
-                placeholder="VD: Toàn thời gian"
-              />
+            {/* Loại hình công việc & Số lượng */}
+            <View style={styles.formRow}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
+                <Text style={styles.inputLabel}>Loại hình công việc *</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => {
+                      Alert.alert("Chọn loại hình công việc", "", [
+                        {
+                          text: "Toàn thời gian",
+                          onPress: () =>
+                            setFormData({
+                              ...formData,
+                              jobType: "Toàn thời gian",
+                            }),
+                        },
+                        {
+                          text: "Bán thời gian",
+                          onPress: () =>
+                            setFormData({
+                              ...formData,
+                              jobType: "Bán thời gian",
+                            }),
+                        },
+                        {
+                          text: "Thực tập",
+                          onPress: () =>
+                            setFormData({ ...formData, jobType: "Thực tập" }),
+                        },
+                        {
+                          text: "Freelance",
+                          onPress: () =>
+                            setFormData({ ...formData, jobType: "Freelance" }),
+                        },
+                        { text: "Hủy", style: "cancel" },
+                      ]);
+                    }}
+                  >
+                    <Text style={styles.pickerText}>
+                      {formData.jobType || "Chọn loại hình"}
+                    </Text>
+                    <MaterialIcons
+                      name="arrow-drop-down"
+                      size={24}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
+                <Text style={styles.inputLabel}>Số lượng tuyển *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={formData.quantity}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, quantity: text })
+                  }
+                  placeholder="VD: 2"
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
 
             {/* Mô tả */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Mô tả công việc</Text>
+              <Text style={styles.inputLabel}>Mô tả công việc *</Text>
               <TextInput
                 style={[styles.textInput, styles.multilineInput]}
                 value={formData.description}
@@ -191,15 +315,15 @@ export default function CreateJobModal({ visible, onClose, onSubmit }) {
 
             {/* Yêu cầu */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Yêu cầu công việc</Text>
-              <Text style={styles.inputNote}>Mỗi yêu cầu trên một dòng</Text>
+              <Text style={styles.inputLabel}>Yêu cầu công việc *</Text>
+              <Text style={styles.inputNote}>Mô tả chi tiết yêu cầu</Text>
               <TextInput
                 style={[styles.textInput, styles.multilineInput]}
                 value={formData.requirements}
                 onChangeText={(text) =>
                   setFormData({ ...formData, requirements: text })
                 }
-                placeholder={`Có ít nhất 2 năm kinh nghiệm với React Native\nThành thạo JavaScript, TypeScript\nKinh nghiệm với Redux, Context API`}
+                placeholder="Có ít nhất 2 năm kinh nghiệm với React Native. Thành thạo JavaScript, TypeScript. Kinh nghiệm với Redux, Context API..."
                 multiline
                 numberOfLines={5}
               />
@@ -245,10 +369,24 @@ export default function CreateJobModal({ visible, onClose, onSubmit }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.modalButton, styles.submitButton]}
+              style={[
+                styles.modalButton,
+                styles.submitButton,
+                loading && styles.disabledButton,
+              ]}
               onPress={handleSubmit}
+              disabled={loading}
             >
-              <Text style={styles.submitButtonText}>Đăng tin</Text>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="white" />
+                  <Text style={[styles.submitButtonText, { marginLeft: 8 }]}>
+                    Đang đăng...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.submitButtonText}>Đăng tin</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -300,6 +438,22 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   multilineInput: { height: 100, textAlignVertical: "top" },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+  },
+  pickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pickerText: {
+    fontSize: 14,
+    color: "#333",
+  },
   modalFooter: {
     flexDirection: "row",
     padding: 20,
@@ -315,6 +469,12 @@ const styles = StyleSheet.create({
   },
   cancelButton: { backgroundColor: "#f0f0f0" },
   submitButton: { backgroundColor: "#4CAF50" },
+  disabledButton: { backgroundColor: "#cccccc" },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cancelButtonText: { color: "#666", fontWeight: "600" },
   submitButtonText: { color: "white", fontWeight: "600" },
 });

@@ -15,6 +15,7 @@ export default function JobDetailScreen({
   onEdit,
   onDelete,
   applicants: inputApplicants,
+  loading = false,
 }) {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState("overview");
@@ -72,10 +73,14 @@ export default function JobDetailScreen({
     );
   };
 
-  const handleSubmitEdit = (updatedJob) => {
-    onEdit && onEdit(updatedJob);
-    setShowEditModal(false);
-    Alert.alert("Thành công", "Đã cập nhật thông tin tin tuyển dụng!");
+  const handleSubmitEdit = async (updatedJob) => {
+    try {
+      (await onEdit) && onEdit(updatedJob);
+      setShowEditModal(false);
+    } catch (error) {
+      // Error được handle trong parent component
+      console.error("Edit job error in JobDetailScreen:", error);
+    }
   };
 
   const TabButton = ({ title, isActive, onPress }) => (
@@ -127,6 +132,7 @@ export default function JobDetailScreen({
         job={job}
         onClose={() => setShowEditModal(false)}
         onSubmit={handleSubmitEdit}
+        loading={loading}
       />
       <InterviewNotificationModal
         visible={showInterviewModal}
