@@ -249,8 +249,7 @@ class JobController {
         const { data, error } = await supabase
             .from('jobs')
             .delete()
-            .eq('id', jobId)
-            .eq('employer_id', companyId);
+            .eq('id', jobId);
         if (error) {
             return res.status(400).json({ error: error.message });
         }
@@ -260,20 +259,6 @@ class JobController {
                 .json({ error: 'Job not found or not deleted' });
         }
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:deleteJob:${jobId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'deleteJob',
-                    jobId,
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (deleteJob):', err);
-        }
         res.status(200).json({ message: 'Job deleted successfully' });
     }
 
