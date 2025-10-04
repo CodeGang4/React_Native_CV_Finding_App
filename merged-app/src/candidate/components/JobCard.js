@@ -1,34 +1,160 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
-export default function JobCard({ job, onPress }) {
+export default function JobCard({ job, onPress, onFavoritePress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={() => onPress?.(job)}>
-      <Text style={styles.title}>{job.title}</Text>
-      <Text style={styles.company}>{job.position}</Text>
-      <Text style={styles.location}>{job.location}</Text>
-      <Text style={styles.salary}>{job.salary}</Text>
-      <Text style={styles.description} numberOfLines={2}>
-        {job.description}
-      </Text>
+      <View style={styles.headerRow}>
+        <View style={styles.logoContainer}>
+          {job.company_logo ? (
+            <Image
+              source={{ uri: job.company_logo }}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.placeholderLogo}>
+              <Text style={styles.placeholderText}>Logo</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.headerText}>
+          <Text style={styles.title} numberOfLines={2}>
+            {job.title}
+          </Text>
+          <View style={styles.subInfoRow}>
+            <Text style={styles.company} numberOfLines={1}>
+              {job.company_name || "Không rõ công ty"}
+            </Text>
+            {job.location && <Text style={styles.dot}> · </Text>}
+            <Text style={styles.locationText} numberOfLines={1}>
+              {job.location}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.footerRow}>
+        <View style={styles.salaryContainer}>
+          <Text style={styles.salaryText}>{job.salary}</Text>
+        </View>
+        {/* <View style={styles.locationContainer}>
+        </View> */}
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => onFavoritePress?.(job)}
+        >
+          <Feather name="heart" size={20} color="#00b14f" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: "#f0f8f0",
+    borderWidth: 2,
+    borderColor: "#00b14f",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  logoContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: "#e0e0e0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  logo: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  placeholderLogo: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#999",
+    fontSize: 12,
+  },
+  headerText: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4,
+  },
+  subInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "nowrap",
+  },
+  company: {
+    fontSize: 14,
+    color: "#666",
+    opacity: 0.7,
+    flexShrink: 0, 
+    minWidth: 0, 
+  },
+  dot: {
+    fontSize: 14,
+    color: "#999",
+    marginHorizontal: 4,
+  },
+  locationText: {
+    fontSize: 14,
+    color: "#666",
+    flexShrink: 1, 
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  salaryContainer: {
+    backgroundColor: "#e6f8ee",
+    borderWidth: 1,
+    borderColor: "#00b14f",
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  salaryText: {
+    color: "#00b14f",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  locationContainer: {
+    display: "none",
+  },
+  favoriteButton: {
     backgroundColor: "#fff",
-    padding: 15,
-    marginVertical: 8,
-    borderRadius: 10,
+    borderRadius: 20,
+    padding: 6,
+    elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 3,
   },
-  title: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  company: { fontSize: 14, color: "#666", marginTop: 4 },
-  location: { fontSize: 13, color: "#444", marginTop: 2 },
-  salary: { fontSize: 13, color: "#00b14f", marginTop: 2 },
-  description: { fontSize: 12, color: "#777", marginTop: 6 },
 });

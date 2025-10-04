@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,31 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../contexts/AuthContext";
+import CandidateApiService from "../../services/api/CandidateApiService";
 
 export default function ProfileScreen() {
   const { user, userRole, logout, switchRole } = useAuth();
-  const [avatar, setAvatar] = useState(user?.avatar || null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch profile từ backend
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      try {
+        const data = await CandidateApiService.getCandidateById(user.id);
+        setProfile(data);
+      } catch (error) {
+        console.error("❌ Lỗi fetch profile:", error);
+        Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
@@ -25,8 +46,7 @@ export default function ProfileScreen() {
 
   const handleRoleSwitch = () => {
     const newRole = userRole === "candidate" ? "employer" : "candidate";
-    const roleText =
-      newRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng";
+    const roleText = newRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng";
 
     Alert.alert(
       "Chuyển đổi vai trò",
@@ -41,10 +61,7 @@ export default function ProfileScreen() {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(
-        "Quyền bị từ chối",
-        "Ứng dụng cần quyền truy cập thư viện ảnh."
-      );
+      Alert.alert("Quyền bị từ chối", "Ứng dụng cần quyền truy cập thư viện ảnh.");
       return;
     }
 
@@ -55,20 +72,40 @@ export default function ProfileScreen() {
       quality: 0.7,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets?.length > 0) {
       const selectedUri = result.assets[0].uri;
-      setAvatar(selectedUri);
 
-      await CandidateApiService.uploadAvatar(user.id, selectedUri);
+      // Update UI ngay
+      setProfile(prev => ({ ...prev, portfolio: selectedUri }));
+
+      try {
+        await CandidateApiService.uploadPortfolio(user.id, selectedUri);
+
+        // Optionally: fetch lại profile từ backend
+        const updatedProfile = await CandidateApiService.getUserById(user.id);
+        setProfile(updatedProfile);
+      } catch (error) {
+        console.error("❌ Lỗi upload portfolio:", error);
+        Alert.alert("Lỗi", "Không thể upload ảnh portfolio.");
+      }
     }
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text>Đang tải thông tin...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={pickImage} style={styles.avatar}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatarImage} />
+          {profile?.portfolio ? (
+            <Image source={{ uri: profile.portfolio }} style={styles.avatarImage} />
           ) : (
             <MaterialIcons name="person" size={60} color="#fff" />
           )}
@@ -76,20 +113,20 @@ export default function ProfileScreen() {
             <MaterialIcons name="photo-camera" size={20} color="#fff" />
           </View>
         </TouchableOpacity>
-        <Text style={styles.name}>{user?.username || user?.email}</Text>
+        <Text style={styles.name}>{profile?.full_name || user?.email}</Text>
         <Text style={styles.role}>
           {userRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng"}
         </Text>
       </View>
 
+      {/* Account Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleRoleSwitch}>
           <MaterialIcons name="swap-horiz" size={24} color="#666" />
           <Text style={styles.menuText}>
-            Chuyển sang{" "}
-            {userRole === "candidate" ? "Nhà tuyển dụng" : "Người tìm việc"}
+            Chuyển sang {userRole === "candidate" ? "Nhà tuyển dụng" : "Người tìm việc"}
           </Text>
           <MaterialIcons name="chevron-right" size={24} color="#ccc" />
         </TouchableOpacity>
@@ -113,6 +150,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Support Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Hỗ trợ</Text>
 
@@ -135,6 +173,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <MaterialIcons name="exit-to-app" size={24} color="#fff" />
         <Text style={styles.logoutText}>Đăng xuất</Text>
@@ -145,73 +184,19 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
-  header: {
-    backgroundColor: "#fff",
-    alignItems: "center",
-    paddingVertical: 30,
-    marginBottom: 20,
-  },
+  header: { backgroundColor: "#fff", alignItems: "center", paddingVertical: 30, marginBottom: 20 },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#00b14f",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 15,
-    position: "relative",
+    width: 100, height: 100, borderRadius: 50, backgroundColor: "#00b14f",
+    alignItems: "center", justifyContent: "center", marginBottom: 15, position: "relative"
   },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  cameraIcon: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "#00b14f",
-    borderRadius: 15,
-    padding: 4,
-  },
+  avatarImage: { width: 100, height: 100, borderRadius: 50 },
+  cameraIcon: { position: "absolute", bottom: 0, right: 0, backgroundColor: "#00b14f", borderRadius: 15, padding: 4 },
   name: { fontSize: 20, fontWeight: "bold", color: "#333", marginBottom: 5 },
   role: { fontSize: 14, color: "#666" },
-  section: {
-    backgroundColor: "#fff",
-    marginBottom: 20,
-    paddingVertical: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
+  section: { backgroundColor: "#fff", marginBottom: 20, paddingVertical: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: "600", color: "#333", paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  menuItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
   menuText: { flex: 1, fontSize: 16, color: "#333", marginLeft: 15 },
-  logoutButton: {
-    backgroundColor: "#ff4444",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 15,
-    margin: 20,
-    borderRadius: 10,
-  },
-  logoutText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
+  logoutButton: { backgroundColor: "#ff4444", flexDirection: "row", alignItems: "center", justifyContent: "center", padding: 15, margin: 20, borderRadius: 10 },
+  logoutText: { color: "#fff", fontSize: 16, fontWeight: "bold", marginLeft: 10 }
 });
