@@ -6,7 +6,7 @@ import { Image } from "react-native";
 import CandidateHomeScreen from "../screens/CandidateHomeScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
-import ProfileScreen from "../../shared/screens/auth/ProfileScreen";
+import ProfileStackNavigator from "./ProfileStackNavigator"; // ⬅️ dùng stack
 import { useAuth } from "../../shared/contexts/AuthContext";
 
 const Tab = createBottomTabNavigator();
@@ -19,7 +19,7 @@ export default function CandidateNavigator() {
       initialRouteName="CandidateHome"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
-          if (route.name === "Profile" && user?.avatarUrl) {
+          if (route.name === "ProfileStack" && user?.avatarUrl) {
             return (
               <Image
                 source={{ uri: user.avatarUrl }}
@@ -63,8 +63,8 @@ export default function CandidateNavigator() {
         options={{ title: "Luyện phỏng vấn" }}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="ProfileStack"
+        component={ProfileStackNavigator}
         options={{ title: "Hồ sơ" }}
       />
     </Tab.Navigator>
