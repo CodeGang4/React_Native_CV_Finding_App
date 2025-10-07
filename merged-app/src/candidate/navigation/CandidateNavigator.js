@@ -6,7 +6,7 @@ import { Image } from "react-native";
 import CandidateHomeScreen from "../screens/CandidateHomeScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
-import ProfileStackNavigator from "./ProfileStackNavigator"; // ⬅️ dùng stack
+import ProfileStackNavigator from "./ProfileStackNavigator";
 import { useAuth } from "../../shared/contexts/AuthContext";
 
 const Tab = createBottomTabNavigator();
@@ -45,6 +45,10 @@ export default function CandidateNavigator() {
         tabBarActiveTintColor: "#00b14f",
         tabBarInactiveTintColor: "gray",
         headerShown: false,
+
+        // tabBarStyle: {
+        //   paddingHorizontal: 10,
+        // },
       })}
     >
       <Tab.Screen

@@ -175,7 +175,6 @@ const EmployerAccountPage = () => {
       const jobTitle = job ? job.title : "tin tuyển dụng này";
 
       // Navigate về trang chính ngay khi user confirm delete
-      // để tránh lỗi "job not found" nếu user ở lại trang detail
       const deleted = await deleteJobWithConfirmation(jobId, jobTitle);
       if (deleted) {
         // Navigate về trang chính ngay lập tức

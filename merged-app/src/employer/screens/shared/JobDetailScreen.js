@@ -6,15 +6,15 @@ import JobOverviewSection from "../../components/jobDetail/JobOverviewSection";
 import ApplicantsList from "../../components/jobDetail/ApplicantsList";
 import InterviewNotificationModal from "../../components/modals/InterviewNotificationModal";
 import EditJobModal from "../../components/jobs/EditJobModal";
+import { useJobCandidates } from "../../../shared/hooks/useJobCandidates";
 
 // A shared Job Detail screen for both Account and JobPosting flows
-// Props: { job, onBack, onEdit, onDelete, applicants? }
+// Props: { job, onBack, onEdit, onDelete }
 export default function JobDetailScreen({
   job,
   onBack,
   onEdit,
   onDelete,
-  applicants: inputApplicants,
   loading = false,
 }) {
   const navigation = useNavigation();
@@ -22,41 +22,20 @@ export default function JobDetailScreen({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
 
-  const applicants = inputApplicants || [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      status: "pending",
-      experience: "2 năm",
-      rating: 4.5,
-      avatar: "👤",
-      appliedDate: "10/09/2025",
-      email: "a@email.com",
-      phone: "0123456789",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      status: "shortlisted",
-      experience: "1.5 năm",
-      rating: 4.2,
-      avatar: "👤",
-      appliedDate: "08/09/2025",
-      email: "b@email.com",
-      phone: "0987654321",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      status: "rejected",
-      experience: "6 tháng",
-      rating: 3.8,
-      avatar: "👤",
-      appliedDate: "07/09/2025",
-      email: "c@email.com",
-      phone: "0456789123",
-    },
-  ];
+  // Use real candidates data from backend
+  const {
+    candidates: applicants,
+    stats: candidatesStats,
+    loading: candidatesLoading,
+    refreshing: candidatesRefreshing,
+    error: candidatesError,
+    refreshCandidates,
+  } = useJobCandidates(job?.id);
+
+  // Filter candidates for interview modal
+  const interviewCandidates = applicants.filter(
+    (a) => a.status === "pending" || a.status === "shortlisted"
+  );
 
   const handleDelete = () => {
     Alert.alert(
@@ -114,16 +93,21 @@ export default function JobDetailScreen({
         {activeTab === "overview" ? (
           <JobOverviewSection
             job={job}
+            candidatesStats={candidatesStats}
             onEdit={() => setShowEditModal(true)}
             onDelete={handleDelete}
           />
         ) : (
           <ApplicantsList
             applicants={applicants}
+            loading={candidatesLoading}
+            refreshing={candidatesRefreshing}
+            error={candidatesError}
             onOpenInterview={() => setShowInterviewModal(true)}
             onPressCandidate={(cand) =>
               navigation.navigate("CandidateDetail", { candidate: cand })
             }
+            onRefresh={refreshCandidates}
           />
         )}
       </View>
@@ -141,9 +125,7 @@ export default function JobDetailScreen({
           setShowInterviewModal(false);
           Alert.alert("Thành công", "Đã gửi thông báo phỏng vấn!");
         }}
-        applicants={applicants.filter(
-          (a) => a.status === "pending" || a.status === "shortlisted"
-        )}
+        applicants={interviewCandidates}
       />
     </View>
   );

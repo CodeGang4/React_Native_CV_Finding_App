@@ -55,17 +55,19 @@ export default function JobCard({ job, onPress, onFavoritePress }) {
 
 const styles = StyleSheet.create({
   card: {
+    width: "100%",
     backgroundColor: "#f0f8f0",
     borderWidth: 2,
     borderColor: "#00b14f",
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    padding: 10,
+    marginBottom: 10,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
+
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -114,8 +116,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     opacity: 0.7,
-    flexShrink: 0, 
-    minWidth: 0, 
+    flexShrink: 0,
+    minWidth: 0,
   },
   dot: {
     fontSize: 14,
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
     color: "#666",
-    flexShrink: 1, 
+    flexShrink: 1,
   },
   footerRow: {
     flexDirection: "row",
