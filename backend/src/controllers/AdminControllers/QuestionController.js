@@ -115,7 +115,7 @@ class QuestionController {
         }
     }
     async getQuestionsByIndustryAndLevel(req, res) {
-        const { industry, level } = req.body;
+        const { industry, level } = req.query;
         if (!industry || !level) {
             return res.status(400).json({ error: 'Missing industry or level' });
         }
@@ -128,10 +128,18 @@ class QuestionController {
             console.error('Supabase fetch error:', error);
             return res.status(500).json({ error: 'Failed to fetch questions' });
         }
+        if (data.length === 0) {
+            return res
+                .status(404)
+                .json({
+                    error: 'No questions found for this industry and level',
+                });
+        }
         res.status(200).json(data);
     }
     async getQuestionsByIndustry(req, res) {
-        const { industry } = req.body;
+        const { industry } = req.query;
+        console.log({ industry });
         if (!industry) {
             return res.status(400).json({ error: 'Missing industry' });
         }
@@ -142,6 +150,12 @@ class QuestionController {
         if (error) {
             console.error('Supabase fetch error:', error);
             return res.status(500).json({ error: 'Failed to fetch questions' });
+        }
+
+        if (data.length === 0) {
+            return res
+                .status(404)
+                .json({ error: 'No questions found for this industry' });
         }
         res.status(200).json(data);
     }

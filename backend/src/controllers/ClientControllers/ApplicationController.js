@@ -55,6 +55,8 @@ class ApplicationController {
 
         res.status(201).json(data);
     }
+
+    //[GET]
     async getApplicationByCandidate(req, res) {
         const { candidate_id } = req.params;
 
@@ -71,6 +73,11 @@ class ApplicationController {
             return res
                 .status(500)
                 .json({ error: 'Failed to retrieve applications' });
+        }
+        if (!data || data.length === 0) {
+            return res
+                .status(404)
+                .json({ error: 'No applications found for this candidate' });
         }
 
         res.status(200).json(data);
@@ -186,10 +193,11 @@ class ApplicationController {
 
     async getAllApplicationsByStatus(req, res) {
         const job_id = req.params.job_id;
+        const { status } = req.query;
+
         if (!job_id) {
             return res.status(400).json({ error: 'Job ID is required' });
         }
-        const { status } = req.body;
         const validStatuses = ['pending', 'reviewed', 'accepted', 'rejected'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });

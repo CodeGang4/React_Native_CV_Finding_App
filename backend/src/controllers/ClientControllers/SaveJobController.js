@@ -1,29 +1,46 @@
 const supabase = require('../../supabase/config');
 const redis = require('../../redis/config');
 
-
 class SaveJobController {
-
-    //[GET] /getJobs : Get all jobs
+    //[GET] /getJobs : Get all saved jobs with details
     async getJobsByCandidates(req, res) {
         const candidate_id = req.params.candidate_id;
         if (!candidate_id) {
             return res.status(400).json({ error: 'Candidate ID is required' });
         }
-        const { data, error } = await supabase
-            .from('saved_jobs')
-            .select()
-            .eq('candidate_id', candidate_id);
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-        // Redis log
+
         try {
-            await redis.setEx(`log:getJobsByCandidates:${candidate_id}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'getJobsByCandidates', candidate_id, time: new Date().toISOString() }));
+            const { data, error } = await supabase
+                .from('saved_jobs')
+                .select(
+                    `
+                    *,
+                    jobs!saved_jobs_job_id_fkey (
+                        *,
+                        employers!jobs_employer_id_fkey (
+                            company_name,
+                            company_logo,
+                            company_website,
+                            company_address,
+                            industry,
+                            contact_person
+                        )
+                    )
+                `,
+                )
+                .eq('candidate_id', candidate_id)
+                .order('saved_at', { ascending: false });
+
+            if (error) {
+                console.error('[getJobsByCandidates] Error:', error.message);
+                return res.status(400).json({ error: error.message });
+            }
+
+            res.status(200).json(data);
         } catch (err) {
-            console.error('Redis log error (getJobsByCandidates):', err);
+            console.error('[getJobsByCandidates] Internal error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
         }
-        res.status(200).json(data);
     }
 
     async getSavedJobsDetails(req, res) {
@@ -31,75 +48,70 @@ class SaveJobController {
         const job_id = req.params.job_id;
 
         if (!candidate_id) {
-            return res.status(400).json({ error: "Candidate ID is required" });
+            return res.status(400).json({ error: 'Candidate ID is required' });
         }
         if (!job_id) {
-            return res.status(400).json({ error: "Job ID is required" });
+            return res.status(400).json({ error: 'Job ID is required' });
         }
 
         try {
-            const cacheKey = `savedJobs:${candidate_id}:${job_id}`;
+            // Kiểm tra xem job có được saved bởi candidate này không
+            const { data: savedJob, error: savedJobError } = await supabase
+                .from('saved_jobs')
+                .select('*')
+                .eq('candidate_id', candidate_id)
+                .eq('job_id', job_id)
+                .single();
 
-            // 1. Check Redis cache
-            const cacheStart = Date.now();
-            const cachedData = await redis.get(cacheKey);
-            const cacheGetTime = Date.now() - cacheStart;
-
-            if (cachedData) {
-                console.log(
-                    `[getSavedJobsDetails] ✅ Cache HIT | candidate=${candidate_id}, job=${job_id} | Redis GET=${cacheGetTime} ms`
+            if (savedJobError) {
+                console.error(
+                    '[getSavedJobsDetails] Saved job error:',
+                    savedJobError.message,
                 );
-                return res.status(200).json(JSON.parse(cachedData));
-            }
-            console.log(
-                `[getSavedJobsDetails] ❌ Cache MISS | candidate=${candidate_id}, job=${job_id} | Redis GET=${cacheGetTime} ms`
-            );
-
-            // 2. Query Supabase nếu chưa có cache
-            const dbStart = Date.now();
-            const { data, error } = await supabase
-                .from("saved_jobs")
-                .select()
-                .eq("candidate_id", candidate_id)
-                .eq("job_id", job_id);
-            const dbQueryTime = Date.now() - dbStart;
-            console.log(`[getSavedJobsDetails] Supabase query time: ${dbQueryTime} ms`);
-
-            if (error) {
-                console.error("[getSavedJobsDetails] Supabase error:", error.message);
-                return res.status(400).json({ error: error.message });
+                return res
+                    .status(404)
+                    .json({ error: 'Job not saved by this candidate' });
             }
 
-            // 3. Save to Redis (TTL: 24h)
-            const cacheSetStart = Date.now();
-            await redis.setEx(cacheKey, 60 * 60 * 24, JSON.stringify(data));
-            const cacheSetTime = Date.now() - cacheSetStart;
-            console.log(`[getSavedJobsDetails] Redis setEx time: ${cacheSetTime} ms`);
+            // Lấy chi tiết job từ bảng jobs
+            const { data: jobDetails, error: jobError } = await supabase
+                .from('jobs')
+                .select(
+                    `
+                    *,
+                    employers!jobs_employer_id_fkey (
+                        company_name,
+                        company_logo,
+                        company_website,
+                        company_address,
+                        industry,
+                        contact_person
+                    )
+                `,
+                )
+                .eq('id', job_id)
+                .single();
 
-            // 4. Redis log (async, không chặn response)
-            setImmediate(() => {
-                redis.setEx(
-                    `log:getSavedJobsDetails:${candidate_id}:${job_id}:${Date.now()}`,
-                    60 * 60 * 24,
-                    JSON.stringify({
-                        action: "getSavedJobsDetails",
-                        candidate_id,
-                        job_id,
-                        time: new Date().toISOString(),
-                    })
-                ).catch(err =>
-                    console.error("Redis log error (getSavedJobsDetails):", err)
+            if (jobError) {
+                console.error(
+                    '[getSavedJobsDetails] Job details error:',
+                    jobError.message,
                 );
-            });
+                return res.status(404).json({ error: 'Job not found' });
+            }
 
-            return res.status(200).json(data);
+            // Kết hợp thông tin saved job và job details
+            const result = {
+                ...savedJob,
+                job_details: jobDetails,
+            };
+
+            return res.status(200).json(result);
         } catch (err) {
-            console.error("[getSavedJobsDetails] Internal error:", err);
-            return res.status(500).json({ error: "Internal server error" });
+            console.error('[getSavedJobsDetails] Internal error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
         }
     }
-
-
 
     async saveJobs(req, res) {
         const candidate_id = req.params.candidate_id;
@@ -127,8 +139,11 @@ class SaveJobController {
             return res.status(400).json({ error: 'Job already saved' });
         }
 
-        const { data, error } = await supabase.from('saved_jobs')
-            .upsert([{ candidate_id, job_id, saved_at: new Date().toISOString() }])
+        const { data, error } = await supabase
+            .from('saved_jobs')
+            .upsert([
+                { candidate_id, job_id, saved_at: new Date().toISOString() },
+            ])
             .select();
 
         if (error) {
@@ -137,7 +152,16 @@ class SaveJobController {
         }
         // Redis log
         try {
-            await redis.setEx(`log:saveJob:${candidate_id}:${job_id}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'saveJob', candidate_id, job_id, time: new Date().toISOString() }));
+            await redis.setEx(
+                `log:saveJob:${candidate_id}:${job_id}:${Date.now()}`,
+                60 * 60 * 24,
+                JSON.stringify({
+                    action: 'saveJob',
+                    candidate_id,
+                    job_id,
+                    time: new Date().toISOString(),
+                }),
+            );
         } catch (err) {
             console.error('Redis log error (saveJob):', err);
         }
@@ -160,17 +184,29 @@ class SaveJobController {
             .from('saved_jobs')
             .delete()
             .eq('candidate_id', candidate_id)
-            .eq('job_id', job_id).select();
+            .eq('job_id', job_id)
+            .select();
 
         if (error) {
             return res.status(400).json({ error: error.message });
         }
         if (!data || data.length === 0) {
-            return res.status(404).json({ error: 'Saved job not found or not deleted' });
+            return res
+                .status(404)
+                .json({ error: 'Saved job not found or not deleted' });
         }
         // Redis log
         try {
-            await redis.setEx(`log:unsaveJob:${candidate_id}:${job_id}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'unsaveJob', candidate_id, job_id, time: new Date().toISOString() }));
+            await redis.setEx(
+                `log:unsaveJob:${candidate_id}:${job_id}:${Date.now()}`,
+                60 * 60 * 24,
+                JSON.stringify({
+                    action: 'unsaveJob',
+                    candidate_id,
+                    job_id,
+                    time: new Date().toISOString(),
+                }),
+            );
         } catch (err) {
             console.error('Redis log error (unsaveJob):', err);
         }
@@ -178,9 +214,6 @@ class SaveJobController {
     }
 
     //[PUT] /updateJob/:jobId : Update a job
-
 }
 
 module.exports = new SaveJobController();
-
-

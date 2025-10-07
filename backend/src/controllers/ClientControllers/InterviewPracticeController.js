@@ -222,24 +222,19 @@ class InterviewPracticeController {
         }
 
         const prompt = `
-        Đây là câu hỏi phỏng vấn: "${questionData.question}".
-        Đây là câu trả lời của ứng viên: "${answerData.answer}".
-        Bạn là 1 chuyên gia về tuyển dụng, hãy giúp tôi chấm điểm câu trả lời này.
+Đây là câu hỏi phỏng vấn: "${questionData.question}".
+Đây là câu trả lời của ứng viên: "${answerData.answer}".
 
-        Hãy chấm điểm câu trả lời này trên thang điểm 1-10 với tiêu chí:
-        - 9-10: Xuất sắc, trả lời đầy đủ và chính xác
-        - 7-8: Tốt, có hiểu biết cơ bản và trả lời đúng trọng tâm
-        - 5-6: Trung bình, thiếu chi tiết hoặc một số sai sót nhỏ
-        - 3-4: Yếu, hiểu biết hạn chế hoặc trả lời chưa đúng trọng tâm
-        - 1-2: Rất yếu, không liên quan hoặc sai hoàn toàn
+Bạn là chuyên gia tuyển dụng, hãy chấm điểm câu trả lời này theo thang điểm 1-10:
+- 9-10: Xuất sắc, trả lời đầy đủ và chính xác
+- 7-8: Tốt, có hiểu biết cơ bản và trả lời đúng trọng tâm  
+- 5-6: Trung bình, thiếu chi tiết hoặc một số sai sót nhỏ
+- 3-4: Yếu, hiểu biết hạn chế hoặc trả lời chưa đúng trọng tâm
+- 1-2: Rất yếu, không liên quan hoặc sai hoàn toàn
 
-        Đưa ra feedback chi tiết, xây dựng và khuyến khích bằng tiếng Việt.
-        
-        QUAN TRỌNG: Chỉ trả về JSON duy nhất với format:
-        {"score": <số từ 1-10>, "feedback": "<feedback đầy đủ trong một chuỗi duy nhất>"}
-        
-        Không thêm bất kỳ text nào khác ngoài JSON.
-    `;
+Trả về CHÍNH XÁC định dạng JSON sau và KHÔNG có text gì khác:
+{"score": <số từ 1-10>, "feedback": "<feedback chi tiết bằng tiếng Việt trong một chuỗi duy nhất>"}
+`;
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -252,49 +247,43 @@ class InterviewPracticeController {
                 const responseText = result.response.text();
                 console.log('Raw Gemini response:', responseText);
 
-                // Tìm JSON trong response - có thể có text khác xung quanh
-                let jsonMatch = responseText.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) {
-                    throw new Error('No JSON found in response');
-                }
+                // Loại bỏ markdown code blocks trước khi parse
+                let cleanText = responseText
+                    .replace(/```json\n?|\n?```/g, '')
+                    .trim();
 
-                let jsonText = jsonMatch[0];
-                // Loại bỏ markdown code blocks nếu có
-                jsonText = jsonText.replace(/```json\n?|\n?```/g, '').trim();
+                // Tìm JSON trong response - lấy từ { đầu tiên đến } cuối cùng
+                const firstBrace = cleanText.indexOf('{');
+                const lastBrace = cleanText.lastIndexOf('}');
 
-                // Xử lý trường hợp feedback bị tách thành nhiều phần
                 if (
-                    jsonText.includes('"feedback"') &&
-                    !jsonText.includes('}')
+                    firstBrace === -1 ||
+                    lastBrace === -1 ||
+                    firstBrace >= lastBrace
                 ) {
-                    // Nếu JSON chưa đóng, lấy toàn bộ text từ feedback đến cuối
-                    const feedbackStart = responseText.indexOf('"feedback"');
-                    if (feedbackStart !== -1) {
-                        const remainingText =
-                            responseText.substring(feedbackStart);
-                        // Tìm vị trí đóng JSON
-                        const endBrace = remainingText.lastIndexOf('}');
-                        if (endBrace !== -1) {
-                            jsonText =
-                                '{' + remainingText.substring(0, endBrace + 1);
-                        }
-                    }
+                    throw new Error('No valid JSON structure found');
                 }
+
+                const jsonText = cleanText.substring(firstBrace, lastBrace + 1);
+                console.log('Extracted JSON:', jsonText);
 
                 evaluation = JSON.parse(jsonText);
 
                 // Validate và điều chỉnh score
-                if (evaluation.score > 10) evaluation.score = 10;
+                if (!evaluation.score || evaluation.score > 10)
+                    evaluation.score = 10;
                 if (evaluation.score < 1) evaluation.score = 1;
 
-                // Đảm bảo feedback tích cực và xây dựng
-                if (
-                    evaluation.score < 3 &&
-                    !evaluation.feedback.includes('khuyến khích')
-                ) {
-                    evaluation.feedback +=
-                        ' Hãy tiếp tục học hỏi và cải thiện!';
+                // Đảm bảo có feedback
+                if (!evaluation.feedback) {
+                    evaluation.feedback =
+                        'Cảm ơn bạn đã trả lời. Hãy tiếp tục cải thiện!';
                 }
+
+                console.log('Parsed evaluation:', {
+                    score: evaluation.score,
+                    feedbackLength: evaluation.feedback.length,
+                });
             } catch (parseError) {
                 console.error('JSON parsing error:', parseError);
                 console.log(
@@ -304,11 +293,16 @@ class InterviewPracticeController {
 
                 // Fallback: Tạo evaluation từ text response
                 const responseText = result.response.text();
+
+                // Cố gắng extract score từ text
+                const scoreMatch = responseText.match(/score["\s:]*(\d+)/i);
+                const extractedScore = scoreMatch ? parseInt(scoreMatch[1]) : 5;
+
                 evaluation = {
-                    score: 5,
+                    score: Math.min(Math.max(extractedScore, 1), 10),
                     feedback:
                         responseText.length > 50
-                            ? responseText
+                            ? responseText.replace(/```json|```/g, '').trim()
                             : 'Cần cải thiện thêm. Hãy tiếp tục học hỏi và cải thiện!',
                 };
             }
