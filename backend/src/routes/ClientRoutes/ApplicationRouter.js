@@ -18,4 +18,5 @@ router.get(
     '/getApplicationByCandidate/:candidate_id',
     ApplicationController.getApplicationByCandidate,
 );
+
 module.exports = router;

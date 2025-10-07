@@ -327,6 +327,58 @@ class JobController {
         }
         res.status(200).json(data[0]);
     }
+
+    async incrementJobViews(req, res) {
+        const jobId = req.params.jobId;
+
+        if (!jobId) {
+            return res.status(400).json({ error: 'Job ID is required' });
+        }
+
+        try {
+            // Sử dụng PostgreSQL's atomic increment
+            const { data, error } = await supabase
+                .rpc('increment_views_atomic', {
+                    job_uuid: jobId
+                });
+
+            if (error) {
+                if (error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Job not found' });
+                }
+                throw error;
+            }
+
+            res.status(200).json({
+                success: true,
+                views: data,
+                jobId: jobId
+            });
+
+        } catch (error) {
+            console.error('Error incrementing views:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    async getTopViewedJobs(req, res) {
+        try {
+            const { data, error } = await supabase
+                .from('jobs')
+                .select()
+                .order('views', { ascending: false })
+                .limit(10);
+
+            if (error) {
+                return res.status(400).json({ error: error.message });
+            }
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error fetching top viewed jobs:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 module.exports = new JobController();
