@@ -9,8 +9,13 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 
 // Shared Overview Section
-// Props: { job, onEdit: () => void, onDelete: () => void }
-export default function JobOverviewSection({ job, onEdit, onDelete }) {
+// Props: { job, candidatesStats, onEdit: () => void, onDelete: () => void }
+export default function JobOverviewSection({
+  job,
+  candidatesStats,
+  onEdit,
+  onDelete,
+}) {
   return (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       <View style={styles.statsContainer}>
@@ -21,12 +26,16 @@ export default function JobOverviewSection({ job, onEdit, onDelete }) {
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="people" size={24} color="#4CAF50" />
-          <Text style={styles.statNumber}>{job?.applications ?? 0}</Text>
+          <Text style={styles.statNumber}>
+            {candidatesStats?.total ?? job?.applications ?? 0}
+          </Text>
           <Text style={styles.statLabel}>Ứng viên</Text>
         </View>
         <View style={styles.statCard}>
           <MaterialIcons name="star" size={24} color="#FF9800" />
-          <Text style={styles.statNumber}>{job?.shortlisted ?? 0}</Text>
+          <Text style={styles.statNumber}>
+            {candidatesStats?.shortlisted ?? job?.shortlisted ?? 0}
+          </Text>
           <Text style={styles.statLabel}>Được chọn</Text>
         </View>
       </View>
