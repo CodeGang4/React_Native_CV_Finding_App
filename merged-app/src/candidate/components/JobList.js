@@ -16,7 +16,9 @@ export default function JobList({ jobs = [], onJobPress }) {
       data={jobs}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => <JobCard job={item} onPress={onJobPress} />}
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{
+        padding: 20,
+      }}
     />
   );
 }

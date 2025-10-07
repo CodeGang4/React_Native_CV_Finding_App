@@ -13,6 +13,7 @@ import axios from "axios";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import ListCV from "./ListCV";
+import EditProfile from "./EditProfile";
 import NotificationsScreen from "../screens/NotificationsScreen";
 
 export default function ProfileScreen() {
@@ -27,7 +28,7 @@ export default function ProfileScreen() {
       setLoading(true);
       try {
         const res = await axios.get(
-          `http://192.168.1.4:3000/client/candidates/getProfile/${user.id}`
+          `http://192.168.1.2:3000/client/candidates/getProfile/${user.id}`
         );
         setProfile(res.data);
       } catch (error) {
