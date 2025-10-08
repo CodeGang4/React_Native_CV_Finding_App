@@ -25,7 +25,7 @@ export default function ListCV() {
     if (!user?.id) return;
     try {
       const res = await axios.get(
-        `http://192.168.1.2:3000/client/candidates/getProfile/${user.id}`
+        `http://192.168.1.3:3000/client/candidates/getProfile/${user.id}`
       );
       const profile = res.data;
 
@@ -67,7 +67,7 @@ export default function ListCV() {
       });
 
       const uploadRes = await axios.post(
-        "http://192.168.1.2:3000/client/candidates/uploadCV",
+        "http://192.168.1.3:3000/client/candidates/uploadCV",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -75,7 +75,7 @@ export default function ListCV() {
       const newUrl = uploadRes.data.url;
 
       await axios.put(
-        `http://192.168.1.2:3000/client/candidates/updateProfile/${user.id}`,
+        `http://192.168.1.3:3000/client/candidates/updateProfile/${user.id}`,
         { cv_url: newUrl }
       );
 
@@ -96,7 +96,7 @@ export default function ListCV() {
         onPress: async () => {
           try {
             await axios.put(
-              `http://192.168.1.2:3000/client/candidates/updateProfile/${user.id}`,
+              `http://192.168.1.3:3000/client/candidates/updateProfile/${user.id}`,
               { cv_url: null }
             );
             Alert.alert("Thành công", "Đã xóa CV");

@@ -2,7 +2,7 @@ import React,{useState , useEffect, useCallback} from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import JobCard from '../components/JobCard';
 import axios from "axios"
-const api = 'http://172.20.10.10:3000/job'
+const api = 'http://192.168.1.3:3000/job'
 
 export default function HomeScreen({ navigation }) {
     const [jobs,setJobs] = useState([]);

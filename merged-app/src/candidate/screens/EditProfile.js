@@ -30,7 +30,7 @@ export default function EditProfile({ navigation }) {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `http://192.168.1.2:3000/client/candidates/getProfile/${user.id}`
+          `http://192.168.1.3:3000/client/candidates/getProfile/${user.id}`
         );
         const formattedProfile = {
           ...res.data,
@@ -96,7 +96,7 @@ export default function EditProfile({ navigation }) {
       };
 
       const res = await axios.post(
-        `http://192.168.1.2:3000/client/candidates/updateProfile/${user.id}`,
+        `http://192.168.1.3:3000/client/candidates/updateProfile/${user.id}`,
         updatedProfile
       );
 

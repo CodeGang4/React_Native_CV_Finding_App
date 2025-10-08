@@ -11,7 +11,7 @@ export default function CandidateHomeScreen({ navigation }) {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch("http://192.168.1.2:3000/job/getJobs");
+        const response = await fetch("http://192.168.1.3:3000/job/getJobs");
         const data = await response.json();
         console.log("Job API response:", data);
 
@@ -21,7 +21,7 @@ export default function CandidateHomeScreen({ navigation }) {
           jobsData.map(async (job) => {
             try {
               const res = await fetch(
-                `http://192.168.1.2:3000/employer/getCompanyInfo/${job.employer_id}`
+                `http://192.168.1.3:3000/employer/getCompanyInfo/${job.employer_id}`
               );
               const companyData = await res.json();
 
@@ -31,7 +31,7 @@ export default function CandidateHomeScreen({ navigation }) {
                 company_logo: companyData.company_logo || null,
               };
             } catch (err) {
-              console.error("⚠️ Lỗi fetch company info:", err);
+              console.error("Lỗi fetch company info:", err);
               return {
                 ...job,
                 company_name: "Không rõ công ty",
@@ -73,9 +73,7 @@ export default function CandidateHomeScreen({ navigation }) {
 
       <JobList
         jobs={jobs}
-        onJobPress={(job) =>
-          navigation.navigate("JobDetail", { jobId: job.id })
-        }
+        onJobPress={(job) => navigation.navigate("JobDetail", { job })}
       />
     </View>
   );

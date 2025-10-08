@@ -8,6 +8,8 @@ import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
 import ProfileStackNavigator from "./ProfileStackNavigator";
 import { useAuth } from "../../shared/contexts/AuthContext";
+import CandidateStackNavigator from "./CandidateStackNavigator";
+
 
 const Tab = createBottomTabNavigator();
 
@@ -53,7 +55,7 @@ export default function CandidateNavigator() {
     >
       <Tab.Screen
         name="CandidateHome"
-        component={CandidateHomeScreen}
+        component={CandidateStackNavigator}
         options={{ title: "Trang chủ" }}
       />
       <Tab.Screen

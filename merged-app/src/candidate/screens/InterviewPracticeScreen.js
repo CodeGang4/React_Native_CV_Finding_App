@@ -16,7 +16,7 @@ import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/Ionicons";
 
 const PRIMARY_COLOR = "#00b14f";
-const API_BASE = "http://192.168.1.2:3000";
+const API_BASE = "http://192.168.1.3:3000";
 
 export default function InterviewPracticeScreen() {
   const { user } = useAuth();
