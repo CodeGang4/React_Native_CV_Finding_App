@@ -9,4 +9,5 @@ export { default as EditCompanyModal } from "./EditCompanyModal";
 export { default as JobListItem } from "./JobListItem";
 export { default as JobsStatsRow } from "./JobsStatsRow";
 export { default as JobsTabSection } from "./JobsTabSection";
+export { default as SwipeableJobCard } from "./SwipeableJobCard";
 export { default as RecruitmentSettingsSection } from "./RecruitmentSettingsSection";

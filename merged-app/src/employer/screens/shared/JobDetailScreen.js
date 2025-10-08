@@ -7,6 +7,7 @@ import ApplicantsList from "../../components/jobDetail/ApplicantsList";
 import InterviewNotificationModal from "../../components/modals/InterviewNotificationModal";
 import EditJobModal from "../../components/jobs/EditJobModal";
 import { useJobCandidates } from "../../../shared/hooks/useJobCandidates";
+import { useJobViews } from "../../../shared/hooks/useJobViews";
 
 // A shared Job Detail screen for both Account and JobPosting flows
 // Props: { job, onBack, onEdit, onDelete }
@@ -31,6 +32,9 @@ export default function JobDetailScreen({
     error: candidatesError,
     refreshCandidates,
   } = useJobCandidates(job?.id);
+
+  // Handle job views increment
+  const { views } = useJobViews(job?.id, job?.views);
 
   // Filter candidates for interview modal
   const interviewCandidates = applicants.filter(
@@ -93,6 +97,7 @@ export default function JobDetailScreen({
         {activeTab === "overview" ? (
           <JobOverviewSection
             job={job}
+            views={views}
             candidatesStats={candidatesStats}
             onEdit={() => setShowEditModal(true)}
             onDelete={handleDelete}

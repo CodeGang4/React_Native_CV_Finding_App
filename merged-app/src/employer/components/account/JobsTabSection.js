@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import JobsStatsRow from "./JobsStatsRow";
-import JobListItem from "./JobListItem";
+import SwipeableJobCard from "./SwipeableJobCard";
 
 export default function JobsTabSection({
   jobs,
@@ -17,7 +17,35 @@ export default function JobsTabSection({
   creating = false,
   onCreatePress,
   onJobPress,
+  onJobDelete,
 }) {
+  // State for managing which card is open for swipe
+  const [openCardId, setOpenCardId] = useState(null);
+
+  // Handle card swipe state
+  const handleCardSwipe = useCallback(
+    (cardId, isOpen) => {
+      if (isOpen) {
+        setOpenCardId(cardId);
+      } else {
+        if (openCardId === cardId) {
+          setOpenCardId(null);
+        }
+      }
+    },
+    [openCardId]
+  );
+
+  // Handle job deletion
+  const handleJobDelete = useCallback(
+    async (jobId) => {
+      setOpenCardId(null); // Close any open card
+      if (onJobDelete) {
+        await onJobDelete(jobId);
+      }
+    },
+    [onJobDelete]
+  );
   // Sử dụng jobStats từ props hoặc tính toán từ jobs
   const stats = jobStats || {
     totalApplications: jobs.reduce((sum, j) => sum + (j.applications || 0), 0),
@@ -70,7 +98,14 @@ export default function JobsTabSection({
       ) : (
         <View style={styles.jobsList}>
           {jobs.map((job) => (
-            <JobListItem key={job.id} job={job} onPress={onJobPress} />
+            <SwipeableJobCard
+              key={job.id}
+              job={job}
+              isOpen={openCardId === job.id}
+              onPress={onJobPress}
+              onDelete={handleJobDelete}
+              onSwipe={handleCardSwipe}
+            />
           ))}
         </View>
       )}

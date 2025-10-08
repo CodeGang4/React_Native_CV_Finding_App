@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useJobCardStats } from "../../../shared/hooks/useJobCardStats";
 
 // Helper function to format data from API
 const formatJobData = (job) => {
@@ -46,22 +47,24 @@ const formatJobData = (job) => {
 };
 
 export default function JobListItem({ job, onPress }) {
-  const formattedJob = formatJobData(job);
-  // Get status color
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Đang tuyển":
-        return "#4CAF50";
-      case "Tạm dừng":
-        return "#FF9800";
-      case "Đã đóng":
-        return "#757575";
-      case "Bản nháp":
-        return "#2196F3";
-      default:
-        return "#757575";
+  // Use real backend data for job stats
+  const { views, candidatesCount, deadline, status } = useJobCardStats(job);
+
+  // Debug job data to check deadline fields (only once per job)
+  React.useEffect(() => {
+    if (job) {
+      console.log("🔍 Job data fields:", {
+        id: job.id,
+        title: job.title,
+        deadline: job.deadline,
+        exprired_date: job.exprired_date,
+        expired_date: job.expired_date,
+        expiry_date: job.expiry_date,
+      });
     }
-  };
+  }, [job?.id]); // Only when job ID changes
+
+  const formattedJob = formatJobData(job);
 
   return (
     <TouchableOpacity style={styles.jobCard} onPress={() => onPress?.(job)}>
@@ -76,31 +79,44 @@ export default function JobListItem({ job, onPress }) {
           </Text>
         </View>
         <View style={styles.jobStatus}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(formattedJob.status) },
-            ]}
-          >
-            <Text style={styles.statusText}>{formattedJob.status}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: status.color }]}>
+            <Text style={styles.statusText}>{status.text}</Text>
           </View>
         </View>
       </View>
       <View style={styles.jobCardStats}>
         <View style={styles.jobStat}>
           <MaterialIcons name="visibility" size={16} color="#666" />
-          <Text style={styles.jobStatText}>{formattedJob.views} lượt xem</Text>
+          <Text style={styles.jobStatText}>{views} lượt xem</Text>
         </View>
         <View style={styles.jobStat}>
           <MaterialIcons name="people" size={16} color="#666" />
-          <Text style={styles.jobStatText}>
-            {formattedJob.applications} ứng viên
-          </Text>
+          <Text style={styles.jobStatText}>{candidatesCount} ứng viên</Text>
         </View>
         <View style={styles.jobStat}>
-          <MaterialIcons name="schedule" size={16} color="#666" />
-          <Text style={styles.jobStatText} numberOfLines={1}>
-            Hết hạn: {formattedJob.deadline}
+          <MaterialIcons
+            name="schedule"
+            size={16}
+            color={
+              deadline && typeof deadline === "object" && deadline.isExpired
+                ? "#F44336"
+                : "#666"
+            }
+          />
+          <Text
+            style={[
+              styles.jobStatText,
+              deadline &&
+                typeof deadline === "object" &&
+                deadline.isExpired && {
+                  color: "#F44336",
+                  fontWeight: "600",
+                },
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {typeof deadline === "object" ? deadline.formatted : deadline}
           </Text>
         </View>
       </View>

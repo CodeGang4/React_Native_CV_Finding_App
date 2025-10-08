@@ -38,6 +38,7 @@ const EmployerAccountPage = () => {
     createJobWithFeedback,
     updateJobWithFeedback,
     deleteJobWithConfirmation,
+    refreshJobs,
   } = useEmployerJobs();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -194,6 +195,18 @@ const EmployerAccountPage = () => {
     setCurrentPage("main");
     setSelectedJob(null);
     scrollY.setValue(0);
+
+    // Refresh jobs data when returning from JobDetail (views might have increased)
+    console.log("🔄 Refreshing jobs data after returning from JobDetail");
+
+    // Refresh job data directly from useEmployerJobs
+    refreshJobs();
+
+    // Emit event for job cards to refresh their data
+    setTimeout(() => {
+      const { DeviceEventEmitter } = require("react-native");
+      DeviceEventEmitter.emit("refreshJobCards");
+    }, 100); // Small delay to ensure page transition is complete
   };
 
   const renderCompanyTab = () => (
@@ -217,6 +230,7 @@ const EmployerAccountPage = () => {
       creating={jobsCreating}
       onCreatePress={handleCreateJobPress}
       onJobPress={handleJobPress}
+      onJobDelete={deleteJobWithConfirmation}
     />
   );
 

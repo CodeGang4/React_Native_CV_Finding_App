@@ -9,9 +9,10 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 
 // Shared Overview Section
-// Props: { job, candidatesStats, onEdit: () => void, onDelete: () => void }
+// Props: { job, views, candidatesStats, onEdit: () => void, onDelete: () => void }
 export default function JobOverviewSection({
   job,
+  views,
   candidatesStats,
   onEdit,
   onDelete,
@@ -21,7 +22,7 @@ export default function JobOverviewSection({
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <MaterialIcons name="visibility" size={24} color="#2196F3" />
-          <Text style={styles.statNumber}>{job?.views ?? 0}</Text>
+          <Text style={styles.statNumber}>{views ?? job?.views ?? 0}</Text>
           <Text style={styles.statLabel}>Lượt xem</Text>
         </View>
         <View style={styles.statCard}>
