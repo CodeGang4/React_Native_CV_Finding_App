@@ -379,6 +379,59 @@ class JobController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    async hideJob(req, res) {
+        const { jobId, candidate_id } = req.params;
+        
+
+        try {
+            // Check job exists
+            const { data: job } = await supabase
+                .from('jobs')
+                .select('id')
+                .eq('id', jobId)
+                .single();
+
+            if (!job) {
+                return res.status(404).json({ error: 'Job not found' });
+            }
+
+            // Insert hidden job (UPSERT để tránh duplicate)
+            const { data, error } = await supabase
+                .from('hidden_jobs')
+                .upsert({
+                    candidate_id: candidate_id,
+                    job_id: jobId,
+                    reason: 'swipe_delete',
+                    hidden_at: new Date().toISOString()
+                })
+                .select();
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                hidden_at: data[0].hidden_at
+            });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    async getHiddenJobs(req,res) {
+        const { candidate_id } = req.params;
+        try {
+            const { data, error } = await supabase
+                .from('hidden_jobs')
+                .select('*')
+                .eq('candidate_id', candidate_id)
+                .order('hidden_at', { ascending: false });
+            if (error) throw error;
+            
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new JobController();
