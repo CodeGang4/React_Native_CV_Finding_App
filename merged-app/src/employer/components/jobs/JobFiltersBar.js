@@ -30,13 +30,13 @@ export default function JobFiltersBar({
         />
         <FilterChip
           label="Đang tuyển"
-          active={status === "Đang tuyển"}
-          onPress={() => onChangeStatus("Đang tuyển")}
+          active={status === "active"}
+          onPress={() => onChangeStatus("active")}
         />
         <FilterChip
           label="Hết hạn"
-          active={status === "Hết hạn"}
-          onPress={() => onChangeStatus("Hết hạn")}
+          active={status === "expired"}
+          onPress={() => onChangeStatus("expired")}
         />
       </View>
     </View>

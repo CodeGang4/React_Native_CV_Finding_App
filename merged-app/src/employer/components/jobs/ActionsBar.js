@@ -1,11 +1,36 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 
-export default function ActionsBar({ onCreatePress, onManageTemplatesPress }) {
+export default function ActionsBar({
+  onCreatePress,
+  onManageTemplatesPress,
+  creating = false,
+}) {
   return (
     <View style={styles.row}>
-      <TouchableOpacity style={styles.primaryButton} onPress={onCreatePress}>
-        <Text style={styles.primaryText}>Đăng tin mới</Text>
+      <TouchableOpacity
+        style={[styles.primaryButton, creating && styles.disabledButton]}
+        onPress={onCreatePress}
+        disabled={creating}
+      >
+        {creating ? (
+          <>
+            <ActivityIndicator
+              size="small"
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.primaryText}>Đang tạo...</Text>
+          </>
+        ) : (
+          <Text style={styles.primaryText}>Đăng tin mới</Text>
+        )}
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.secondaryButton}
@@ -25,6 +50,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#cccccc",
   },
   primaryText: { color: "#fff", fontWeight: "600" },
   secondaryButton: {

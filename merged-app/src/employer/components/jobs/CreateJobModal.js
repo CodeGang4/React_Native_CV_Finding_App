@@ -10,6 +10,8 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -143,7 +145,11 @@ export default function CreateJobModal({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Đăng tin tuyển dụng mới</Text>
@@ -154,7 +160,9 @@ export default function CreateJobModal({
 
           <ScrollView
             style={styles.modalBody}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {/* Tiêu đề công việc */}
             <View style={styles.inputGroup}>
@@ -390,7 +398,7 @@ export default function CreateJobModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -406,7 +414,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 12,
     width: width - 32,
-    maxHeight: "90%",
+    maxHeight: "85%",
+    minHeight: "60%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -418,7 +427,10 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
   closeButton: { padding: 5 },
-  modalBody: { maxHeight: 500, padding: 20 },
+  modalBody: { flex: 1, padding: 20 },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   inputGroup: { marginBottom: 20 },
   formRow: { flexDirection: "row", marginBottom: 0 },
   inputLabel: {

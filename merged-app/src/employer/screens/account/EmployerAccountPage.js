@@ -17,6 +17,10 @@ import EditCompanyModal from "../../components/account/EditCompanyModal";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useCompanyInfo } from "../../../shared/hooks/useCompanyInfo";
 import { useEmployerJobs } from "../../../shared/hooks/useEmployerJobs";
+import {
+  registerCallbacks,
+  unregisterCallbacks,
+} from "../../../shared/services/utils/callbackRegistry";
 
 const EmployerAccountPage = () => {
   const { user } = useAuth();
@@ -208,6 +212,26 @@ const EmployerAccountPage = () => {
       DeviceEventEmitter.emit("refreshJobCards");
     }, 100); // Small delay to ensure page transition is complete
   };
+
+  // Setup job synchronization callbacks
+  useEffect(() => {
+    const callbacks = {
+      onJobCreated: (newJob) => {
+        // Refresh data when job is created from other pages
+        refreshJobs();
+      },
+      onJobDeleted: (jobId) => {
+        // Refresh data when job is deleted from other pages
+        refreshJobs();
+      },
+    };
+
+    registerCallbacks("jobSyncCallbacks", callbacks);
+
+    return () => {
+      unregisterCallbacks("jobSyncCallbacks");
+    };
+  }, [refreshJobs]);
 
   const renderCompanyTab = () => (
     <CompanyTabSection

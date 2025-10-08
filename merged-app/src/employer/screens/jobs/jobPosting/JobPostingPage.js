@@ -1,6 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   registerCallbacks,
   unregisterCallbacks,
@@ -11,8 +19,11 @@ import StatsBar from "../../../components/jobs/StatsBar";
 import JobFiltersBar from "../../../components/jobs/JobFiltersBar";
 import ActionsBar from "../../../components/jobs/ActionsBar";
 import JobItem from "../../../components/jobs/JobItem";
+import SwipeableJobCard from "../../../components/account/SwipeableJobCard";
 import CreateJobModal from "../../../components/jobs/CreateJobModal";
 import ManageTemplatesModal from "../../../components/jobs/ManageTemplatesModal";
+import { useEmployerJobs } from "../../../../shared/hooks/useEmployerJobs";
+import { useEmailTemplates } from "../../../../shared/hooks/useEmailTemplates";
 
 export default function JobPostingPage() {
   const navigation = useNavigation();
@@ -21,158 +32,142 @@ export default function JobPostingPage() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const [jobs, setJobs] = useState([
-    {
-      id: 1,
-      title: "Senior React Native Developer",
-      company: "Công ty Cổ phần TCC & Partners",
-      salary: "15 - 25 triệu",
-      location: "Hà Nội",
-      experience: "2-3 năm",
-      deadline: "30/09/2025",
-      postedDate: "10/09/2025",
-      status: "Đang tuyển",
-      views: 156,
-      applications: 8,
-      shortlisted: 2,
-      rejected: 3,
-      pending: 3,
-      jobType: "Toàn thời gian",
-      description:
-        "Chúng tôi đang tìm kiếm một Senior React Native Developer có kinh nghiệm để tham gia phát triển các ứng dụng mobile chất lượng cao...",
-      requirements: [
-        "Có ít nhất 2 năm kinh nghiệm với React Native",
-        "Thành thạo JavaScript, TypeScript",
-        "Kinh nghiệm với Redux, Context API",
-        "Hiểu biết về Native Modules",
-        "Kỹ năng giao tiếp tốt",
-      ],
-      benefits: [
-        "Mức lương cạnh tranh 15-25 triệu",
-        "Thưởng hiệu suất hàng quý",
-        "Bảo hiểm đầy đủ theo quy định",
-        "Môi trường làm việc năng động",
-        "Cơ hội học hỏi và phát triển",
-      ],
-      skills: ["React Native", "JavaScript", "TypeScript", "Redux"],
-      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
-      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
-    },
-    {
-      id: 2,
-      title: "Junior PHP Developer",
-      company: "Công ty Cổ phần TCC & Partners",
-      salary: "8 - 12 triệu",
-      location: "Hà Nội",
-      experience: "Không yêu cầu",
-      deadline: "25/09/2025",
-      postedDate: "05/09/2025",
-      status: "Đang tuyển",
-      views: 247,
-      applications: 12,
-      shortlisted: 3,
-      rejected: 7,
-      pending: 2,
-      jobType: "Toàn thời gian",
-      description:
-        "Chúng tôi đang tìm kiếm một PHP Developer để tham gia vào team phát triển sản phẩm...",
-      requirements: [
-        "Hiểu biết về PHP, MySQL, HTML, CSS, Javascript",
-        "Khả năng làm việc nhóm tốt",
-        "Chịu được áp lực công việc",
-      ],
-      benefits: [
-        "Mức lương cạnh tranh 8-12 triệu",
-        "Thưởng hiệu suất hàng quý",
-        "Bảo hiểm đầy đủ theo quy định",
-        "Môi trường làm việc năng động",
-        "Cơ hội học hỏi và phát triển",
-      ],
-      skills: ["PHP", "MySQL", "HTML", "CSS", "Javascript"],
-      workLocation: "Tầng 12, Tòa nhà ABC, 123 Đường XYZ, Hà Nội",
-      workTime: "Thứ 2 - Thứ 6: 8:00 - 17:30",
-    },
-  ]);
+  // Use employer jobs hook for backend integration (reuse from account page)
+  const {
+    jobs,
+    jobStats,
+    loading,
+    creating,
+    updating,
+    error,
+    createJobWithFeedback,
+    updateJobWithFeedback,
+    deleteJobWithConfirmation,
+    refreshJobs,
+  } = useEmployerJobs();
 
-  const [templates, setTemplates] = useState([
-    {
-      id: 1,
-      name: "Mẫu thông báo phỏng vấn",
-      subject: "Thông báo lịch phỏng vấn - {position}",
-      content: "Chào {candidate_name},\n\nChúng tôi rất vui mừng thông báo...",
-      uploadDate: "15/09/2025",
-    },
-    {
-      id: 2,
-      name: "Mẫu chúc mừng trúng tuyển",
-      subject: "Chúc mừng bạn đã trúng tuyển vị trí {position}",
-      content: "Chào {candidate_name},\n\nChúc mừng bạn đã được chọn...",
-      uploadDate: "12/09/2025",
-    },
-  ]);
+  // Use email templates hook for backend integration
+  const {
+    templates,
+    loading: templatesLoading,
+    creating: templatesCreating,
+    createTemplateWithFeedback,
+    deleteTemplateWithConfirmation,
+  } = useEmailTemplates();
 
   const handleCreatePress = () => setShowCreate(true);
   const handleManageTemplatesPress = () => setShowTemplates(true);
 
-  const handleSubmitJob = (jobData) => {
-    const newJob = {
-      id: Date.now(),
-      title: jobData.title,
-      salary: jobData.salary,
-      location: jobData.location,
-      experience: jobData.experience,
-      deadline: jobData.deadline,
-      jobType: jobData.jobType,
-      description: jobData.description,
-      requirements: jobData.requirements,
-      benefits: jobData.benefits,
-      skills: jobData.skills,
-      status: "Đang tuyển",
-      applications: 0,
-      views: 0,
-      createdDate: new Date().toLocaleDateString("vi-VN"),
+  // Setup job synchronization callbacks
+  React.useEffect(() => {
+    const callbacks = {
+      onJobCreated: (newJob) => {
+        // Refresh data when job is created from other pages
+        refreshJobs();
+      },
+      onJobDeleted: (jobId) => {
+        // Refresh data when job is deleted from other pages
+        refreshJobs();
+      },
     };
-    setJobs((prev) => [newJob, ...prev]);
-    setShowCreate(false);
-    Alert.alert("Thành công", "Đã đăng tin tuyển dụng mới!");
-  };
 
-  const handleEditJob = (updatedJob) => {
-    setJobs((prev) =>
-      prev.map((j) => (j.id === updatedJob.id ? { ...j, ...updatedJob } : j))
-    );
-    Alert.alert("Thành công", "Đã cập nhật tin tuyển dụng!");
-  };
+    registerCallbacks("jobSyncCallbacks", callbacks);
 
-  const handleDeleteJob = (jobId) => {
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
-    Alert.alert("Đã xoá", "Tin tuyển dụng đã được xoá");
-  };
+    return () => {
+      unregisterCallbacks("jobSyncCallbacks");
+    };
+  }, [refreshJobs]);
 
-  const handleCreateTemplate = (tpl) => {
-    setTemplates((prev) => [tpl, ...prev]);
-  };
+  // Refresh jobs when returning to this screen (for updated view counts)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refresh jobs data when screen is focused
+      refreshJobs();
 
-  const handleUploadTemplate = (tpl) => {
-    setTemplates((prev) => [tpl, ...prev]);
-  };
-
-  const totalApplications = jobs.reduce(
-    (sum, j) => sum + (j.applications || 0),
-    0
+      // Emit event for job cards to refresh their stats
+      setTimeout(() => {
+        const { DeviceEventEmitter } = require("react-native");
+        DeviceEventEmitter.emit("refreshJobCards");
+      }, 100);
+    }, [refreshJobs])
   );
 
-  const filteredJobs = jobs.filter((j) => {
-    const matchStatus =
-      statusFilter === "all" ? true : (j.status || "").trim() === statusFilter;
-    const q = searchText.trim().toLowerCase();
-    const matchQuery =
-      q.length === 0 ||
-      (j.title || "").toLowerCase().includes(q) ||
-      (j.company || "").toLowerCase().includes(q) ||
-      (j.location || "").toLowerCase().includes(q);
-    return matchStatus && matchQuery;
-  });
+  // Helper function to check if job is expired
+  const isJobExpired = (job) => {
+    if (!job.deadline || job.deadline === "N/A") return false;
+
+    try {
+      // Parse Vietnamese date format (dd/mm/yyyy)
+      const dateParts = job.deadline.split("/");
+      if (dateParts.length === 3) {
+        const day = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
+        const year = parseInt(dateParts[2], 10);
+        const deadlineDate = new Date(year, month, day);
+        const now = new Date();
+        return deadlineDate < now;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Filter jobs locally (since useEmployerJobs doesn't have this function)
+  const filterJobs = (statusFilter, searchQuery) => {
+    return jobs.filter((job) => {
+      // Status filter
+      let matchStatus = true;
+      if (statusFilter === "active") {
+        matchStatus = job.status === "Đang tuyển" && !isJobExpired(job);
+      } else if (statusFilter === "expired") {
+        matchStatus = isJobExpired(job);
+      } else if (statusFilter !== "all") {
+        matchStatus = job.status === statusFilter;
+      }
+
+      // Search query filter
+      const query = searchQuery.trim().toLowerCase();
+      const matchQuery =
+        query.length === 0 ||
+        (job.title || "").toLowerCase().includes(query) ||
+        (job.location || "").toLowerCase().includes(query) ||
+        (job.company || "").toLowerCase().includes(query);
+
+      return matchStatus && matchQuery;
+    });
+  };
+
+  const handleSubmitJob = async (jobData) => {
+    const success = await createJobWithFeedback(jobData);
+    if (success) {
+      setShowCreate(false);
+    }
+  };
+
+  const handleEditJob = async (updatedJob) => {
+    const success = await updateJobWithFeedback(updatedJob.id, updatedJob);
+    return success;
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    await deleteJobWithConfirmation(jobId);
+  };
+
+  const handleCreateTemplate = async (templateData) => {
+    await createTemplateWithFeedback(templateData);
+  };
+
+  const handleUploadTemplate = async (templateData) => {
+    // For uploaded templates, we can use the same create function
+    await createTemplateWithFeedback({
+      ...templateData,
+      type: "uploaded",
+    });
+  };
+
+  // Use filterJobs from hook instead of manual filtering
+  const filteredJobs = filterJobs(statusFilter, searchText);
 
   return (
     <View style={styles.container}>
@@ -187,13 +182,15 @@ export default function JobPostingPage() {
         contentContainerStyle={TAB_BAR_PADDING}
       >
         <StatsBar
-          jobs={jobs.length}
-          applications={totalApplications}
+          jobs={jobStats.totalJobs}
+          applications={jobStats.totalApplications}
           templates={templates.length}
+          loading={loading}
         />
         <ActionsBar
           onCreatePress={handleCreatePress}
           onManageTemplatesPress={handleManageTemplatesPress}
+          creating={creating}
         />
         <JobFiltersBar
           searchText={searchText}
@@ -202,22 +199,46 @@ export default function JobPostingPage() {
           onChangeStatus={setStatusFilter}
         />
         <Text style={styles.sectionTitle}>Tin tuyển dụng gần đây</Text>
-        <View>
-          {filteredJobs.map((job) => (
-            <JobItem
-              key={job.id}
-              job={job}
-              onPress={(j) => {
-                const cbKey = `jobdetail:${j.id}`;
-                registerCallbacks(cbKey, {
-                  onEdit: handleEditJob,
-                  onDelete: handleDeleteJob,
-                });
-                navigation.navigate("JobDetail", { job: j, cbKey });
-              }}
-            />
-          ))}
-        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.loadingText}>Đang tải tin tuyển dụng...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={refreshJobs}>
+              <Text style={styles.retryButtonText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : filteredJobs.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {jobs.length === 0
+                ? "Chưa có tin tuyển dụng nào"
+                : "Không tìm thấy tin tuyển dụng phù hợp"}
+            </Text>
+          </View>
+        ) : (
+          <View>
+            {filteredJobs.map((job) => (
+              <SwipeableJobCard
+                key={job.id}
+                job={job}
+                onPress={(j) => {
+                  const cbKey = `jobdetail:${j.id}`;
+                  registerCallbacks(cbKey, {
+                    onEdit: handleEditJob,
+                    onDelete: handleDeleteJob,
+                  });
+                  navigation.navigate("JobDetail", { job: j, cbKey });
+                }}
+                onDelete={handleDeleteJob}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
       <CreateJobModal
         visible={showCreate}
@@ -230,6 +251,9 @@ export default function JobPostingPage() {
         templates={templates}
         onCreate={handleCreateTemplate}
         onUpload={handleUploadTemplate}
+        onDelete={deleteTemplateWithConfirmation}
+        loading={templatesLoading}
+        creating={templatesCreating}
       />
     </View>
   );
@@ -239,4 +263,46 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   body: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+  },
+  errorContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#F44336",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+  },
 });

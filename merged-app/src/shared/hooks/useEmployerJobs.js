@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import employerJobBusinessService from "../services/business/EmployerJobBusinessService";
+import {
+  registerCallbacks,
+  getCallbacks,
+} from "../services/utils/callbackRegistry";
 
 /**
  * Custom hook for managing employer jobs
@@ -89,6 +93,12 @@ export const useEmployerJobs = () => {
           const stats =
             employerJobBusinessService.generateJobStats(updatedJobs);
           setJobStats(stats);
+
+          // Đồng bộ với các trang khác
+          const callbacks = getCallbacks("jobSyncCallbacks");
+          if (callbacks.onJobCreated) {
+            callbacks.onJobCreated(newJob);
+          }
         }
 
         return newJob;
@@ -191,6 +201,12 @@ export const useEmployerJobs = () => {
 
         // Force refresh danh sách jobs từ server để đảm bảo consistency
         await fetchJobs(true);
+
+        // Đồng bộ với các trang khác
+        const callbacks = getCallbacks("jobSyncCallbacks");
+        if (callbacks.onJobDeleted) {
+          callbacks.onJobDeleted(jobId);
+        }
 
         return { success: true };
       } catch (err) {

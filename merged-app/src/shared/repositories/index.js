@@ -10,3 +10,4 @@ export { default as CompanyRepository } from "./CompanyRepository.js";
 export { default as EmployerRepository } from "./EmployerRepository.js";
 export { default as InterviewRepository } from "./InterviewRepository.js";
 export { default as ApplicationRepository } from "./ApplicationRepository.js";
+export { default as EmailTemplateRepository } from "./EmailTemplateRepository.js";

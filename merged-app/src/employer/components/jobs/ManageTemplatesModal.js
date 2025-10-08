@@ -9,6 +9,7 @@ import {
   TextInput,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -20,6 +21,9 @@ export default function ManageTemplatesModal({
   templates = [],
   onCreate,
   onUpload,
+  onDelete,
+  loading = false,
+  creating = false,
 }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -27,25 +31,30 @@ export default function ManageTemplatesModal({
     content: "",
   });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name || !formData.subject || !formData.content) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin mẫu email");
       return;
     }
-    const newTemplate = {
-      id: Date.now(),
-      ...formData,
-      uploadDate: new Date().toLocaleDateString("vi-VN"),
+
+    const templateData = {
+      name: formData.name,
+      subject: formData.subject,
+      content: formData.content,
+      type: "custom",
     };
-    onCreate && onCreate(newTemplate);
-    setFormData({ name: "", subject: "", content: "" });
-    Alert.alert("Thành công", "Đã tạo mẫu email mới!");
+
+    if (onCreate) {
+      const success = await onCreate(templateData);
+      if (success) {
+        setFormData({ name: "", subject: "", content: "" });
+      }
+    }
   };
 
-  const handleUploadMock = () => {
+  const handleUploadMock = async () => {
     Alert.alert("Thông báo", "Tính năng upload file đang được phát triển");
-    const t = {
-      id: Date.now(),
+    const templateData = {
       name: "Template từ file",
       subject: "Subject từ file",
       content: "Nội dung từ file...",
@@ -110,10 +119,26 @@ export default function ManageTemplatesModal({
             </View>
             <View style={styles.row}>
               <TouchableOpacity
-                style={[styles.btn, styles.btnPrimary]}
+                style={[
+                  styles.btn,
+                  styles.btnPrimary,
+                  creating && styles.btnDisabled,
+                ]}
                 onPress={handleCreate}
+                disabled={creating}
               >
-                <Text style={styles.btnPrimaryText}>Tạo mẫu</Text>
+                {creating ? (
+                  <>
+                    <ActivityIndicator
+                      size="small"
+                      color="#fff"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.btnPrimaryText}>Đang tạo...</Text>
+                  </>
+                ) : (
+                  <Text style={styles.btnPrimaryText}>Tạo mẫu</Text>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.btn, styles.btnSecondary]}
@@ -127,30 +152,46 @@ export default function ManageTemplatesModal({
             <Text style={[styles.sectionTitle, { marginTop: 16 }]}>
               Danh sách mẫu
             </Text>
-            {templates.map((tpl) => (
-              <View key={tpl.id} style={styles.templateCard}>
-                <View style={styles.templateHeader}>
-                  <MaterialIcons name="email" size={22} color="#4CAF50" />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.templateName}>{tpl.name}</Text>
-                    <Text style={styles.templateSubject} numberOfLines={1}>
-                      {tpl.subject}
-                    </Text>
-                    <Text style={styles.templateDate}>
-                      Tạo: {tpl.uploadDate}
-                    </Text>
-                  </View>
-                  <MaterialIcons name="more-vert" size={20} color="#999" />
-                </View>
-                <Text style={styles.templateContent} numberOfLines={3}>
-                  {tpl.content}
-                </Text>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4CAF50" />
+                <Text style={styles.loadingText}>Đang tải mẫu email...</Text>
               </View>
-            ))}
-            {templates.length === 0 && (
-              <Text style={{ color: "#666", fontStyle: "italic" }}>
-                Chưa có mẫu email nào
-              </Text>
+            ) : (
+              templates.map((tpl) => (
+                <View key={tpl.id} style={styles.templateCard}>
+                  <View style={styles.templateHeader}>
+                    <MaterialIcons name="email" size={22} color="#4CAF50" />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={styles.templateName}>{tpl.name}</Text>
+                      <Text style={styles.templateSubject} numberOfLines={1}>
+                        {tpl.subject}
+                      </Text>
+                      <Text style={styles.templateDate}>
+                        Tạo: {tpl.uploadDate}
+                      </Text>
+                    </View>
+                    {tpl.type !== "default" && onDelete && (
+                      <TouchableOpacity
+                        onPress={() => onDelete(tpl.id)}
+                        style={styles.deleteButton}
+                      >
+                        <MaterialIcons
+                          name="delete"
+                          size={20}
+                          color="#F44336"
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <Text style={styles.templateContent} numberOfLines={3}>
+                    {tpl.content}
+                  </Text>
+                </View>
+              ))
+            )}
+            {!loading && templates.length === 0 && (
+              <Text style={styles.emptyText}>Chưa có mẫu email nào</Text>
             )}
           </ScrollView>
         </View>
@@ -202,7 +243,14 @@ const styles = StyleSheet.create({
   },
   textarea: { height: 90, textAlignVertical: "top" },
   row: { flexDirection: "row", gap: 10 },
-  btn: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 8 },
+  btn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 8,
+    flexDirection: "row",
+  },
   btnPrimary: { backgroundColor: "#00b14f" },
   btnSecondary: {
     backgroundColor: "#fff",
@@ -224,4 +272,27 @@ const styles = StyleSheet.create({
   templateSubject: { fontSize: 12, color: "#666", marginTop: 2 },
   templateDate: { fontSize: 11, color: "#999", marginTop: 2 },
   templateContent: { fontSize: 12, color: "#555", marginTop: 8 },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 4,
+  },
+  btnDisabled: {
+    backgroundColor: "#cccccc",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+  },
+  emptyText: {
+    color: "#666",
+    fontStyle: "italic",
+    textAlign: "center",
+    paddingVertical: 20,
+  },
 });

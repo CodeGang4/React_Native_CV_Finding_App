@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 
 export default function StatsBar({
   jobs = 0,
   applications = 0,
   templates = 0,
+  loading = false,
 }) {
   const items = [
     { label: "Tin đăng", value: jobs },
@@ -15,7 +16,11 @@ export default function StatsBar({
     <View style={styles.row}>
       {items.map((it, idx) => (
         <View key={idx} style={styles.card}>
-          <Text style={styles.value}>{it.value}</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#00b14f" />
+          ) : (
+            <Text style={styles.value}>{it.value}</Text>
+          )}
           <Text style={styles.label}>{it.label}</Text>
         </View>
       ))}
