@@ -16,7 +16,6 @@ export default function HomeScreen({ navigation }) {
         try {
             const userId = '6acc4010-1b7f-403f-9035-832b64e4f66d'; // TODO: Get from auth
             
-            // Fetch all jobs và hidden jobs song song
             const [jobsResponse, hiddenResponse] = await Promise.all([
                 axios.get(`${api}/getjobs`),
                 axios.get(`${api}/getHiddenJobs/${userId}`)
@@ -24,8 +23,6 @@ export default function HomeScreen({ navigation }) {
             
             const allJobs = jobsResponse.data;
             const hiddenJobIds = hiddenResponse.data.map(hidden => hidden.job_id);
-            
-            // Filter ra các hidden jobs
             const visibleJobs = allJobs.filter(job => !hiddenJobIds.includes(job.id));
             
             setJobs(visibleJobs);
