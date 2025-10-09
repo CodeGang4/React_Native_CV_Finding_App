@@ -181,15 +181,19 @@ const JobsListPage = () => {
       width: 120,
       render: (_, record) => getStatusTag(record.is_expired)
     },
-    {
+ {
       title: 'Ứng tuyển',
-      dataIndex: 'applications',
       key: 'applications',
-      width: 80,
-      render: (applications) => (
-        <Tag color="purple">
-          📝 {applications?.length || 0}
-        </Tag>
+      width: 100,
+      render: (_, record) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Tag color="purple">
+            📝 {record.total_applications || 0} lượt
+          </Tag>
+          <Tag color="blue">
+            👥 {record.unique_candidates || 0} người
+          </Tag>
+        </div>
       )
     },
     {
