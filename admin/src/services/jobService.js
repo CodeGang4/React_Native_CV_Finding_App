@@ -11,6 +11,10 @@ export const getJobs = async (filters = {}) => {
           company_name,
           company_logo,
           isverified
+        ),
+        applications(
+          id,
+          candidate_id
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -42,8 +46,21 @@ export const getJobs = async (filters = {}) => {
       throw error
     }
 
-    console.log('Fetched jobs:', data)
-    return { data, error: null, count }
+    // Xử lý data để đếm số ứng viên unique cho mỗi job
+    const processedData = data?.map(job => {
+      // Lấy danh sách candidate_id unique
+      const candidateIds = job.applications?.map(app => app.candidate_id) || []
+      const uniqueCandidates = [...new Set(candidateIds)]
+      
+      return {
+        ...job,
+        total_applications: job.applications?.length || 0,
+        unique_candidates: uniqueCandidates.length
+      }
+    })
+
+    console.log('Fetched jobs with applications:', processedData)
+    return { data: processedData, error: null, count }
   } catch (error) {
     console.error('Error in getJobs:', error)
     return { data: [], error, count: 0 }
