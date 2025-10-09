@@ -10,20 +10,6 @@ class JobController {
             return res.status(400).json({ error: error.message });
         }
 
-        // Log riêng (không ảnh hưởng cache)
-        try {
-            await redis.setEx(
-                `log:getJobs:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'getJobs',
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (getJobs):', err);
-        }
-
         res.status(200).json(data);
     }
 
@@ -156,8 +142,8 @@ class JobController {
             'quantity',
             'position',
             'education',
-            'exprired_date',
-            'isAccepted',
+            'expired_date',
+            'is_expired',
         ];
         const missingFields = requiredFields.filter(
             (field) => req.body[field] === undefined || req.body[field] === '',
@@ -192,9 +178,9 @@ class JobController {
             quantity,
             position,
             education,
-            exprired_date,
+            expired_date,
             salary,
-            isAccepted,
+            is_expired,
         } = req.body;
 
         if (!jobTypes.includes(job_type)) {
@@ -211,9 +197,9 @@ class JobController {
                 salary,
                 quantity,
                 position,
-                isAccepted,
+                is_expired,
                 education,
-                exprired_date,
+                expired_date,
                 employer_id: companyId,
             })
             .select(); // Thêm .select() để lấy lại dữ liệu vừa thêm
@@ -221,21 +207,6 @@ class JobController {
             return res.status(400).json({ error: error.message });
         }
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:addJob:${companyId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'addJob',
-                    companyId,
-                    job: { title, location },
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (addJob):', err);
-        }
         res.status(200).json(data);
     }
 
@@ -274,9 +245,9 @@ class JobController {
             quantity,
             position,
             education,
-            exprired_date,
+            expired_date,
             salary,
-            isAccepted,
+            is_expired,
         } = req.body;
 
         if (!jobId) {
@@ -294,9 +265,9 @@ class JobController {
                 salary,
                 quantity,
                 position,
-                isAccepted,
+                is_expired,
                 education,
-                exprired_date,
+                expired_date,
                 updated_at: new Date(),
             })
             .eq('id', jobId)
@@ -311,20 +282,6 @@ class JobController {
                 .json({ error: 'Job not found or not updated' });
         }
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:updateJob:${jobId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'updateJob',
-                    jobId,
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (updateJob):', err);
-        }
         res.status(200).json(data[0]);
     }
 
@@ -362,12 +319,13 @@ class JobController {
     }
 
     async getTopViewedJobs(req, res) {
+        const number = req.query.number || 10; // Mặc định lấy top 10 nếu không có tham số
         try {
             const { data, error } = await supabase
                 .from('jobs')
                 .select()
                 .order('views', { ascending: false })
-                .limit(10);
+                .limit(number);
 
             if (error) {
                 return res.status(400).json({ error: error.message });

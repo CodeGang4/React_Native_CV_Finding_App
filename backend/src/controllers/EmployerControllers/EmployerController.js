@@ -168,6 +168,9 @@ class EmployerController {
             .update({ company_logo: publicURL })
             .eq('user_id', companyId);
 
+
+        await supabase.from('users').update({ avatar: publicURL }).eq('id', companyId);
+        console.log('Avatar updated in users table:', publicURL);
         if (!success) {
             return res
                 .status(500)
@@ -177,21 +180,7 @@ class EmployerController {
 
         console.log('Company logo uploaded and URL saved:', publicURL);
 
-        // Redis log
-        try {
-            await redis.setEx(
-                `log:uploadCompanyLogo:${companyId}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'uploadCompanyLogo',
-                    companyId,
-                    logo_url: publicURL,
-                    time: new Date().toISOString(),
-                }),
-            );
-        } catch (err) {
-            console.error('Redis log error (uploadCompanyLogo):', err);
-        }
+        
         res.status(200).json({ logo_url: publicURL });
     }
 
@@ -230,6 +219,168 @@ class EmployerController {
         }
 
         res.status(200).json(data[0]);
+    }
+
+    async getTopCompanies(req, res) {
+        const number = req.query.number || 10; // Mặc định lấy top 10 nếu không có tham số
+        try {
+            // Lấy thống kê số ứng viên unique cho từng công ty
+            const { data: companyStats, error } = await supabase
+                .from('employers')
+                .select(`
+                    user_id,
+                    company_name,
+                    company_logo,
+                    industry,
+                    jobs!jobs_employer_id_fkey (
+                        id,
+                        applications!applications_job_id_fkey (
+                            candidate_id
+                        )
+                    )
+                `);
+
+            if (error) {
+                throw error;
+            }
+
+            // Xử lý dữ liệu để tính số ứng viên unique cho mỗi công ty
+            const companiesWithStats = companyStats.map(company => {
+                // Lấy tất cả candidate_id từ các applications của các jobs
+                const allCandidateIds = [];
+                
+                if (company.jobs && company.jobs.length > 0) {
+                    company.jobs.forEach(job => {
+                        if (job.applications && job.applications.length > 0) {
+                            job.applications.forEach(application => {
+                                allCandidateIds.push(application.candidate_id);
+                            });
+                        }
+                    });
+                }
+
+                // Loại bỏ trùng lặp để có số ứng viên unique
+                const uniqueCandidates = [...new Set(allCandidateIds)];
+                
+                return {
+                    company_id: company.user_id,
+                    company_name: company.company_name,
+                    company_logo: company.company_logo,
+                    industry: company.industry,
+                    total_jobs: company.jobs ? company.jobs.length : 0,
+                    total_applications: allCandidateIds.length,
+                    unique_candidates: uniqueCandidates.length
+                };
+            });
+
+            // Sắp xếp theo số ứng viên unique giảm dần
+            const topCompanies = companiesWithStats
+                .sort((a, b) => b.unique_candidates - a.unique_candidates)
+                .slice(0, parseInt(number));
+
+            res.status(200).json(
+                topCompanies
+            );
+
+        } catch (error) {
+            console.error('Error getting top companies:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    // Lấy thống kê chi tiết cho một công ty cụ thể
+    async CompanyAnalytics(req, res) {
+        const companyId = req.params.companyId;
+        
+        try {
+            // Lấy thông tin công ty và thống kê ứng tuyển
+            const { data: companyData, error } = await supabase
+                .from('employers')
+                .select(`
+                    *,
+                    jobs!jobs_employer_id_fkey (
+                        id,
+                        title,
+                        created_at,
+                        applications!applications_job_id_fkey (
+                            id,
+                            candidate_id,
+                            status,
+                            applied_at,
+                            candidates!applications_candidate_id_fkey (
+                                full_name,
+                                phone,
+                                education
+                            )
+                        )
+                    )
+                `)
+                .eq('user_id', companyId)
+                .single();
+
+            if (error) {
+                throw error;
+            }
+
+            if (!companyData) {
+                return res.status(404).json({ error: 'Company not found' });
+            }
+
+            // Xử lý thống kê
+            const allCandidateIds = [];
+            const allApplications = [];
+            let totalApplications = 0;
+
+            const jobsWithStats = companyData.jobs.map(job => {
+                const jobApplications = job.applications || [];
+                totalApplications += jobApplications.length;
+
+                // Thu thập candidate IDs và applications
+                jobApplications.forEach(app => {
+                    allCandidateIds.push(app.candidate_id);
+                    allApplications.push(app);
+                });
+
+                return {
+                    id: job.id,
+                    title: job.title,
+                    created_at: job.created_at,
+                    applications_count: jobApplications.length,
+                    applications: jobApplications
+                };
+            });
+
+            // Thống kê tổng quan
+            const uniqueCandidates = [...new Set(allCandidateIds)];
+            const statusStats = {
+                pending: allApplications.filter(app => app.status === 'pending').length,
+                reviewed: allApplications.filter(app => app.status === 'reviewed').length,
+                accepted: allApplications.filter(app => app.status === 'accepted').length,
+                rejected: allApplications.filter(app => app.status === 'rejected').length
+            };
+
+            const result = {
+                company_info: {
+                    user_id: companyData.user_id,
+                    company_name: companyData.company_name,
+                    company_logo: companyData.company_logo,
+                    industry: companyData.industry
+                },
+                statistics: {
+                    total_jobs: companyData.jobs.length,
+                    total_applications: totalApplications,
+                    unique_candidates: uniqueCandidates.length,
+                    status_breakdown: statusStats
+                },
+                jobs_details: jobsWithStats
+            };
+
+            res.status(200).json(result);
+
+        } catch (error) {
+            console.error('Error getting company application stats:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 }
 

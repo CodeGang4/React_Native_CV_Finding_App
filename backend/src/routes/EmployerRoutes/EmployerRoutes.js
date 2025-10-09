@@ -17,6 +17,8 @@ router.post(
     upload.single('companyLogo'),
     EmployerController.uploadCompanyLogo,
 );
+router.get('/getTopCompanies', EmployerController.getTopCompanies);
+router.get('/analytics/:companyId', EmployerController.CompanyAnalytics);
 router.put('/updateInfor/:companyId', EmployerController.updateInfo);
 router.get('/getCompanyInfo/:companyId', EmployerController.getCompanyInfo);
 router.get('/getAllCompany', EmployerController.getAllCompany);

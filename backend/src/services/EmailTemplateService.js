@@ -10,7 +10,6 @@ class EmailTemplateService {
 
             let templateData = null;
 
-            // Nếu có employerId, ưu tiên template của employer đó
             if (employerId) {
                 const { data: employerTemplate, error: employerError } =
                     await supabase

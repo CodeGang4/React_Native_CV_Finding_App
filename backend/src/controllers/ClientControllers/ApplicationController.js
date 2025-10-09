@@ -29,6 +29,14 @@ class ApplicationController {
         if (candidateError || !candidateData) {
             return res.status(400).json({ error: 'Candidate does not exist' });
         }
+        const { data: JobData, error: jobError } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', job_id)
+            .single();
+        if (jobError || !JobData) {
+            return res.status(400).json({ error: 'Job does not exist' });
+        }
 
         console.log({ candidateData, cv_url: candidateData.cv_url });
 
@@ -38,6 +46,7 @@ class ApplicationController {
                 candidate_id: candidate_id,
                 cv_url: candidateData.cv_url,
                 job_id,
+                employer_id: JobData.employer_id,
                 status: 'pending',
                 applied_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -214,5 +223,7 @@ class ApplicationController {
         }
         res.status(200).json(data);
     }
+
+    
 }
 module.exports = new ApplicationController();

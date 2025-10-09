@@ -6,18 +6,7 @@ const supabaseStorage = createClient(
 );
 const redis = require('../../redis/config');
 class CandidatesController {
-    // async getProfile(req, res) {
-    //     const userId = req.params.userId;
-    //     if (!userId) {
-    //         return res.status(400).json({ error: "Need user ID" })
-    //     }
-    //     const { data, error } = await supabase.from("candidates").select().eq('user_id', userId);
-    //     if (error) {
-    //         return res.status(400).json({ error });
-    //     }
 
-    //     res.status(200).json(data[0])
-    // }
     async getProfile(req, res) {
         const userId = req.params.userId;
         if (!userId) {
@@ -191,14 +180,16 @@ class CandidatesController {
         const { data: publicData } = supabase.storage
             .from('Portfolio_Buckets')
             .getPublicUrl(filePath);
-        const publicURL = publicData.publicUrl;
+        // const publicURL = publicData.publicUrl;
         await supabase
             .from('candidates')
-            .update({ portfolio: publicURL })
+            .update({ portfolio: publicData.publicUrl })
             .eq('user_id', userId);
-        console.log('Portfolio uploaded and URL saved:', publicURL);
 
-        res.status(200).json({ portfolio_url: publicURL });
+        await supabase.from('users').update({ avatar: publicData.publicUrl }).eq('id', userId);
+        console.log('Portfolio uploaded and URL saved:', publicData.publicUrl);
+
+        res.status(200).json({ portfolio_url: publicData.publicUrl });
     }
 }
 
