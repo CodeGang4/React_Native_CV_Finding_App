@@ -1,323 +1,394 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { 
+  Row, 
+  Col, 
+  Card, 
+  Statistic, 
+  Table, 
+  Tag, 
+  Typography, 
+  Spin, 
+  Alert,
+  Select,
+  Space,
+  Badge
+} from 'antd'
+import { 
+  UserOutlined, 
+  FileTextOutlined, 
+  BuildOutlined,
+  TrophyOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined
+} from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import Button from '../../components/common/Button'
-import Table from '../../components/common/Table'
-import Tag from '../../components/common/Tag'
-import Chart from '../../components/common/Chart'
-import Skeleton from '../../components/common/Skeleton'
-import EmptyState from '../../components/common/EmptyState'
-import Breadcrumbs from '../../components/layout/Breadcrumbs'
-import { getStats } from '../../services/stats'
-import { getPendingCompanies } from '../../services/companies'
-import dayjs from 'dayjs'
+import { getDashboardStats, getAnalyticsData } from '../../services/dashboardService'
+import { Line } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
 
-function DashboardPage() {
-  const navigate = useNavigate()
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
-  // Fetch stats with optimized settings
-  const { 
-    data: stats, 
-    isLoading: statsLoading, 
-    error: statsError,
-    refetch: refetchStats 
-  } = useQuery({
-    queryKey: ['stats'],
-    queryFn: getStats,
-    staleTime: 60_000, // 1 minute
-    refetchOnWindowFocus: false,
-    retry: 3
+const { Title: AntTitle } = Typography
+const { Option } = Select
+
+const DashboardPage = () => {
+  const [chartPeriod, setChartPeriod] = useState('30d')
+
+  // Fetch dashboard stats
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: getDashboardStats,
+    refetchInterval: 30000 // Refresh mỗi 30 giây
   })
 
-  // Fetch pending companies with optimized settings
-  const { 
-    data: pendingCompanies, 
-    isLoading: companiesLoading, 
-    error: companiesError,
-    refetch: refetchCompanies 
-  } = useQuery({
-    queryKey: ['companies', 'pending'],
-    queryFn: () => getPendingCompanies(5),
-    staleTime: 30_000, // 30 seconds
-    refetchOnWindowFocus: false,
-    retry: 3
+  // Fetch analytics data
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['analytics', chartPeriod],
+    queryFn: () => getAnalyticsData(chartPeriod),
+    refetchInterval: 60000 // Refresh mỗi phút
   })
 
-  // Breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Home', to: '/' },
-    { label: 'Dashboard' }
-  ]
-
-  // Table columns for pending companies
-  const pendingCompaniesColumns = [
-    { 
-      title: 'Company Name', 
-      dataIndex: 'name', 
-      key: 'name',
-      render: (name) => <span className="font-medium text-gray-900">{name}</span>
-    },
-    { 
-      title: 'Owner', 
-      dataIndex: 'ownerUserId', 
-      key: 'ownerUserId',
-      render: (ownerId) => `User #${ownerId}`
-    },
-    { 
-      title: 'Created Date', 
-      dataIndex: 'createdAt', 
-      key: 'createdAt',
-      render: (date) => dayjs(date).format('MMM DD, YYYY')
-    },
-    { 
-      title: 'Status', 
-      dataIndex: 'status', 
-      key: 'status', 
-      render: (status) => <Tag status={status}>{status}</Tag> 
-    },
-    { 
-      title: 'Actions', 
-      key: 'actions', 
-      render: (_, record) => (
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={() => navigate(`/companies/${record.id}`)}
-          >
-            View
-          </Button>
-          <Button 
-            size="sm" 
-            variant="primary"
-            onClick={() => navigate(`/companies/${record.id}/review`)}
-          >
-            Review
-          </Button>
-        </div>
-      )
-    }
-  ]
-
-  // Handle retry for both queries
-  const handleRetry = () => {
-    refetchStats()
-    refetchCompanies()
-  }
-
-  // KPI Card Component
-  const KPICard = ({ title, value, variant = 'primary', loading, error }) => {
-    if (loading) {
-      return (
-        <div className="kpi-card">
-          <Skeleton rows={2} />
-        </div>
-      )
-    }
-
-    if (error) {
-      return (
-        <div className="kpi-card">
-          <div className="kpi-label">{title}</div>
-          <div className="text-2xl font-bold text-red-500">Error</div>
-        </div>
-      )
-    }
-
+  if (statsLoading) {
     return (
-      <div className={`kpi-card kpi-${variant}`}>
-        <div className="kpi-label">{title}</div>
-        <div className="kpi-value">{value?.toLocaleString() || 0}</div>
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Đang tải thống kê...</div>
       </div>
     )
   }
 
-  // Error state for entire dashboard
-  if (statsError && companiesError) {
+  if (statsError) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Breadcrumbs items={breadcrumbItems} />
-            <h1 className="text-3xl font-bold text-gray-900 mt-2">Dashboard</h1>
-          </div>
-        </div>
-
-        <EmptyState
-          title="Unable to load dashboard"
-          description="There was an error loading the dashboard data. Please check your connection and try again."
-          action={true}
-          actionText="Retry"
-          onAction={handleRetry}
-          icon={
-            <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-      </div>
+      <Alert
+        message="Lỗi tải dữ liệu"
+        description={statsError.message}
+        type="error"
+        showIcon
+      />
     )
   }
+
+  // Chart configuration
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top'
+      },
+      title: {
+        display: true,
+        text: `Hoạt động ${chartPeriod === '7d' ? '7 ngày' : chartPeriod === '30d' ? '30 ngày' : '90 ngày'} qua`
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        }
+      }
+    }
+  }
+
+  const chartData = {
+    labels: analytics?.jobs?.map(item => item.displayDate) || [],
+    datasets: [
+      {
+        label: 'Jobs mới',
+        data: analytics?.jobs?.map(item => item.count) || [],
+        borderColor: 'rgb(24, 144, 255)',
+        backgroundColor: 'rgba(24, 144, 255, 0.1)',
+        tension: 0.1
+      },
+      {
+        label: 'Users mới',
+        data: analytics?.users?.map(item => item.count) || [],
+        borderColor: 'rgb(82, 196, 26)',
+        backgroundColor: 'rgba(82, 196, 26, 0.1)',
+        tension: 0.1
+      },
+      {
+        label: 'Ứng tuyển',
+        data: analytics?.applications?.map(item => item.count) || [],
+        borderColor: 'rgb(250, 173, 20)',
+        backgroundColor: 'rgba(250, 173, 20, 0.1)',
+        tension: 0.1
+      }
+    ]
+  }
+
+  // Recent activity table columns
+  const jobColumns = [
+    {
+      title: 'Tiêu đề Job',
+      dataIndex: 'title',
+      key: 'title',
+      ellipsis: true
+    },
+    {
+      title: 'Công ty',
+      dataIndex: ['employers', 'company_name'],
+      key: 'company'
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date) => new Date(date).toLocaleDateString('vi-VN')
+    }
+  ]
+
+  const applicationColumns = [
+    {
+      title: 'Ứng viên',
+      dataIndex: ['users', 'full_name'],
+      key: 'candidate',
+      render: (name, record) => name || record.users?.email
+    },
+    {
+      title: 'Job',
+      dataIndex: ['jobs', 'title'],
+      key: 'job'
+    },
+    {
+      title: 'Ngày ứng tuyển',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date) => new Date(date).toLocaleDateString('vi-VN')
+    }
+  ]
+
+  const companyColumns = [
+    {
+      title: 'Tên công ty',
+      dataIndex: 'company_name',
+      key: 'name'
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'verified',
+      key: 'status',
+      render: (verified) => (
+        <Tag color={verified ? 'green' : 'orange'}>
+          {verified ? 'Đã duyệt' : 'Chờ duyệt'}
+        </Tag>
+      )
+    },
+    {
+      title: 'Ngày đăng ký',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date) => new Date(date).toLocaleDateString('vi-VN')
+    }
+  ]
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Breadcrumbs items={breadcrumbItems} />
-          <h1 className="text-3xl font-bold text-gray-900 mt-2">Dashboard</h1>
-        </div>
-      </div>
-
-      {/* KPI Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KPICard
-          title="Total Users"
-          value={stats?.totalUsers}
-          variant="primary"
-          loading={statsLoading}
-          error={statsError}
-        />
-        <KPICard
-          title="Total Jobs"
-          value={stats?.totalJobs}
-          variant="success"
-          loading={statsLoading}
-          error={statsError}
-        />
-        <KPICard
-          title="Total Applications"
-          value={stats?.totalApplications}
-          variant="purple"
-          loading={statsLoading}
-          error={statsError}
-        />
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Applicants Bar Chart */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Applicants</h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Skeleton rows={8} />
-            </div>
-          ) : statsError ? (
-            <div className="flex items-center justify-center h-64">
-              <EmptyState
-                title="Chart Error"
-                description="Unable to load chart data"
-                action={true}
-                actionText="Retry"
-                onAction={refetchStats}
-                icon={
-                  <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                }
-              />
-            </div>
-          ) : (
-            <Chart 
-              type="bar" 
-              data={stats?.monthlyApplicants || []} 
-              height={300}
-              colors={['#3B82F6', '#10B981', '#F59E0B']}
+    <div>
+      <AntTitle level={2}>
+        Thống kê tổng quan
+      </AntTitle>
+      
+      {/* Main Statistics Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Tổng Users"
+              value={stats?.users?.total || 0}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
             />
-          )}
-        </div>
-
-        {/* Application Status Pie Chart */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Application Status</h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Skeleton rows={8} />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              +{stats?.users?.newThisMonth || 0} tháng này
             </div>
-          ) : statsError ? (
-            <div className="flex items-center justify-center h-64">
-              <EmptyState
-                title="Chart Error"
-                description="Unable to load chart data"
-                action={true}
-                actionText="Retry"
-                onAction={refetchStats}
-                icon={
-                  <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                  </svg>
-                }
-              />
-            </div>
-          ) : (
-            <Chart 
-              type="pie" 
-              data={stats?.applicantsStatus || []} 
-              height={300}
-              colors={['#F59E0B', '#10B981', '#EF4444']}
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Tổng Jobs"
+              value={stats?.jobs?.total || 0}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: '#52c41a' }}
             />
-          )}
-        </div>
-      </div>
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              {stats?.jobs?.accepted || 0} đã duyệt
+            </div>
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Companies"
+              value={stats?.companies?.total || 0}
+              prefix={<BuildOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              {stats?.companies?.pending || 0} chờ duyệt
+            </div>
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Lượt ứng tuyển"
+              value={stats?.applications?.total || 0}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: '#faad14' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              {stats?.applications?.pending || 0} chờ xử lý
+            </div>
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Recent Reviews Section */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Reviews</h2>
-          <span className="text-sm text-gray-500">Pending Companies</span>
-        </div>
+      {/* Detailed Stats Row */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={8}>
+          <Card title="Phân loại Users" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>👔 Nhà tuyển dụng:</span>
+                <strong>{stats?.users?.employers || 0}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>🎯 Ứng viên:</span>
+                <strong>{stats?.users?.candidates || 0}</strong>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+        
+        <Col xs={24} md={8}>
+          <Card title="Trạng thái Jobs" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Active:</span>
+                <strong>{stats?.jobs?.active || 0}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Expired:</span>
+                <strong>{stats?.jobs?.expired || 0}</strong>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+        
+        <Col xs={24} md={8}>
+          <Card title="Ứng tuyển" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Chờ xử lý:</span>
+                <strong>{stats?.applications?.pending || 0}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Đã duyệt:</span>
+                <strong>{stats?.applications?.accepted || 0}</strong>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
 
-        {companiesLoading ? (
-          <Skeleton type="table" rows={5} />
-        ) : companiesError ? (
-          <EmptyState
-            title="Unable to load pending companies"
-            description="There was an error loading the pending companies. Please try again."
-            action={true}
-            actionText="Retry"
-            onAction={refetchCompanies}
-            icon={
-              <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-2 0H7m5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6m-5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6" />
-              </svg>
+      {/* Analytics Chart */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col span={24}>
+          <Card 
+            title="📈 Biểu đồ hoạt động" 
+            loading={analyticsLoading}
+            extra={
+              <Select
+                value={chartPeriod}
+                onChange={setChartPeriod}
+                style={{ width: 120 }}
+              >
+                <Option value="7d">7 ngày</Option>
+                <Option value="30d">30 ngày</Option>
+                <Option value="90d">90 ngày</Option>
+              </Select>
             }
-          />
-        ) : !pendingCompanies || pendingCompanies.length === 0 ? (
-          <EmptyState
-            title="Không có công ty pending"
-            description="There are currently no companies waiting for review."
-            icon={
-              <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-        ) : (
-          <Table
-            columns={pendingCompaniesColumns}
-            data={pendingCompanies}
-            rowKey="id"
-            pagination={false}
-          />
-        )}
-      </div>
+          >
+            {analytics && (
+              <Line options={chartOptions} data={chartData} height={80} />
+            )}
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Debug Info for Development */}
-      {(statsError || companiesError) && (
-        <div className="card p-4 bg-yellow-50 border-yellow-200">
-          <h3 className="text-sm font-semibold text-yellow-800 mb-2">Development Debug Info</h3>
-          <p className="text-yellow-700 text-sm">
-            Make sure the mock server is running: <code className="bg-yellow-100 px-1 rounded">npm run mock</code>
-          </p>
-          {statsError && (
-            <p className="text-yellow-700 text-sm mt-1">Stats Error: {statsError.message}</p>
-          )}
-          {companiesError && (
-            <p className="text-yellow-700 text-sm mt-1">Companies Error: {companiesError.message}</p>
-          )}
-        </div>
-      )}
+      {/* Recent Activity Tables */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={8}>
+          <Card title="🆕 Jobs mới nhất" size="small">
+            <Table
+              columns={jobColumns}
+              dataSource={stats?.recentActivity?.recentJobs || []}
+              pagination={false}
+              rowKey="id"
+              size="small"
+              scroll={{ x: 300 }}
+            />
+          </Card>
+        </Col>
+        
+        <Col xs={24} lg={8}>
+          <Card title="📝 Ứng tuyển gần đây" size="small">
+            <Table
+              columns={applicationColumns}
+              dataSource={stats?.recentActivity?.recentApplications || []}
+              pagination={false}
+              rowKey="id"
+              size="small"
+              scroll={{ x: 300 }}
+            />
+          </Card>
+        </Col>
+        
+        <Col xs={24} lg={8}>
+          <Card 
+            title={
+              <Space>
+                🏢 Companies mới
+                {stats?.companies?.pending > 0 && (
+                  <Badge count={stats.companies.pending} />
+                )}
+              </Space>
+            } 
+            size="small"
+          >
+            <Table
+              columns={companyColumns}
+              dataSource={stats?.recentActivity?.recentCompanies || []}
+              pagination={false}
+              rowKey="id"
+              size="small"
+              scroll={{ x: 300 }}
+            />
+          </Card>
+        </Col>
+      </Row>
     </div>
   )
 }

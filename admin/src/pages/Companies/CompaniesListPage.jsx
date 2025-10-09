@@ -1,395 +1,377 @@
-import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate, useLocation } from 'react-router-dom'
-import Button from '../../components/common/Button'
-import Table from '../../components/common/Table'
-import Tag from '../../components/common/Tag'
-import SearchInput from '../../components/common/SearchInput'
-import Select from '../../components/common/Select'
-import Skeleton from '../../components/common/Skeleton'
-import EmptyState from '../../components/common/EmptyState'
-import { getCompanies } from '../../services/companies'
-import dayjs from 'dayjs'
+import React, { useState } from 'react'
+import { 
+  Table, 
+  Button, 
+  Tag, 
+  Space, 
+  Input, 
+  Select, 
+  Card, 
+  Typography,
+  Modal,
+  message,
+  Avatar,
+  Tooltip,
+  Badge,
+  Row,
+  Col,
+  Statistic
+} from 'antd'
+import { 
+  SearchOutlined, 
+  EyeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
+  BuildOutlined,
+  ClockCircleOutlined
+} from '@ant-design/icons'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getCompanies, reviewCompany, getCompanyStats } from '../../services/companyService'
+import { useNavigate } from 'react-router-dom'
 
-// Simple hook for URL query params
-const useQueryParams = () => {
+const { Title } = Typography
+const { Option } = Select
+const { TextArea } = Input
+
+const CompaniesListPage = () => {
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 20,
+    search: '',
+    is_verified: undefined
+  })
+  
+  const [reviewModal, setReviewModal] = useState({
+    visible: false,
+    company: null,
+    action: null
+  })
+  
+  const [adminNote, setAdminNote] = useState('')
+  
   const navigate = useNavigate()
-  const location = useLocation()
-  
-  const setMultipleQueryParams = (updates) => {
-    // Only update if we're still on the same page to avoid race conditions
-    const currentParams = new URLSearchParams(location.search)
-    let hasChanges = false
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      const currentValue = currentParams.get(key)
-      const newValue = (value === undefined || value === null || value === '') ? null : String(value)
-      
-      if (newValue === null && currentValue !== null) {
-        currentParams.delete(key)
-        hasChanges = true
-      } else if (newValue !== null && currentValue !== newValue) {
-        currentParams.set(key, newValue)
-        hasChanges = true
-      }
-    })
-    
-    // Only navigate if there are actual changes and we're on the same page
-    if (hasChanges) {
-      const newSearch = currentParams.toString()
-      navigate({ 
-        pathname: location.pathname,
-        search: newSearch 
-      }, { replace: true })
-    }
-  }
-  
-  const getQueryParam = (key, defaultValue = '') => {
-    return new URLSearchParams(location.search).get(key) || defaultValue
-  }
-  
-  return { getQueryParam, setMultipleQueryParams }
-}
+  const queryClient = useQueryClient()
 
-function CompaniesListPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { getQueryParam, setMultipleQueryParams } = useQueryParams()
-  
-  // URL state
-  const [page, setPage] = useState(parseInt(getQueryParam('page', '1'), 10))
-  const [pageSize, setPageSize] = useState(parseInt(getQueryParam('pageSize', '10'), 10))
-  const [status, setStatus] = useState(getQueryParam('status', ''))
-  const [searchQuery, setSearchQuery] = useState(getQueryParam('q', ''))
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Clean up when leaving the page
-  useEffect(() => {
-    return () => {
-      // Component unmounting - prevent any pending URL updates
-    }
-  }, [])
-
-  // Update URL when filters change - only when on companies page
-  useEffect(() => {
-    if (location.pathname === '/companies') {
-      setMultipleQueryParams({
-        page: page > 1 ? page : undefined,
-        pageSize: pageSize !== 10 ? pageSize : undefined,
-        status: status,
-        q: debouncedSearch
-      })
-    }
-  }, [page, pageSize, status, debouncedSearch, location.pathname, setMultipleQueryParams])
-
-  // Reset to page 1 when filters change (but don't update URL here to avoid race condition)
-  useEffect(() => {
-    if (page > 1 && (status !== getQueryParam('status', '') || debouncedSearch !== getQueryParam('q', ''))) {
-      setPage(1)
-    }
-  }, [status, debouncedSearch])
-
-  // Build query params for API
-  const buildQueryParams = () => {
-    const params = {
-      _page: page,
-      _limit: pageSize,
-      _sort: 'createdAt',
-      _order: 'desc'
-    }
-    
-    if (status) {
-      params.status = status
-    }
-    
-    if (debouncedSearch) {
-      params.name_like = debouncedSearch
-    }
-    
-    return params
-  }
-
-  // Fetch companies
-  const { 
-    data: companiesData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useQuery({
-    queryKey: ['companies', 'list', { page, pageSize, status, q: debouncedSearch }],
-    queryFn: () => getCompanies(buildQueryParams()),
-    staleTime: 30_000, // 30 seconds
-    keepPreviousData: true,
-    retry: 3
+  // Fetch companies data
+  const { data: companiesData, isLoading } = useQuery({
+    queryKey: ['companies', filters],
+    queryFn: () => getCompanies(filters),
+    keepPreviousData: true
   })
 
-  const companies = companiesData?.items || []
-  const total = companiesData?.total || 0
+  // Fetch company statistics
+  const { data: companyStats } = useQuery({
+    queryKey: ['company-stats'],
+    queryFn: getCompanyStats,
+    refetchInterval: 60000
+  })
 
-  // Status options
-  const statusOptions = [
-    { value: '', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' }
-  ]
+  // Review company mutation
+  const reviewMutation = useMutation({
+    mutationFn: ({ companyId, isApproved, note }) => reviewCompany(companyId, isApproved, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['companies'])
+      queryClient.invalidateQueries(['company-stats'])
+      message.success('Đã xử lý thành công')
+      setReviewModal({ visible: false, company: null, action: null })
+      setAdminNote('')
+    },
+    onError: (error) => {
+      message.error(`Lỗi: ${error.message}`)
+    }
+  })
 
-  // Page size options
-  const pageSizeOptions = [
-    { value: '10', label: '10' },
-    { value: '20', label: '20' },
-    { value: '50', label: '50' }
-  ]
+  const handleReview = (company, action) => {
+    setReviewModal({
+      visible: true,
+      company,
+      action
+    })
+  }
 
-  // Table columns
+  const confirmReview = () => {
+    reviewMutation.mutate({
+      companyId: reviewModal.company.id,
+      isApproved: reviewModal.action === 'approve',
+      note: adminNote
+    })
+  }
+
+  const handleSearch = (value) => {
+    setFilters(prev => ({ ...prev, search: value, page: 1 }))
+  }
+
+  const handleStatusFilter = (value) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      is_verified: value === 'all' ? undefined : value === 'verified', 
+      page: 1 
+    }))
+  }
+
+  const handlePageChange = (page, pageSize) => {
+    setFilters(prev => ({ ...prev, page, limit: pageSize }))
+  }
+
+  const getStatusTag = (isVerified) => {
+    if (isVerified === true) {
+      return <Tag color="green" icon={<CheckCircleOutlined />}>✅ Đã duyệt</Tag>
+    } else {
+      return <Tag color="orange" icon={<ClockCircleOutlined />}>⏳ Chờ duyệt</Tag>
+    }
+  }
+
   const columns = [
     {
-      title: 'Company Name',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name) => <span className="font-medium text-gray-900">{name}</span>
+      title: 'Logo',
+      dataIndex: 'company_logo',
+      key: 'company_logo',
+      width: 60,
+      render: (logo, record) => (
+        <Avatar 
+          src={logo} 
+          icon={<BuildOutlined />}
+          size="default"
+        >
+          {record.company_name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+      )
     },
     {
-      title: 'Owner',
-      dataIndex: 'ownerUserId',
-      key: 'ownerUserId',
-      render: (ownerId) => <span className="text-gray-600">User #{ownerId}</span>
-    },
-    {
-      title: 'Created Date',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => dayjs(date).format('DD/MM/YYYY')
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => <Tag status={status}>{status}</Tag>
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
+      title: 'Thông tin công ty',
+      key: 'info',
       render: (_, record) => (
-        <div className="flex space-x-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/companies/${record.id}`)}
-          >
-            View
-          </Button>
-          {record.status === 'pending' && (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => {
-                const currentPath = location.pathname + location.search
-                const backParam = currentPath ? `?back=${encodeURIComponent(currentPath)}` : ''
-                navigate(`/companies/${record.id}/review${backParam}`)
-              }}
-            >
-              Review
-            </Button>
+        <div>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+            {record.company_name}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: 2 }}>
+            � {record.contact_person}
+          </div>
+          {record.company_website && (
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              🌐 {record.company_website}
+            </div>
+          )}
+          {record.company_address && (
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              📍 {record.company_address}
+            </div>
           )}
         </div>
+      )
+    },
+    {
+      title: 'Ngành nghề',
+      dataIndex: 'industry',
+      key: 'industry',
+      width: 120,
+      render: (industry) => (
+        <Tag color="blue">{industry || 'Chưa cập nhật'}</Tag>
+      )
+    },
+    {
+      title: 'Quy mô',
+      dataIndex: 'company_size',
+      key: 'company_size',
+      width: 100,
+      render: (size) => size || 'N/A'
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      width: 120,
+      render: (_, record) => getStatusTag(record.verified)
+    },
+    {
+      title: 'Người đại diện',
+      dataIndex: 'users',
+      key: 'representative',
+      width: 150,
+      render: (users) => users?.[0]?.username || users?.[0]?.email || 'N/A'
+    },
+    {
+      title: 'Ngày đăng ký',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 120,
+      render: (date) => (
+        <Tooltip title={new Date(date).toLocaleString('vi-VN')}>
+          {new Date(date).toLocaleDateString('vi-VN')}
+        </Tooltip>
+      )
+    },
+    {
+      title: 'Hành động',
+      key: 'actions',
+      width: 200,
+      render: (_, record) => (
+        <Space>
+          <Tooltip title="Xem chi tiết">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/companies/${record.id}`)}
+            />
+          </Tooltip>
+          
+          {record.verified === false && (
+            <>
+              <Tooltip title="Duyệt công ty">
+                <Button
+                  type="text"
+                  icon={<CheckCircleOutlined />}
+                  style={{ color: '#52c41a' }}
+                  loading={reviewMutation.isLoading}
+                  onClick={() => handleReview(record, 'approve')}
+                />
+              </Tooltip>
+              
+              <Tooltip title="Từ chối">
+                <Button
+                  type="text"
+                  icon={<CloseCircleOutlined />}
+                  danger
+                  loading={reviewMutation.isLoading}
+                  onClick={() => handleReview(record, 'reject')}
+                />
+              </Tooltip>
+            </>
+          )}
+        </Space>
       )
     }
   ]
 
-  // Pagination info
-  const startItem = (page - 1) * pageSize + 1
-  const endItem = Math.min(page * pageSize, total)
-  const totalPages = Math.ceil(total / pageSize)
-
-  // Handle pagination
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setPage(page - 1)
-    }
-  }
-
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1)
-    }
-  }
-
-  // Handle filter changes
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value)
-  }
-
-  const handleStatusChange = (e) => {
-    const newStatus = e.target.value
-    setStatus(newStatus)
-    setPage(1) // Reset to page 1, URL will be updated by useEffect
-  }
-
-  const handlePageSizeChange = (e) => {
-    const newPageSize = parseInt(e.target.value, 10)
-    setPageSize(newPageSize)
-    setPage(1) // Reset to first page, URL will be updated by useEffect
-  }
-
-  const handleClearSearch = () => {
-    setSearchQuery('')
-    setPage(1) // Reset to page 1, URL will be updated by useEffect
-  }
-
-  const handleClearAllFilters = () => {
-    setSearchQuery('')
-    setStatus('')
-    setPage(1)
-    setPageSize(10)
-    // URL will be updated by useEffect automatically
-  }
+  // Count pending companies for badge
+  const pendingCount = companyStats?.pending || 0
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
-      </div>
+    <div>
+      <Title level={2}>
+        Danh Sách Companies 
+        {pendingCount > 0 && (
+          <Badge count={pendingCount} style={{ marginLeft: 8 }} />
+        )}
+      </Title>
+      
+      {/* Statistics Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Tổng Companies"
+              value={companyStats?.total || 0}
+              prefix={<BuildOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Đã duyệt"
+              value={companyStats?.verified || 0}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card>
+            <Statistic
+              title="Chờ duyệt"
+              value={companyStats?.pending || 0}
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+      
+      <Card>
+        <Space style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+          <Input.Search
+            placeholder="Tìm công ty, email..."
+            allowClear
+            style={{ width: 300 }}
+            onSearch={handleSearch}
+            enterButton={<SearchOutlined />}
+          />
+          
+          <Select
+            placeholder="Trạng thái duyệt"
+            style={{ width: 150 }}
+            allowClear
+            onChange={handleStatusFilter}
+          >
+            <Option value="all">Tất cả</Option>
+            <Option value="pending">⏳ Chờ duyệt</Option>
+            <Option value="verified">✅ Đã duyệt</Option>
+            <Option value="rejected">❌ Từ chối</Option>
+          </Select>
+        </Space>
+        
+        <Table
+          columns={columns}
+          dataSource={companiesData?.data || []}
+          rowKey="id"
+          loading={isLoading}
+          pagination={{
+            current: filters.page,
+            pageSize: filters.limit,
+            total: companiesData?.count || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} của ${total} companies`,
+            onChange: handlePageChange,
+            onShowSizeChange: handlePageChange
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </Card>
 
-      {/* Filters */}
-      <div className="card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-2">
-            <SearchInput
-              placeholder="Search companies..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onClear={handleClearSearch}
-            />
-          </div>
-          <div>
-            <Select
-              value={status}
-              onChange={handleStatusChange}
-              options={statusOptions}
-              placeholder="Filter by status"
-            />
-          </div>
-          <div>
-            <Select
-              value={pageSize.toString()}
-              onChange={handlePageSizeChange}
-              options={pageSizeOptions}
-              placeholder="Page size"
-            />
-          </div>
+      {/* Review Modal */}
+      <Modal
+        title={
+          <Space>
+            <ExclamationCircleOutlined style={{ color: '#faad14' }} />
+            {reviewModal.action === 'approve' ? '✅ Duyệt Company' : '❌ Từ chối Company'}
+          </Space>
+        }
+        open={reviewModal.visible}
+        onOk={confirmReview}
+        onCancel={() => {
+          setReviewModal({ visible: false, company: null, action: null })
+          setAdminNote('')
+        }}
+        confirmLoading={reviewMutation.isLoading}
+        okText="Xác nhận"
+        cancelText="Hủy"
+        width={600}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <strong>🏢 Công ty:</strong> {reviewModal.company?.name}
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <strong>📧 Email:</strong> {reviewModal.company?.email}
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <strong>🌐 Website:</strong> {reviewModal.company?.website || 'N/A'}
         </div>
         
-        {/* Clear All Filters Button */}
-        {(searchQuery || status || page > 1 || pageSize !== 10) && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAllFilters}
-            >
-              Clear All Filters
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Table */}
-      <div className="card">
-        {isLoading ? (
-          <Skeleton type="table" rows={pageSize} />
-        ) : error ? (
-          <div className="p-6">
-            <EmptyState
-              title="Unable to load companies"
-              description="There was an error loading the companies. Please try again."
-              action={true}
-              actionText="Retry"
-              onAction={refetch}
-              icon={
-                <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-2 0H7m5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6m-5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6" />
-                </svg>
-              }
-            />
-          </div>
-        ) : companies.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              title="No companies found"
-              description={
-                status || debouncedSearch
-                  ? "No companies match your current filters. Try adjusting your search criteria."
-                  : "There are no companies registered yet."
-              }
-              icon={
-                <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-2 0H7m5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6m-5 0v-6a1 1 0 011-1h2a1 1 0 011 1v6" />
-                </svg>
-              }
-            />
-          </div>
-        ) : (
-          <>
-            <Table
-              columns={columns}
-              data={companies}
-              rowKey="id"
-              pagination={false}
-            />
-            
-            {/* Pagination Footer */}
-            <div className="border-t border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  Showing {startItem} to {endItem} of {total} companies
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={handlePrevPage}
-                    disabled={page <= 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleNextPage}
-                    disabled={page >= totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Debug Info */}
-      {error && (
-        <div className="card p-4 bg-yellow-50 border-yellow-200">
-          <h3 className="text-sm font-semibold text-yellow-800 mb-2">Development Debug Info</h3>
-          <p className="text-yellow-700 text-sm">
-            Make sure the mock server is running: <code className="bg-yellow-100 px-1 rounded">npm run mock</code>
-          </p>
-          <p className="text-yellow-700 text-sm mt-1">Error: {error.message}</p>
+        <div style={{ marginBottom: 8 }}>
+          <strong>📝 Ghi chú admin:</strong>
         </div>
-      )}
+        <TextArea
+          rows={4}
+          value={adminNote}
+          onChange={(e) => setAdminNote(e.target.value)}
+          placeholder="Nhập ghi chú cho quyết định này (tùy chọn)..."
+        />
+      </Modal>
     </div>
   )
 }

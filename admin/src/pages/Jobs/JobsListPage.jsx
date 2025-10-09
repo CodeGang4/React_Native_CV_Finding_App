@@ -1,446 +1,334 @@
-import React, { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import Button from '../../components/common/Button'
-import Table from '../../components/common/Table'
-import Tag from '../../components/common/Tag'
-import SearchInput from '../../components/common/SearchInput'
-import Select from '../../components/common/Select'
-import Skeleton from '../../components/common/Skeleton'
-import EmptyState from '../../components/common/EmptyState'
-import JobErrorBoundary from '../../components/common/JobErrorBoundary'
-import { getJobs, patchJob } from '../../services/jobs'
+import React, { useState } from 'react'
+import { 
+  Table, 
+  Button, 
+  Tag, 
+  Space, 
+  Input, 
+  Select, 
+  Card, 
+  Typography,
+  Avatar,
+  Tooltip,
+  Row,
+  Col,
+  Statistic,
+  Alert
+} from 'antd'
+import { 
+  SearchOutlined, 
+  EyeOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
+  FileTextOutlined,
+  DollarOutlined
+} from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
+import { getJobs, getJobStats } from '../../services/jobService'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/vi'
 
-function JobsListPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const queryClient = useQueryClient()
+dayjs.extend(relativeTime)
+dayjs.locale('vi')
+
+const { Title } = Typography
+const { Option } = Select
+
+const JobsListPage = () => {
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 20,
+    search: '',
+    status: '',
+    job_type: ''
+  })
   
-  // URL state
-  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1', 10))
-  const [pageSize, setPageSize] = useState(parseInt(searchParams.get('pageSize') || '10', 10))
-  const [type, setType] = useState(searchParams.get('type') || '')
-  const [status, setStatus] = useState(searchParams.get('status') || '')
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+  const navigate = useNavigate()
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+  // Fetch jobs data
+  const { data: jobsData, isLoading, error: jobsError } = useQuery({
+    queryKey: ['jobs', filters],
+    queryFn: async () => {
+      const result = await getJobs(filters)
+      console.log('Jobs data:', result)
+      return result
+    },
+    keepPreviousData: true
+  })
 
-  // Update URL when filters change - only when on jobs page
-  useEffect(() => {
-    if (location.pathname === '/jobs') {
-      const params = new URLSearchParams()
-      
-      if (page > 1) params.set('page', page.toString())
-      if (pageSize !== 10) params.set('pageSize', pageSize.toString())
-      if (type) params.set('type', type)
-      if (status) params.set('status', status)
-      if (debouncedSearch) params.set('q', debouncedSearch)
-      
-      setSearchParams(params, { replace: true })
-    }
-  }, [page, pageSize, type, status, debouncedSearch, location.pathname, setSearchParams])
+  // Fetch job statistics
+  const { data: jobStats } = useQuery({
+    queryKey: ['job-stats'],
+    queryFn: getJobStats,
+    refetchInterval: 60000
+  })
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    const currentType = searchParams.get('type') || ''
-    const currentStatus = searchParams.get('status') || ''
-    const currentQ = searchParams.get('q') || ''
-    
-    if (page > 1 && (type !== currentType || status !== currentStatus || debouncedSearch !== currentQ)) {
-      setPage(1)
+  // Log errors
+  React.useEffect(() => {
+    if (jobsError) {
+      console.error('Jobs error:', jobsError)
     }
-  }, [type, status, debouncedSearch])
+    if (jobsData?.error) {
+      console.error('Jobs data error:', jobsData.error)
+    }
+  }, [jobsError, jobsData])
 
-  // Build query params for API
-  const buildQueryParams = () => {
-    const params = {
-      _page: page,
-      _limit: pageSize,
-      _sort: 'createdAt',
-      _order: 'desc'
-    }
-    
-    if (type) {
-      params.type = type
-    }
-    
-    if (status) {
-      params.status = status
-    }
-    
-    if (debouncedSearch) {
-      params.title_like = debouncedSearch
-    }
-    
-    return params
+
+
+  const handleSearch = (value) => {
+    setFilters(prev => ({ ...prev, search: value, page: 1 }))
   }
 
-  // Fetch jobs
-  const { 
-    data: jobsData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useQuery({
-    queryKey: ['jobs', 'list', { page, pageSize, type, status, q: debouncedSearch }],
-    queryFn: () => getJobs(buildQueryParams()),
-    staleTime: 30_000, // 30 seconds
-    keepPreviousData: true,
-    retry: 3
-  })
+  const handleStatusFilter = (value) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      is_expired: value === 'all' ? undefined : value === 'expired' ? true : value === 'active' ? false : undefined,
+      page: 1 
+    }))
+  }
 
-  const jobs = jobsData?.items || []
-  const total = jobsData?.total || 0
+  const handleJobTypeFilter = (value) => {
+    setFilters(prev => ({ ...prev, job_type: value, page: 1 }))
+  }
 
-  // Toggle status mutation with optimistic updates
-  const toggleStatusMutation = useMutation({
-    mutationFn: ({ id, newStatus }) => patchJob(id, { status: newStatus }),
-    onMutate: async ({ id, newStatus }) => {
-      // Cancel any outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries(['jobs'])
-      
-      // Snapshot the previous value
-      const previousJobs = queryClient.getQueryData(['jobs', 'list', { page, pageSize, type, status, q: debouncedSearch }])
-      
-      // Optimistically update to the new value
-      queryClient.setQueryData(['jobs', 'list', { page, pageSize, type, status, q: debouncedSearch }], old => {
-        if (!old || !old.items) return old
-        
-        return {
-          ...old,
-          items: old.items.map(job => 
-            job.id === id ? { ...job, status: newStatus } : job
-          )
-        }
-      })
-      
-      // Return a context object with the snapshotted value
-      return { previousJobs }
-    },
-    onError: (err, { id, newStatus }, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousJobs) {
-        queryClient.setQueryData(['jobs', 'list', { page, pageSize, type, status, q: debouncedSearch }], context.previousJobs)
-      }
-      console.error('Error updating job status:', err)
-      alert('Failed to update job status. Please try again.')
-    },
-    onSettled: () => {
-      // Always refetch after error or success to ensure we're in sync with the server
-      queryClient.invalidateQueries(['jobs'])
+  const handlePageChange = (page, pageSize) => {
+    setFilters(prev => ({ ...prev, page, limit: pageSize }))
+  }
+
+  const getStatusTag = (isExpired) => {
+    if (isExpired) {
+      return <Tag color="red" icon={<ExclamationCircleOutlined />}>⏰ Hết hạn</Tag>
+    } else {
+      return <Tag color="green" icon={<CheckCircleOutlined />}>🟢 Đang tuyển</Tag>
     }
-  })
+  }
 
-  // Type options
-  const typeOptions = [
-    { value: '', label: 'All Types' },
-    { value: 'fulltime', label: 'Full-time' },
-    { value: 'parttime', label: 'Part-time' },
-    { value: 'remote', label: 'Remote' },
-    { value: 'contract', label: 'Contract' }
-  ]
-
-  // Status options
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'open', label: 'Open' },
-    { value: 'closed', label: 'Closed' },
-    { value: 'hidden', label: 'Hidden' }
-  ]
-
-  // Page size options
-  const pageSizeOptions = [
-    { value: '10', label: '10' },
-    { value: '20', label: '20' },
-    { value: '50', label: '50' }
-  ]
-
-  // Handle toggle status with debouncing
-  const handleToggleStatus = React.useCallback((job) => {
-    // Prevent multiple rapid clicks on the same job
-    if (toggleStatusMutation.isLoading) return
-    
-    const newStatus = job.status === 'open' ? 'hidden' : 'open'
-    toggleStatusMutation.mutate({ id: job.id, newStatus })
-  }, [toggleStatusMutation])
-
-  // Format salary
   const formatSalary = (salary) => {
-    if (!salary) return 'Not specified'
-    if (typeof salary === 'string') return salary
-    return `$${salary.toLocaleString()}`
+    if (!salary) return 'Thỏa thuận'
+    return salary
   }
 
-  // Table columns
   const columns = [
     {
-      title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
-      render: (title) => <span className="font-medium text-gray-900">{title}</span>
-    },
-    {
-      title: 'Company',
-      dataIndex: 'company',
-      key: 'company',
-      render: (company) => <span className="text-gray-600">{company}</span>
-    },
-    {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type) => (
-        <Tag variant="secondary">
-          {type}
-        </Tag>
+      title: 'Logo',
+      dataIndex: ['employers', 'company_logo'],
+      key: 'logo',
+      width: 60,
+      render: (logo, record) => (
+        <Avatar 
+          src={logo} 
+          icon={<FileTextOutlined />}
+          size="default"
+        >
+          {record.employers?.company_name?.charAt(0)?.toUpperCase()}
+        </Avatar>
       )
     },
     {
-      title: 'Location',
-      dataIndex: 'location',
-      key: 'location',
-      render: (location) => <span className="text-gray-600">{location}</span>
-    },
-    {
-      title: 'Salary',
-      dataIndex: 'salary',
-      key: 'salary',
-      render: (salary) => <span className="text-gray-600">{formatSalary(salary)}</span>
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag variant={
-          status === 'open' ? 'success' :
-          status === 'closed' ? 'error' : 'warning'
-        }>
-          {status}
-        </Tag>
-      )
-    },
-    {
-      title: 'Created At',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => dayjs(date).format('DD/MM/YYYY')
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
+      title: 'Thông tin Job',
+      key: 'info',
       render: (_, record) => (
-        <div className="flex space-x-2" key={`actions-${record.id}`}>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/jobs/${record.id}`)}
-          >
-            View
-          </Button>
-          {record.status !== 'closed' && (
-            <Button
-              size="sm"
-              variant={record.status === 'open' ? 'warning' : 'success'}
-              onClick={() => handleToggleStatus(record)}
-              loading={toggleStatusMutation.isLoading && toggleStatusMutation.variables?.id === record.id}
-              disabled={toggleStatusMutation.isLoading}
-            >
-              {record.status === 'open' ? 'Hide' : 'Show'}
-            </Button>
-          )}
+        <div>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+            {record.title}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: 2 }}>
+            🏢 {record.employers?.company_name}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            📍 {record.location}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            � {record.position}
+          </div>
         </div>
+      )
+    },
+    {
+      title: 'Loại hình',
+      dataIndex: 'job_type',
+      key: 'job_type',
+      width: 120,
+      render: (jobType) => {
+        const typeMap = {
+          'fulltime': { label: '💼 Full-time', color: 'green' },
+          'parttime': { label: '⏰ Part-time', color: 'orange' },
+          'internship': { label: '🎓 Internship', color: 'purple' }
+        }
+        const type = typeMap[jobType] || { label: jobType, color: 'default' }
+        return <Tag color={type.color}>{type.label}</Tag>
+      }
+    },
+    {
+      title: 'Mức lương',
+      key: 'salary',
+      width: 150,
+      render: (_, record) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <DollarOutlined style={{ marginRight: 4, color: '#faad14' }} />
+          <span style={{ fontSize: '12px' }}>
+            {formatSalary(record.salary)}
+          </span>
+        </div>
+      )
+    },
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      width: 120,
+      render: (_, record) => getStatusTag(record.is_expired)
+    },
+    {
+      title: 'Ứng tuyển',
+      dataIndex: 'applications',
+      key: 'applications',
+      width: 80,
+      render: (applications) => (
+        <Tag color="purple">
+          📝 {applications?.length || 0}
+        </Tag>
+      )
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 120,
+      render: (date) => (
+        <Tooltip title={new Date(date).toLocaleString('vi-VN')}>
+          {dayjs(date).fromNow()}
+        </Tooltip>
+      )
+    },
+    {
+      title: 'Hành động',
+      key: 'actions',
+      width: 100,
+      render: (_, record) => (
+        <Tooltip title="Xem chi tiết">
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/jobs/${record.id}`)}
+          />
+        </Tooltip>
       )
     }
   ]
 
-  // Pagination info
-  const startItem = (page - 1) * pageSize + 1
-  const endItem = Math.min(page * pageSize, total)
-  const totalPages = Math.ceil(total / pageSize)
-
-  // Handle filter changes
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value)
-  }
-
-  const handleTypeChange = (e) => {
-    setType(e.target.value)
-    setPage(1)
-  }
-
-  const handleStatusChange = (e) => {
-    setStatus(e.target.value)
-    setPage(1)
-  }
-
-  const handlePageSizeChange = (e) => {
-    const newPageSize = parseInt(e.target.value, 10)
-    setPageSize(newPageSize)
-    setPage(1)
-  }
-
-  const handleClearSearch = () => {
-    setSearchQuery('')
-    setPage(1)
-  }
-
-  const handleClearAllFilters = () => {
-    setSearchQuery('')
-    setType('')
-    setStatus('')
-    setPage(1)
-    setPageSize(10)
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
-      </div>
-
-      {/* Filters */}
-      <div className="card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="md:col-span-2">
-            <SearchInput
-              placeholder="Search jobs by title..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onClear={handleClearSearch}
+    <div>
+      <Title level={2}>Danh Sách Jobs</Title>
+      
+      {/* Error Alert */}
+      {(jobsError || jobsData?.error) && (
+        <Alert
+          message="Lỗi tải dữ liệu Jobs"
+          description={jobsError?.message || jobsData?.error?.message || 'Không thể tải danh sách jobs'}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      
+      {/* Statistics Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Tổng Jobs"
+              value={jobStats?.total || 0}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: '#1890ff' }}
             />
-          </div>
-          <div>
-            <Select
-              value={type}
-              onChange={handleTypeChange}
-              options={typeOptions}
-              placeholder="Filter by type"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Đang tuyển"
+              value={jobStats?.active || 0}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: '#52c41a' }}
             />
-          </div>
-          <div>
-            <Select
-              value={status}
-              onChange={handleStatusChange}
-              options={statusOptions}
-              placeholder="Filter by status"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Hết hạn"
+              value={jobStats?.expired || 0}
+              prefix={<ExclamationCircleOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
             />
-          </div>
-          <div>
-            <Select
-              value={pageSize.toString()}
-              onChange={handlePageSizeChange}
-              options={pageSizeOptions}
-              placeholder="Page size"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Lượt ứng tuyển"
+              value={jobStats?.totalApplications || 0}
+              valueStyle={{ color: '#faad14' }}
             />
-          </div>
-        </div>
+          </Card>
+        </Col>
+      </Row>
+      
+      <Card>
+        <Space style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+          <Input.Search
+            placeholder="Tìm job, công ty..."
+            allowClear
+            style={{ width: 300 }}
+            onSearch={handleSearch}
+            enterButton={<SearchOutlined />}
+          />
+          
+          <Select
+            placeholder="Trạng thái"
+            style={{ width: 150 }}
+            allowClear
+            onChange={handleStatusFilter}
+          >
+            <Option value="active">🟢 Đang tuyển</Option>
+            <Option value="expired">⏰ Hết hạn</Option>
+          </Select>
+          
+          <Select
+            placeholder="Loại hình"
+            style={{ width: 150 }}
+            allowClear
+            onChange={handleJobTypeFilter}
+          >
+            <Option value="fulltime">💼 Full-time</Option>
+            <Option value="parttime">⏰ Part-time</Option>
+            <Option value="internship">🎓 Internship</Option>
+          </Select>
+        </Space>
         
-        {/* Clear All Filters Button */}
-        {(searchQuery || type || status || page > 1 || pageSize !== 10) && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAllFilters}
-            >
-              Clear All Filters
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Results Info */}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <span>
-          Showing {startItem}–{endItem} of {total} jobs
-        </span>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-      </div>
-
-      {/* Table */}
-      <div className="card">
-        {isLoading ? (
-          <Skeleton type="table" rows={pageSize} />
-        ) : error ? (
-          <div className="p-6">
-            <EmptyState
-              title="Unable to load jobs"
-              description="There was an error loading the jobs. Please try again."
-              action={true}
-              actionText="Retry"
-              onAction={refetch}
-            />
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              title="No jobs found"
-              description="No jobs match your current filters."
-            />
-          </div>
-        ) : (
-          <>
-            <JobErrorBoundary>
-              <Table
-                data={jobs}
-                columns={columns}
-                rowKey="id"
-                key={`jobs-table-${page}-${jobs.length}`}
-              />
-            </JobErrorBoundary>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'primary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  })}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+        <Table
+          columns={columns}
+          dataSource={jobsData?.data || []}
+          rowKey="id"
+          loading={isLoading}
+          pagination={{
+            current: filters.page,
+            pageSize: filters.limit,
+            total: jobsData?.count || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} của ${total} jobs`,
+            onChange: handlePageChange,
+            onShowSizeChange: handlePageChange
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </Card>
     </div>
   )
 }

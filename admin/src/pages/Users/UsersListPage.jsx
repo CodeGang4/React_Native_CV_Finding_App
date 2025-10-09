@@ -1,383 +1,223 @@
-import React, { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import Button from '../../components/common/Button'
-import Table from '../../components/common/Table'
-import Tag from '../../components/common/Tag'
-import SearchInput from '../../components/common/SearchInput'
-import Select from '../../components/common/Select'
-import Skeleton from '../../components/common/Skeleton'
-import EmptyState from '../../components/common/EmptyState'
-import { getUsers, patchUser } from '../../services/users'
-import dayjs from 'dayjs'
+import React, { useState } from 'react'
+import { 
+  Table, 
+  Button, 
+  Tag, 
+  Space, 
+  Input, 
+  Select, 
+  Card, 
+  Typography,
+  Avatar,
+  Tooltip,
+  Statistic,
+  Row,
+  Col
+} from 'antd'
+import { 
+  SearchOutlined, 
+  UserOutlined, 
+  EyeOutlined,
+  MailOutlined
+} from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
+import { getUsers, getUserStats } from '../../services/userService'
+import { useNavigate } from 'react-router-dom'
 
-function UsersListPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const queryClient = useQueryClient()
+const { Title } = Typography
+const { Option } = Select
+
+const UsersListPage = () => {
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 20,
+    search: '',
+    role: ''
+  })
   
-  // URL state
-  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1', 10))
-  const [pageSize, setPageSize] = useState(parseInt(searchParams.get('pageSize') || '10', 10))
-  const [role, setRole] = useState(searchParams.get('role') || '')
-  const [status, setStatus] = useState(searchParams.get('status') || '')
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+  const navigate = useNavigate()
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Update URL when filters change - only when on users page
-  useEffect(() => {
-    if (location.pathname === '/users') {
-      const params = new URLSearchParams()
-      
-      if (page > 1) params.set('page', page.toString())
-      if (pageSize !== 10) params.set('pageSize', pageSize.toString())
-      if (role) params.set('role', role)
-      if (status) params.set('status', status)
-      if (debouncedSearch) params.set('q', debouncedSearch)
-      
-      setSearchParams(params, { replace: true })
-    }
-  }, [page, pageSize, role, status, debouncedSearch, location.pathname, setSearchParams])
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    const currentRole = searchParams.get('role') || ''
-    const currentStatus = searchParams.get('status') || ''
-    const currentQ = searchParams.get('q') || ''
-    
-    if (page > 1 && (role !== currentRole || status !== currentStatus || debouncedSearch !== currentQ)) {
-      setPage(1)
-    }
-  }, [role, status, debouncedSearch])
-
-  // Build query params for API
-  const buildQueryParams = () => {
-    const params = {
-      _page: page,
-      _limit: pageSize,
-      _sort: 'createdAt',
-      _order: 'desc'
-    }
-    
-    if (role) {
-      params.role = role
-    }
-    
-    if (status) {
-      params.status = status
-    }
-    
-    if (debouncedSearch) {
-      params.name_like = debouncedSearch
-    }
-    
-    return params
-  }
-
-  // Fetch users
-  const { 
-    data: usersData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useQuery({
-    queryKey: ['users', 'list', { page, pageSize, role, status, q: debouncedSearch }],
-    queryFn: () => getUsers(buildQueryParams()),
-    staleTime: 30_000, // 30 seconds
-    keepPreviousData: true,
-    retry: 3
+  // Fetch users data
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ['users', filters],
+    queryFn: () => getUsers(filters),
+    keepPreviousData: true
   })
 
-  const users = usersData?.items || []
-  const total = usersData?.total || 0
-
-  // Ban/Unban mutation
-  const banMutation = useMutation({
-    mutationFn: ({ id, newStatus }) => patchUser(id, { status: newStatus }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['users'])
-    }
+  // Fetch user statistics
+  const { data: userStats } = useQuery({
+    queryKey: ['user-stats'],
+    queryFn: getUserStats,
+    refetchInterval: 60000
   })
 
-  // Role options
-  const roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'candidate', label: 'Candidate' },
-    { value: 'employer', label: 'Employer' },
-    { value: 'admin', label: 'Admin' }
-  ]
-
-  // Status options
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'banned', label: 'Banned' }
-  ]
-
-  // Page size options
-  const pageSizeOptions = [
-    { value: '10', label: '10' },
-    { value: '20', label: '20' },
-    { value: '50', label: '50' }
-  ]
-
-  // Handle ban/unban
-  const handleToggleBan = (user) => {
-    const newStatus = user.status === 'banned' ? 'active' : 'banned'
-    banMutation.mutate({ id: user.id, newStatus })
+  const handleSearch = (value) => {
+    setFilters(prev => ({ ...prev, search: value, page: 1 }))
   }
 
-  // Table columns
+  const handleRoleFilter = (value) => {
+    setFilters(prev => ({ ...prev, role: value, page: 1 }))
+  }
+
+  const handlePageChange = (page, pageSize) => {
+    setFilters(prev => ({ ...prev, page, limit: pageSize }))
+  }
+
   const columns = [
     {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name) => <span className="font-medium text-gray-900">{name}</span>
+      title: 'Avatar',
+      dataIndex: 'avatar_url',
+      key: 'avatar',
+      width: 60,
+      render: (avatarUrl, record) => (
+        <Avatar 
+          src={avatarUrl} 
+          icon={<UserOutlined />}
+          size="default"
+        >
+          {record.full_name?.charAt(0)?.toUpperCase()}
+        </Avatar>
+      )
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-      render: (email) => <span className="text-gray-600">{email}</span>
+      title: 'Thông tin',
+      key: 'info',
+      render: (_, record) => (
+        <div>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+            {record.username || 'Chưa cập nhật'}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            <MailOutlined style={{ marginRight: 4 }} />
+            {record.email}
+          </div>
+        </div>
+      )
     },
     {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
+      width: 120,
       render: (role) => (
-        <Tag variant={
-          role === 'admin' ? 'primary' :
-          role === 'employer' ? 'secondary' : 'default'
-        }>
-          {role}
+        <Tag color={role === 'employer' ? 'blue' : 'green'}>
+          {role === 'employer' ? '👔 Nhà tuyển dụng' : '🎯 Ứng viên'}
         </Tag>
       )
     },
+
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Tag variant={status === 'active' ? 'success' : 'error'}>
-          {status}
-        </Tag>
+      title: 'Ngày tham gia',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 120,
+      render: (date) => (
+        <Tooltip title={new Date(date).toLocaleString('vi-VN')}>
+          {new Date(date).toLocaleDateString('vi-VN')}
+        </Tooltip>
       )
     },
     {
-      title: 'Created At',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => dayjs(date).format('DD/MM/YYYY')
-    },
-    {
-      title: 'Actions',
+      title: 'Hành động',
       key: 'actions',
+      width: 100,
       render: (_, record) => (
-        <div className="flex space-x-2">
+        <Tooltip title="Xem chi tiết">
           <Button
-            size="sm"
-            variant="ghost"
+            type="text"
+            icon={<EyeOutlined />}
             onClick={() => navigate(`/users/${record.id}`)}
-          >
-            View
-          </Button>
-          <Button
-            size="sm"
-            variant={record.status === 'banned' ? 'success' : 'error'}
-            onClick={() => handleToggleBan(record)}
-            loading={banMutation.isLoading}
-          >
-            {record.status === 'banned' ? 'Unban' : 'Ban'}
-          </Button>
-        </div>
+          />
+        </Tooltip>
       )
     }
   ]
 
-  // Pagination info
-  const startItem = (page - 1) * pageSize + 1
-  const endItem = Math.min(page * pageSize, total)
-  const totalPages = Math.ceil(total / pageSize)
-
-  // Handle filter changes
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value)
-  }
-
-  const handleRoleChange = (e) => {
-    setRole(e.target.value)
-    setPage(1)
-  }
-
-  const handleStatusChange = (e) => {
-    setStatus(e.target.value)
-    setPage(1)
-  }
-
-  const handlePageSizeChange = (e) => {
-    const newPageSize = parseInt(e.target.value, 10)
-    setPageSize(newPageSize)
-    setPage(1)
-  }
-
-  const handleClearSearch = () => {
-    setSearchQuery('')
-    setPage(1)
-  }
-
-  const handleClearAllFilters = () => {
-    setSearchQuery('')
-    setRole('')
-    setStatus('')
-    setPage(1)
-    setPageSize(10)
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-      </div>
-
-      {/* Filters */}
-      <div className="card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="md:col-span-2">
-            <SearchInput
-              placeholder="Search users by name..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onClear={handleClearSearch}
+    <div>
+      <Title level={2}>Quản Lý Users</Title>
+      
+      {/* Statistics Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Tổng Users"
+              value={userStats?.total || 0}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
             />
-          </div>
-          <div>
-            <Select
-              value={role}
-              onChange={handleRoleChange}
-              options={roleOptions}
-              placeholder="Filter by role"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Ứng viên"
+              value={userStats?.candidates || 0}
+              valueStyle={{ color: '#52c41a' }}
             />
-          </div>
-          <div>
-            <Select
-              value={status}
-              onChange={handleStatusChange}
-              options={statusOptions}
-              placeholder="Filter by status"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Nhà tuyển dụng"
+              value={userStats?.employers || 0}
+              valueStyle={{ color: '#722ed1' }}
             />
-          </div>
-          <div>
-            <Select
-              value={pageSize.toString()}
-              onChange={handlePageSizeChange}
-              options={pageSizeOptions}
-              placeholder="Page size"
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Đã xác thực"
+              value={userStats?.verified || 0}
+              valueStyle={{ color: '#faad14' }}
             />
-          </div>
-        </div>
+          </Card>
+        </Col>
+      </Row>
+      
+      <Card>
+        <Space style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+          <Input.Search
+            placeholder="Tìm theo tên, email..."
+            allowClear
+            style={{ width: 300 }}
+            onSearch={handleSearch}
+            enterButton={<SearchOutlined />}
+          />
+          
+          <Select
+            placeholder="Lọc theo role"
+            style={{ width: 200 }}
+            allowClear
+            onChange={handleRoleFilter}
+          >
+            <Option value="candidate">🎯 Ứng viên</Option>
+            <Option value="employer">👔 Nhà tuyển dụng</Option>
+          </Select>
+        </Space>
         
-        {/* Clear All Filters Button */}
-        {(searchQuery || role || status || page > 1 || pageSize !== 10) && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAllFilters}
-            >
-              Clear All Filters
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Results Info */}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <span>
-          Showing {startItem}–{endItem} of {total} users
-        </span>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-      </div>
-
-      {/* Table */}
-      <div className="card">
-        {isLoading ? (
-          <Skeleton type="table" rows={pageSize} />
-        ) : error ? (
-          <div className="p-6">
-            <EmptyState
-              title="Unable to load users"
-              description="There was an error loading the users. Please try again."
-              action={true}
-              actionText="Retry"
-              onAction={refetch}
-            />
-          </div>
-        ) : users.length === 0 ? (
-          <div className="p-6">
-            <EmptyState
-              title="No users found"
-              description="No users match your current filters."
-            />
-          </div>
-        ) : (
-          <>
-            <Table
-              data={users}
-              columns={columns}
-            />
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                
-                <div className="flex space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = i + 1
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? 'primary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  })}
-                </div>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+        <Table
+          columns={columns}
+          dataSource={usersData?.data || []}
+          rowKey="id"
+          loading={isLoading}
+          pagination={{
+            current: filters.page,
+            pageSize: filters.limit,
+            total: usersData?.count || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} của ${total} users`,
+            onChange: handlePageChange,
+            onShowSizeChange: handlePageChange
+          }}
+          scroll={{ x: 800 }}
+        />
+      </Card>
     </div>
   )
 }
