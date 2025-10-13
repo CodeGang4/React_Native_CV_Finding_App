@@ -3,7 +3,7 @@
  */
 export const FEATURE_FLAGS = {
   // Application counting feature - disable to prevent rate limiting
-  ENABLE_APPLICATION_COUNTING: false,
+  ENABLE_APPLICATION_COUNTING: true,
 
   // Batch size for API calls when application counting is enabled
   APPLICATION_BATCH_SIZE: 2,
