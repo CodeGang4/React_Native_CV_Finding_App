@@ -12,6 +12,7 @@ router.post('/uploadPortfolio/:userId', upload.single('portfolio'), CandidatesCo
 router.post('/uploadCV/:userId', upload.single('cv'), CandidatesController.uploadCV);
 router.post('/updateProfile/:userId', CandidatesController.updateProfile);
 router.get('/getProfile/:userId', CandidatesController.getProfile)
+router.get('/getAll', CandidatesController.getAllCandidates)
 
 
 module.exports = router
