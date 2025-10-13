@@ -100,9 +100,9 @@ const JobsListPage = () => {
 
   const getStatusTag = (isExpired) => {
     if (isExpired) {
-      return <Tag color="red" icon={<ExclamationCircleOutlined />}>⏰ Hết hạn</Tag>
+      return <Tag color="red" icon={<ExclamationCircleOutlined />}>Hết hạn</Tag>
     } else {
-      return <Tag color="green" icon={<CheckCircleOutlined />}>🟢 Đang tuyển</Tag>
+      return <Tag color="green" icon={<CheckCircleOutlined />}>Đang tuyển</Tag>
     }
   }
 
@@ -181,7 +181,7 @@ const JobsListPage = () => {
       width: 120,
       render: (_, record) => getStatusTag(record.is_expired)
     },
- {
+    {
       title: 'Ứng tuyển',
       key: 'applications',
       width: 100,
@@ -204,20 +204,6 @@ const JobsListPage = () => {
       render: (date) => (
         <Tooltip title={new Date(date).toLocaleString('vi-VN')}>
           {dayjs(date).fromNow()}
-        </Tooltip>
-      )
-    },
-    {
-      title: 'Hành động',
-      key: 'actions',
-      width: 100,
-      render: (_, record) => (
-        <Tooltip title="Xem chi tiết">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/jobs/${record.id}`)}
-          />
         </Tooltip>
       )
     }
@@ -298,8 +284,8 @@ const JobsListPage = () => {
             allowClear
             onChange={handleStatusFilter}
           >
-            <Option value="active">🟢 Đang tuyển</Option>
-            <Option value="expired">⏰ Hết hạn</Option>
+            <Option value="active">Đang tuyển</Option>
+            <Option value="expired">Hết hạn</Option>
           </Select>
           
           <Select

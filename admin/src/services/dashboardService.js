@@ -62,8 +62,8 @@ const getCompanyStats = async () => {
     { count: pendingCompanies }
   ] = await Promise.all([
     supabase.from('employers').select('*', { count: 'exact', head: true }),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('verified', true),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('verified', false)
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('isverified', true),
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('isverified', false)
   ])
 
   return {
@@ -77,20 +77,20 @@ const getCompanyStats = async () => {
 const getJobStats = async () => {
   const [
     { count: totalJobs },
-    { count: acceptedJobs },
+    { count: activeJobs },
     { count: expiredJobs },
     { count: newJobsThisMonth }
   ] = await Promise.all([
     supabase.from('jobs').select('*', { count: 'exact', head: true }),
-    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('isAccepted', true),
-    supabase.from('jobs').select('*', { count: 'exact', head: true }).lt('expired_date', new Date().toISOString()),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('is_expired', false),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('is_expired', true),
     supabase.from('jobs').select('*', { count: 'exact', head: true })
       .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
   ])
 
   return {
     total: totalJobs || 0,
-    accepted: acceptedJobs || 0,
+    accepted: activeJobs || 0,
     expired: expiredJobs || 0,
     newThisMonth: newJobsThisMonth || 0
   }

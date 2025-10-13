@@ -116,20 +116,6 @@ const UsersListPage = () => {
           {new Date(date).toLocaleDateString('vi-VN')}
         </Tooltip>
       )
-    },
-    {
-      title: 'Hành động',
-      key: 'actions',
-      width: 100,
-      render: (_, record) => (
-        <Tooltip title="Xem chi tiết">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/users/${record.id}`)}
-          />
-        </Tooltip>
-      )
     }
   ]
 

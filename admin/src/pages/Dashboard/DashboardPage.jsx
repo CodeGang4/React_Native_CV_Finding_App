@@ -231,7 +231,7 @@ const DashboardPage = () => {
               valueStyle={{ color: '#52c41a' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
-              {stats?.jobs?.accepted || 0} đã duyệt
+              {stats?.jobs?.accepted || 0} đang tuyển
             </div>
           </Card>
         </Col>
@@ -286,11 +286,11 @@ const DashboardPage = () => {
           <Card title="Trạng thái Jobs" size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Active:</span>
-                <strong>{stats?.jobs?.active || 0}</strong>
+                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Đang tuyển:</span>
+                <strong>{stats?.jobs?.accepted || 0}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Expired:</span>
+                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Hết hạn:</span>
                 <strong>{stats?.jobs?.expired || 0}</strong>
               </div>
             </Space>
