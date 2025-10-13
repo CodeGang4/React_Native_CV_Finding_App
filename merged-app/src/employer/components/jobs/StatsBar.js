@@ -10,7 +10,7 @@ export default function StatsBar({
   const items = [
     { label: "Tin đăng", value: jobs },
     { label: "Ứng viên", value: applications },
-    { label: "Mẫu email", value: templates },
+    // { label: "Mẫu email", value: templates },
   ];
   return (
     <View style={styles.row}>

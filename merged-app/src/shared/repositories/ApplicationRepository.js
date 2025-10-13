@@ -165,6 +165,150 @@ export class ApplicationRepository extends BaseRepository {
       throw error;
     }
   }
+
+  // Helper method để delay giữa requests
+  async delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Lấy tổng số applications cho các job IDs với rate limiting
+  async getApplicationCountByJobIds(jobIds, forceRefresh = false) {
+    const cacheKey = `application_counts_${jobIds.join("_")}`;
+
+    if (!forceRefresh && jobIds.length > 0) {
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log("💾 Cache hit for application counts");
+        return cached;
+      }
+    }
+
+    const applicationCounts = {};
+    let totalApplications = 0;
+
+    try {
+      console.log(`🔄 Fetching application counts for ${jobIds.length} jobs`);
+
+      // Batch process với delay để tránh rate limiting
+      const batchSize = 3; // Giới hạn 3 concurrent requests
+      const delay = 200; // 200ms delay giữa batches
+
+      for (let i = 0; i < jobIds.length; i += batchSize) {
+        const batch = jobIds.slice(i, i + batchSize);
+        console.log(
+          `📦 Processing batch ${Math.floor(i / batchSize) + 1}: ${
+            batch.length
+          } jobs`
+        );
+
+        // Process batch concurrently
+        const batchPromises = batch.map(async (jobId) => {
+          try {
+            const candidates = await this.getCandidatesByJobId(
+              jobId,
+              forceRefresh
+            );
+            return { jobId, count: candidates.length };
+          } catch (error) {
+            console.warn(
+              `⚠️ Failed to get candidates for job ${jobId}:`,
+              error.message
+            );
+            return { jobId, count: 0 };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+
+        // Update counts
+        batchResults.forEach(({ jobId, count }) => {
+          applicationCounts[jobId] = count;
+          totalApplications += count;
+        });
+
+        // Add delay between batches (except for last batch)
+        if (i + batchSize < jobIds.length) {
+          console.log(`⏱️ Waiting ${delay}ms before next batch...`);
+          await this.delay(delay);
+        }
+      }
+
+      const result = { applicationCounts, totalApplications };
+
+      console.log("✅ Application counts fetched:", result);
+
+      // Cache kết quả
+      this.setCache(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      console.error("Get application count by job IDs error:", error);
+      // Return 0 counts instead of throwing to avoid breaking UI
+      return {
+        applicationCounts: jobIds.reduce((acc, jobId) => {
+          acc[jobId] = 0;
+          return acc;
+        }, {}),
+        totalApplications: 0,
+      };
+    }
+  }
+
+  // Lấy số lượng ứng viên UNIQUE cho các job IDs (1 ứng viên chỉ đếm 1 lần dù apply nhiều job)
+  async getUniqueCandidateCountByJobIds(jobIds, forceRefresh = false) {
+    const cacheKey = `unique_candidates_${jobIds.join("_")}`;
+
+    if (!forceRefresh && jobIds.length > 0) {
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    try {
+      const uniqueCandidateIds = new Set();
+      const candidateCountsByJob = {};
+
+      // Lấy candidates cho từng job
+      for (const jobId of jobIds) {
+        const candidates = await this.getCandidatesByJobId(jobId, forceRefresh);
+        candidateCountsByJob[jobId] = candidates.length;
+
+        // Thêm candidate IDs vào Set để đếm unique
+        candidates.forEach((candidate) => {
+          if (candidate.id) {
+            uniqueCandidateIds.add(candidate.id);
+          }
+        });
+      }
+
+      const result = {
+        applicationCounts: candidateCountsByJob, // Số applications per job
+        totalApplications: Object.values(candidateCountsByJob).reduce(
+          (sum, count) => sum + count,
+          0
+        ),
+        uniqueCandidateIds: Array.from(uniqueCandidateIds),
+        totalUniqueCandidates: uniqueCandidateIds.size, // Số ứng viên unique
+      };
+
+      // Cache kết quả
+      this.setCache(cacheKey, result);
+
+      return result;
+    } catch (error) {
+      console.error("Get unique candidate count by job IDs error:", error);
+      return {
+        applicationCounts: jobIds.reduce((acc, jobId) => {
+          acc[jobId] = 0;
+          return acc;
+        }, {}),
+        totalApplications: 0,
+        uniqueCandidateIds: [],
+        totalUniqueCandidates: 0,
+      };
+    }
+  }
 }
 
 export default new ApplicationRepository();

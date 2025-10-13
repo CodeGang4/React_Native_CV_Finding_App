@@ -175,6 +175,7 @@ export default function JobPostingPage() {
         title="Quản lý tuyển dụng"
         onBack={() => {}}
         showAI={false}
+        showBackButton={false}
       />
       <ScrollView
         style={styles.body}

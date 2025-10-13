@@ -11,15 +11,20 @@ export default function CommonHeader({
   title,
   onBack,
   showAI = true,
+  showBackButton = true,
   backgroundColor = "#00b14f",
 }) {
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={backgroundColor} />
       <View style={[styles.header, { backgroundColor }]}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        {showBackButton ? (
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backButton} />
+        )}
         <Text style={styles.headerTitle}>{title}</Text>
         {showAI ? (
           <View style={styles.aiContainer}>

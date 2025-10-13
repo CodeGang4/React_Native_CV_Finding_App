@@ -32,12 +32,12 @@ export default function ActionsBar({
           <Text style={styles.primaryText}>Đăng tin mới</Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.secondaryButton}
         onPress={onManageTemplatesPress}
       >
         <Text style={styles.secondaryText}>Quản lý email mẫu</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }

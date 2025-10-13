@@ -45,7 +45,7 @@ export const useEmployerJobs = () => {
 
         setJobs(jobsData || []);
 
-        // Generate statistics
+        // Generate statistics (simple application count)
         const stats = employerJobBusinessService.generateJobStats(
           jobsData || []
         );

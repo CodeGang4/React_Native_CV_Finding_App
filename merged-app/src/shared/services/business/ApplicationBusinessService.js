@@ -125,6 +125,145 @@ export class ApplicationBusinessService {
       throw error;
     }
   }
+
+  // Lấy thống kê applications cho một employer
+  async getApplicationStatsForEmployer(jobs, forceRefresh = false) {
+    try {
+      if (!Array.isArray(jobs) || jobs.length === 0) {
+        return {
+          totalApplications: 0,
+          applicationsByJob: {},
+        };
+      }
+
+      // Lấy job IDs
+      const jobIds = jobs.map((job) => job.id).filter(Boolean);
+
+      if (jobIds.length === 0) {
+        return {
+          totalApplications: 0,
+          applicationsByJob: {},
+        };
+      }
+
+      // Lấy application counts với rate limiting protection
+      console.log(`🔄 Getting application stats for ${jobIds.length} jobs`);
+      const result = await this.repository.getApplicationCountByJobIds(
+        jobIds,
+        forceRefresh
+      );
+
+      console.log("📊 Application stats result:", {
+        total: result.totalApplications,
+        jobCounts: Object.keys(result.applicationCounts || {}).length,
+      });
+
+      return {
+        totalApplications: result.totalApplications || 0,
+        applicationsByJob: result.applicationCounts || {},
+      };
+    } catch (error) {
+      console.error("Get application stats for employer error:", error);
+      return {
+        totalApplications: 0,
+        applicationsByJob: {},
+      };
+    }
+  }
+
+  // Update job data với application counts
+  async enrichJobsWithApplicationCounts(jobs, forceRefresh = false) {
+    try {
+      // Nếu không có jobs thì return ngay
+      if (!Array.isArray(jobs) || jobs.length === 0) {
+        return [];
+      }
+
+      console.log(`🔄 Enriching ${jobs.length} jobs with application counts`);
+
+      const stats = await this.getApplicationStatsForEmployer(
+        jobs,
+        forceRefresh
+      );
+
+      const enrichedJobs = jobs.map((job) => ({
+        ...job,
+        applications: stats.applicationsByJob[job.id] || 0,
+      }));
+
+      console.log(
+        "✅ Enrichment completed. Application counts:",
+        enrichedJobs.map((job) => ({
+          id: job.id,
+          applications: job.applications,
+        }))
+      );
+
+      return enrichedJobs;
+    } catch (error) {
+      console.error("Enrich jobs with application counts error:", error);
+
+      // Kiểm tra nếu là rate limit error
+      if (
+        error.message?.includes("429") ||
+        error.message?.includes("Too Many Requests")
+      ) {
+        console.warn("⚠️ Rate limited - returning jobs with 0 applications");
+        throw error; // Re-throw để outer catch xử lý
+      }
+
+      // Return jobs with 0 applications if error
+      return jobs.map((job) => ({
+        ...job,
+        applications: 0,
+      }));
+    }
+  }
+
+  // Lấy thống kê với unique candidates (không trùng lặp ứng viên)
+  async getUniqueApplicationStatsForEmployer(jobs, forceRefresh = false) {
+    try {
+      if (!Array.isArray(jobs) || jobs.length === 0) {
+        return {
+          totalApplications: 0,
+          totalUniqueCandidates: 0,
+          applicationsByJob: {},
+        };
+      }
+
+      // Lấy job IDs
+      const jobIds = jobs.map((job) => job.id).filter(Boolean);
+
+      if (jobIds.length === 0) {
+        return {
+          totalApplications: 0,
+          totalUniqueCandidates: 0,
+          applicationsByJob: {},
+        };
+      }
+
+      // Lấy unique candidate counts
+      const result = await this.repository.getUniqueCandidateCountByJobIds(
+        jobIds,
+        forceRefresh
+      );
+
+      return {
+        totalApplications: result.totalApplications || 0,
+        totalUniqueCandidates: result.totalUniqueCandidates || 0,
+        applicationsByJob: result.applicationCounts || {},
+        uniqueCandidateIds: result.uniqueCandidateIds || [],
+      };
+    } catch (error) {
+      console.error("Get unique application stats for employer error:", error);
+      return {
+        totalApplications: 0,
+        totalUniqueCandidates: 0,
+        applicationsByJob: {},
+        uniqueCandidateIds: [],
+      };
+    }
+  }
 }
 
 export default new ApplicationBusinessService();

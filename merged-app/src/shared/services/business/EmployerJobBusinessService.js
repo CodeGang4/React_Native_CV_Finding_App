@@ -1,4 +1,5 @@
 import employerJobRepository from "../../repositories/EmployerJobRepository.js";
+import applicationBusinessService from "./ApplicationBusinessService.js";
 
 /**
  * Employer Job Business Service - Handles job business logic
@@ -6,6 +7,7 @@ import employerJobRepository from "../../repositories/EmployerJobRepository.js";
 export class EmployerJobBusinessService {
   constructor() {
     this.repository = employerJobRepository;
+    this.applicationService = applicationBusinessService;
   }
 
   // Lấy jobs của company với validation
@@ -25,7 +27,32 @@ export class EmployerJobBusinessService {
         ? jobsData.map((job) => this.repository.transformJobData(job))
         : [];
 
-      return transformedJobs.filter((job) => job !== null);
+      const filteredJobs = transformedJobs.filter((job) => job !== null);
+
+      // Enrich với application counts - với tối ưu để tránh rate limit
+      try {
+        console.log("🔄 Starting optimized application count enrichment");
+        const jobsWithApplications =
+          await this.applicationService.enrichJobsWithApplicationCounts(
+            filteredJobs,
+            forceRefresh
+          );
+
+        return jobsWithApplications;
+      } catch (enrichError) {
+        console.warn(
+          "⚠️ Application count enrichment failed, returning jobs with 0 applications:",
+          enrichError.message
+        );
+
+        // Fallback: return jobs với applications = 0 nếu enrichment fail
+        const jobsWithDefaults = filteredJobs.map((job) => ({
+          ...job,
+          applications: 0,
+        }));
+
+        return jobsWithDefaults;
+      }
     } catch (error) {
       console.error("Get company jobs service error:", error);
       throw this.handleError(error);
@@ -204,16 +231,70 @@ export class EmployerJobBusinessService {
       };
     }
 
-    return {
+    console.log(
+      "🔍 Generate job stats - jobs with applications:",
+      jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        applications: job.applications,
+      }))
+    );
+
+    const stats = {
       totalJobs: jobs.length,
       activeJobs: jobs.filter((job) => job.status === "Đang tuyển").length,
-      totalApplications: jobs.reduce(
-        (sum, job) => sum + (job.applications || 0),
-        0
-      ),
+      totalApplications: jobs.reduce((sum, job) => {
+        const appCount = job.applications || 0;
+        console.log(`Job ${job.id}: ${appCount} applications`);
+        return sum + appCount;
+      }, 0),
       totalViews: jobs.reduce((sum, job) => sum + (job.views || 0), 0),
       pendingApproval: jobs.filter((job) => job.status === "Chờ duyệt").length,
     };
+
+    console.log("📊 Final job stats:", stats);
+    return stats;
+  }
+
+  // Generate job statistics với unique candidate count
+  async generateJobStatsWithUniqueCount(jobs, forceRefresh = false) {
+    if (!Array.isArray(jobs)) {
+      return {
+        totalJobs: 0,
+        activeJobs: 0,
+        totalApplications: 0,
+        totalUniqueCandidates: 0,
+        totalViews: 0,
+      };
+    }
+
+    try {
+      // Lấy unique candidate stats
+      const uniqueStats =
+        await this.applicationService.getUniqueApplicationStatsForEmployer(
+          jobs,
+          forceRefresh
+        );
+
+      const stats = {
+        totalJobs: jobs.length,
+        activeJobs: jobs.filter((job) => job.status === "Đang tuyển").length,
+        totalApplications: uniqueStats.totalApplications, // Tổng số applications
+        totalUniqueCandidates: uniqueStats.totalUniqueCandidates, // Số ứng viên unique
+        totalViews: jobs.reduce((sum, job) => sum + (job.views || 0), 0),
+        pendingApproval: jobs.filter((job) => job.status === "Chờ duyệt")
+          .length,
+      };
+
+      console.log("📊 Job stats with unique count:", stats);
+      console.log("👥 Unique candidate IDs:", uniqueStats.uniqueCandidateIds);
+
+      return stats;
+    } catch (error) {
+      console.error("Generate job stats with unique count error:", error);
+      // Fallback to regular stats
+      return this.generateJobStats(jobs);
+    }
   }
 
   // Handle errors
