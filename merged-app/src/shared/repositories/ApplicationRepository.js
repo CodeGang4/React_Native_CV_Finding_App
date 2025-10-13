@@ -139,6 +139,13 @@ export class ApplicationRepository extends BaseRepository {
         skills: Array.isArray(candidate.skills) ? candidate.skills : [],
         bio: candidate.bio || candidate.summary,
         profileImage: candidate.profile_image || candidate.avatar,
+        // Thông tin nguyện vọng công việc
+        job_preferences:
+          candidate.job_preferences || candidate.preferred_position,
+        salary_expectation:
+          candidate.salary_expectation || candidate.expected_salary,
+        work_type_preference:
+          candidate.work_type_preference || candidate.work_type,
       };
     });
   }
