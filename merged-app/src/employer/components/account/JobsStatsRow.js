@@ -4,8 +4,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 export default function JobsStatsRow({
   totalJobs = 0,
-  totalApplications = 0,
   activeJobs = 0,
+  expiredJobs = 0,
   loading = false,
 }) {
   const renderStatValue = (value) => {
@@ -21,16 +21,14 @@ export default function JobsStatsRow({
         <Text style={styles.statLabel}>Tin đã đăng</Text>
       </View>
       <View style={styles.statCard}>
-        <MaterialIcons name="people" size={24} color="#2196F3" />
-        <Text style={styles.statNumber}>
-          {renderStatValue(totalApplications)}
-        </Text>
-        <Text style={styles.statLabel}>Ứng viên nhận</Text>
-      </View>
-      <View style={styles.statCard}>
-        <MaterialIcons name="trending-up" size={24} color="#FF9800" />
+        <MaterialIcons name="trending-up" size={24} color="#4CAF50" />
         <Text style={styles.statNumber}>{renderStatValue(activeJobs)}</Text>
         <Text style={styles.statLabel}>Tin đang tuyển</Text>
+      </View>
+      <View style={styles.statCard}>
+        <MaterialIcons name="schedule" size={24} color="#F44336" />
+        <Text style={styles.statNumber}>{renderStatValue(expiredJobs)}</Text>
+        <Text style={styles.statLabel}>Tin hết hạn</Text>
       </View>
     </View>
   );

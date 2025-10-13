@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import JobsStatsRow from "./JobsStatsRow";
+import { calculateJobStatus } from "../../../shared/utils/jobStatusUtils";
 import SwipeableJobCard from "./SwipeableJobCard";
 
 export default function JobsTabSection({
@@ -49,7 +50,9 @@ export default function JobsTabSection({
   // Sử dụng jobStats từ props hoặc tính toán từ jobs
   const stats = jobStats || {
     totalApplications: jobs.reduce((sum, j) => sum + (j.applications || 0), 0),
-    activeJobs: jobs.filter((j) => j.status === "Đang tuyển").length,
+    activeJobs: jobs.filter((j) => calculateJobStatus(j) === "Đang tuyển")
+      .length,
+    expiredJobs: jobs.filter((j) => calculateJobStatus(j) === "Hết hạn").length,
     totalJobs: jobs.length,
   };
 
@@ -57,7 +60,7 @@ export default function JobsTabSection({
     <View style={styles.container}>
       <JobsStatsRow
         totalJobs={stats.totalJobs}
-        totalApplications={stats.totalApplications}
+        expiredJobs={stats.expiredJobs}
         activeJobs={stats.activeJobs}
         loading={loading}
       />
