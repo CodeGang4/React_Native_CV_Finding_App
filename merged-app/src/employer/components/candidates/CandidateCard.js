@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Image,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -76,8 +77,20 @@ export default function CandidateCard({
     >
       <View style={styles.headerRow}>
         <View style={styles.avatar}>
-          {/* Placeholder avatar */}
-          <Text style={{ fontSize: 18 }}>{candidate.avatar || "👤"}</Text>
+          {/* Avatar - check if it's a URL or emoji/text */}
+          {candidate.avatar &&
+          (candidate.avatar.startsWith("http") ||
+            candidate.avatar.startsWith("https")) ? (
+            <Image
+              source={{ uri: candidate.avatar }}
+              style={styles.avatarImage}
+              defaultSource={{
+                uri: "https://th.bing.com/th/id/R.e6453f9d07601043e5b928d25e129948?rik=JPSLKIXFf8DmmQ&pid=ImgRaw&r=0",
+              }}
+            />
+          ) : (
+            <Text style={styles.avatarText}>{candidate.avatar || "👤"}</Text>
+          )}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>{name}</Text>
@@ -156,6 +169,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
+    overflow: "hidden", // Ensure image is clipped to circle
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarText: {
+    fontSize: 18,
   },
   name: { fontSize: 16, fontWeight: "700", color: "#333" },
   title: { fontSize: 13, color: "#666", marginTop: 2 },

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Image,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import CommonHeader from "../../components/common/CommonHeader";
@@ -51,7 +52,21 @@ export default function CandidateDetailScreen({ route, navigation }) {
         <View style={styles.profileCard}>
           <View style={styles.headerRow}>
             <View style={styles.avatar}>
-              <Text style={{ fontSize: 22 }}>{candidate.avatar || "👤"}</Text>
+              {candidate.avatar &&
+              (candidate.avatar.startsWith("http") ||
+                candidate.avatar.startsWith("https")) ? (
+                <Image
+                  source={{ uri: candidate.avatar }}
+                  style={styles.avatarImage}
+                  defaultSource={{
+                    uri: "https://th.bing.com/th/id/R.e6453f9d07601043e5b928d25e129948?rik=JPSLKIXFf8DmmQ&pid=ImgRaw&r=0",
+                  }}
+                />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {candidate.avatar || "👤"}
+                </Text>
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{name}</Text>
@@ -141,6 +156,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  avatarText: {
+    fontSize: 22,
   },
   name: { fontSize: 18, fontWeight: "800", color: "#333" },
   title: { fontSize: 14, color: "#666", marginTop: 4 },

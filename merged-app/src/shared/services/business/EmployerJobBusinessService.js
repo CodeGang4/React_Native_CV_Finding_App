@@ -1,5 +1,6 @@
 import employerJobRepository from "../../repositories/EmployerJobRepository.js";
 import applicationBusinessService from "./ApplicationBusinessService.js";
+import { isApplicationCountingEnabled } from "../../config/featureFlags.js";
 
 /**
  * Employer Job Business Service - Handles job business logic
@@ -29,9 +30,24 @@ export class EmployerJobBusinessService {
 
       const filteredJobs = transformedJobs.filter((job) => job !== null);
 
-      // Enrich với application counts - với tối ưu để tránh rate limit
+      // Check feature flag for application counting
+      if (!isApplicationCountingEnabled()) {
+        console.log("⚠️ Application count enrichment disabled by feature flag");
+
+        // Return jobs với applications = 0 để tránh API calls
+        const jobsWithDefaults = filteredJobs.map((job) => ({
+          ...job,
+          applications: 0,
+        }));
+
+        return jobsWithDefaults;
+      }
+
+      // Enrich với application counts - với feature flag enabled
       try {
-        console.log("🔄 Starting optimized application count enrichment");
+        console.log(
+          "🔄 Starting application count enrichment (feature enabled)"
+        );
         const jobsWithApplications =
           await this.applicationService.enrichJobsWithApplicationCounts(
             filteredJobs,

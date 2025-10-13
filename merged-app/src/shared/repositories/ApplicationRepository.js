@@ -101,8 +101,20 @@ export class ApplicationRepository extends BaseRepository {
       const application = item;
       const candidate = application.candidates || {};
 
+      // Get user data if available (might have avatar in users table)
+      const user = candidate.users || candidate.user || {};
+
       console.log(`🔄 Application:`, JSON.stringify(application, null, 2));
       console.log(`🔄 Candidate:`, JSON.stringify(candidate, null, 2));
+
+      // Debug avatar mapping
+      console.log(
+        `🖼️ Avatar mapping for ${candidate.full_name || candidate.name}:`,
+        {
+          candidate_portfolio: candidate.portfolio,
+          final: candidate.portfolio,
+        }
+      );
 
       return {
         id: candidate.user_id || candidate.id,
@@ -111,7 +123,8 @@ export class ApplicationRepository extends BaseRepository {
         phone: candidate.phone_number || candidate.phone || "N/A",
         experience: candidate.experience || "Chưa có thông tin",
         rating: candidate.rating || 0,
-        avatar: candidate.avatar || "👤",
+        avatar: candidate.portfolio,
+
         appliedDate: application.applied_at
           ? new Date(application.applied_at).toLocaleDateString("vi-VN")
           : "N/A",

@@ -48,6 +48,21 @@ export default function ConnectScreen({ navigation }) {
       setCandidates(result.candidates);
 
       console.log("Loaded candidates from backend:", result.candidates.length);
+
+      // Debug: Log first candidate's avatar data
+      if (result.candidates.length > 0) {
+        const firstCandidate = result.candidates[0];
+        console.log("🔍 Sample candidate avatar data:", {
+          id: firstCandidate.id,
+          name: firstCandidate.name,
+          avatar: firstCandidate.avatar,
+          avatarType: typeof firstCandidate.avatar,
+          isUrl:
+            firstCandidate.avatar &&
+            (firstCandidate.avatar.startsWith("http") ||
+              firstCandidate.avatar.startsWith("https")),
+        });
+      }
     } catch (err) {
       console.error("Failed to load candidates:", err);
       setError(err.message);

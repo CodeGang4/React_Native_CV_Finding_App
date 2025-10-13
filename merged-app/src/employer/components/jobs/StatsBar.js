@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { isApplicationCountingEnabled } from "../../../shared/config/featureFlags.js";
 
 export default function StatsBar({
   jobs = 0,
@@ -9,7 +10,14 @@ export default function StatsBar({
 }) {
   const items = [
     { label: "Tin đăng", value: jobs },
-    { label: "Ứng viên", value: applications },
+    {
+      label: "Ứng viên",
+      value: applications,
+      note:
+        !isApplicationCountingEnabled() && applications === 0
+          ? "Tính năng tạm tắt"
+          : null,
+    },
     // { label: "Mẫu email", value: templates },
   ];
   return (
@@ -22,6 +30,7 @@ export default function StatsBar({
             <Text style={styles.value}>{it.value}</Text>
           )}
           <Text style={styles.label}>{it.label}</Text>
+          {it.note && <Text style={styles.note}>{it.note}</Text>}
         </View>
       ))}
     </View>
@@ -44,4 +53,5 @@ const styles = StyleSheet.create({
   },
   value: { fontSize: 20, fontWeight: "700", color: "#00b14f" },
   label: { fontSize: 12, color: "#666", marginTop: 4 },
+  note: { fontSize: 10, color: "#999", marginTop: 2, fontStyle: "italic" },
 });
