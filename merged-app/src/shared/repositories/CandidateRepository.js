@@ -12,17 +12,32 @@ export class CandidateRepository extends BaseRepository {
 
   // Get all candidates with filters
   async getCandidates(filters = {}, useCache = true) {
-    const params = this.buildCandidateFilters(filters);
-    const data = await this.get(this.endpoint, params, useCache);
+    try {
+      const data = await this.get(`${this.endpoint}/getAll`, {}, useCache);
 
-    return {
-      candidates: data.candidates
-        ? data.candidates.map((c) => Candidate.fromJSON(c))
-        : data.map((c) => Candidate.fromJSON(c)),
-      total: data.total || data.length,
-      page: data.page || 1,
-      totalPages: data.totalPages || 1,
-    };
+      // Backend trả về array trực tiếp hoặc có thể là object chứa array
+      const candidatesArray = Array.isArray(data)
+        ? data
+        : data.candidates || [];
+
+      return {
+        candidates: candidatesArray.map((c) => Candidate.fromJSON(c)),
+        total: candidatesArray.length,
+        page: 1,
+        totalPages: 1,
+      };
+    } catch (error) {
+      // If no candidates found, return empty array
+      if (error.message && error.message.includes("No candidates found")) {
+        return {
+          candidates: [],
+          total: 0,
+          page: 1,
+          totalPages: 1,
+        };
+      }
+      throw error;
+    }
   }
 
   // Get single candidate by ID

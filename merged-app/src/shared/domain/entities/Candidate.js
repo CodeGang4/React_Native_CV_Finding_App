@@ -210,6 +210,56 @@ export class Candidate {
   }
 
   static fromJSON(data) {
-    return new Candidate(data);
+    if (!data) return new Candidate();
+
+    // Map backend data structure to frontend entity
+    const mappedData = {
+      id: data.id,
+      name: data.name || data.full_name || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      avatar: data.avatar || data.portfolio || null,
+      title: data.title || "Developer", // Default title
+      summary: data.summary || "",
+      level: data.level || "junior",
+      experience: data.experience || "",
+      skills: Array.isArray(data.skills)
+        ? data.skills
+        : typeof data.skills === "string"
+        ? data.skills.split(",").map((s) => s.trim())
+        : [],
+      education: Array.isArray(data.education)
+        ? data.education
+        : typeof data.education === "string"
+        ? [data.education]
+        : [],
+      workHistory: data.work_history || data.workHistory || [],
+      projects: data.projects || [],
+      languages: data.languages || [],
+      location: data.address || data.location || "",
+      salaryExpectation:
+        data.salary_expectation || data.salaryExpectation || "",
+      availableDate: data.available_date || data.availableDate || null,
+      jobType: data.job_type || data.jobType || "full-time",
+      cvUrl: data.cv_url || data.cvUrl || null,
+      portfolioUrl: data.portfolio || data.portfolioUrl || null,
+      isActive: data.is_active !== undefined ? data.is_active : true,
+      isAvailable: data.is_available !== undefined ? data.is_available : true,
+      rating: data.rating || 0,
+      createdAt: data.created_at || data.createdAt || new Date(),
+      updatedAt: data.updated_at || data.updatedAt || new Date(),
+
+      // Additional backend fields
+      userId: data.user_id || data.userId,
+      dateOfBirth: data.date_of_birth || data.dateOfBirth,
+      gender: data.gender,
+      jobPreferences: Array.isArray(data.job_preferences)
+        ? data.job_preferences
+        : typeof data.job_preferences === "string"
+        ? data.job_preferences.split(",").map((s) => s.trim())
+        : [],
+    };
+
+    return new Candidate(mappedData);
   }
 }

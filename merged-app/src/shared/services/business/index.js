@@ -4,3 +4,4 @@
 export { default as AIService } from "./AIService.js";
 export { default as EmployerBusinessService } from "./EmployerBusinessService.js";
 export { default as ApplicationBusinessService } from "./ApplicationBusinessService.js";
+export { default as ConnectCandidateService } from "./ConnectCandidateService.js";

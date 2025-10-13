@@ -1,5 +1,12 @@
-import React, { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, StatusBar } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  ActivityIndicator,
+  Text,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import InterviewNotificationModal from "../../components/modals/InterviewNotificationModal";
@@ -8,7 +15,7 @@ import SearchFiltersBar from "../../components/connect/SearchFiltersBar";
 import CandidatePreviewSheet from "../../components/connect/CandidatePreviewSheet";
 import AiSuggestionsModal from "../../components/connect/AiSuggestionsModal";
 import { colors } from "../../../shared/styles/colors";
-import mockCandidates from "../../../shared/repositories/local/mockCandidates";
+import ConnectCandidateService from "../../../shared/services/business/ConnectCandidateService";
 import AIService from "../../../shared/services/business/AIService";
 
 export default function ConnectScreen({ navigation }) {
@@ -21,14 +28,40 @@ export default function ConnectScreen({ navigation }) {
   const [inviteCandidate, setInviteCandidate] = useState(null);
   const [showAi, setShowAi] = useState(false);
 
-  const candidates = mockCandidates;
+  // Backend integration state
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load candidates and skills from backend
+  useEffect(() => {
+    loadCandidatesFromBackend();
+  }, []);
+
+  const loadCandidatesFromBackend = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load candidates
+      const result = await ConnectCandidateService.getAllCandidates();
+      setCandidates(result.candidates);
+
+      console.log("Loaded candidates from backend:", result.candidates.length);
+    } catch (err) {
+      console.error("Failed to load candidates:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const allSkills = useMemo(
     () =>
       Array.from(new Set(candidates.flatMap((c) => c.skills))).sort((a, b) =>
         a.localeCompare(b)
       ),
-    []
+    [candidates]
   );
 
   const filtered = candidates.filter((c) => {
@@ -90,24 +123,53 @@ export default function ConnectScreen({ navigation }) {
         />
 
         <ScrollView style={styles.list}>
-          {filtered.map((c) => (
-            <CandidateCard
-              key={c.id}
-              candidate={c}
-              onPress={() =>
-                navigation.navigate("CandidateDetail", { candidate: c })
-              }
-              onInvite={() => {
-                // Open invite modal directly from the list card without opening the bottom sheet
-                setInviteCandidate(c);
-                setShowInvite(true);
-              }}
-              hideViewCV
-              rightAccessory={
-                <MaterialIcons name="chevron-right" size={24} color="#999" />
-              }
-            />
-          ))}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>
+                Đang tải danh sách ứng viên...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <MaterialIcons name="error-outline" size={48} color="#ff6b6b" />
+              <Text style={styles.errorText}>
+                Không thể tải danh sách ứng viên
+              </Text>
+              <Text style={styles.errorSubtext}>{error}</Text>
+            </View>
+          ) : filtered.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="people-outline" size={48} color="#999" />
+              <Text style={styles.emptyText}>
+                Không tìm thấy ứng viên phù hợp
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {candidates.length === 0
+                  ? "Chưa có ứng viên nào trong hệ thống"
+                  : "Hãy thử điều chỉnh bộ lọc tìm kiếm"}
+              </Text>
+            </View>
+          ) : (
+            filtered.map((c) => (
+              <CandidateCard
+                key={c.id}
+                candidate={c}
+                onPress={() =>
+                  navigation.navigate("CandidateDetail", { candidate: c })
+                }
+                onInvite={() => {
+                  // Open invite modal directly from the list card without opening the bottom sheet
+                  setInviteCandidate(c);
+                  setShowInvite(true);
+                }}
+                hideViewCV
+                rightAccessory={
+                  <MaterialIcons name="chevron-right" size={24} color="#999" />
+                }
+              />
+            ))
+          )}
           <View style={{ height: 24 }} />
         </ScrollView>
 
@@ -157,4 +219,53 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   list: { flex: 1, paddingHorizontal: 16 },
   score: { color: "#00b14f", fontWeight: "800" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#ff6b6b",
+    textAlign: "center",
+  },
+  errorSubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
+  },
+  emptySubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
 });
