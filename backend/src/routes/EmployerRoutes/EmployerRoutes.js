@@ -17,9 +17,11 @@ router.post(
     upload.single('companyLogo'),
     EmployerController.uploadCompanyLogo,
 );
+router.patch('updateStatus/:companyId', EmployerController.updateStatusCompany);
 router.get('/getTopCompanies', EmployerController.getTopCompanies);
 router.get('/analytics/:companyId', EmployerController.CompanyAnalytics);
 router.put('/updateInfor/:companyId', EmployerController.updateInfo);
+router.get('/getCompanyWithStatus', EmployerController.getCompanyWithStatus);
 router.get('/getCompanyInfo/:companyId', EmployerController.getCompanyInfo);
 router.get('/getAllCompany', EmployerController.getAllCompany);
 router.get('/getVerifiedCompany', EmployerController.getVerifiedCompany);

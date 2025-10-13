@@ -42,7 +42,8 @@ create table employers (
     description text,
     created_at timestamp default now(),
     updated_at timestamp default now(),
-    isVerified boolean default false
+    isVerified boolean default false,
+    status text check (status in ('pending', 'accepted', 'rejected')) default 'pending'
 );
 
 -- cv : Lưu thông tin CV
