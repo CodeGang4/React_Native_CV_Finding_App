@@ -39,7 +39,7 @@ const CompaniesListPage = () => {
     page: 1,
     limit: 20,
     search: '',
-    is_verified: undefined
+    status: '' // pending/accepted/rejected
   })
   
   const [reviewModal, setReviewModal] = useState({
@@ -70,15 +70,21 @@ const CompaniesListPage = () => {
   // Review company mutation
   const reviewMutation = useMutation({
     mutationFn: ({ companyId, isApproved, note }) => reviewCompany(companyId, isApproved, note),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries(['companies'])
       queryClient.invalidateQueries(['company-stats'])
-      message.success('Đã xử lý thành công')
+      
+      if (variables.isApproved) {
+        message.success('✅ Đã chấp nhận đơn đăng ký công ty!')
+      } else {
+        message.warning('❌ Đã từ chối đơn đăng ký công ty!')
+      }
+      
       setReviewModal({ visible: false, company: null, action: null })
       setAdminNote('')
     },
     onError: (error) => {
-      message.error(`Lỗi: ${error.message}`)
+      message.error(`❌ Lỗi: ${error.message}`)
     }
   })
 
@@ -105,7 +111,7 @@ const CompaniesListPage = () => {
   const handleStatusFilter = (value) => {
     setFilters(prev => ({ 
       ...prev, 
-      is_verified: value === 'all' ? undefined : value === 'verified', 
+      status: value || '', 
       page: 1 
     }))
   }
@@ -114,25 +120,35 @@ const CompaniesListPage = () => {
     setFilters(prev => ({ ...prev, page, limit: pageSize }))
   }
 
-  const getStatusTag = (isVerified) => {
-    if (isVerified === true) {
-      return <Tag color="green" icon={<CheckCircleOutlined />}>✅ Đã duyệt</Tag>
-    } else {
-      return <Tag color="orange" icon={<ClockCircleOutlined />}>⏳ Chờ duyệt</Tag>
+  const getStatusTag = (status) => {
+    switch(status) {
+      case 'accepted':
+        return <Tag color="green" icon={<CheckCircleOutlined />}>Đã duyệt</Tag>
+      case 'rejected':
+        return <Tag color="red" icon={<CloseCircleOutlined />}>Đã từ chối</Tag>
+      case 'pending':
+      default:
+        return <Tag color="orange" icon={<ClockCircleOutlined />}>Chờ duyệt</Tag>
     }
   }
 
   const columns = [
     {
-      title: 'Logo',
+      title: <div style={{ whiteSpace: 'nowrap' }}>Logo</div>,
       dataIndex: 'company_logo',
       key: 'company_logo',
-      width: 60,
+      width: 80,
+      align: 'center',
       render: (logo, record) => (
         <Avatar 
           src={logo} 
           icon={<BuildOutlined />}
-          size="default"
+          size="large"
+          style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
           {record.company_name?.charAt(0)?.toUpperCase()}
         </Avatar>
@@ -182,7 +198,7 @@ const CompaniesListPage = () => {
       title: 'Trạng thái',
       key: 'status',
       width: 120,
-      render: (_, record) => getStatusTag(record.verified)
+      render: (_, record) => getStatusTag(record.status)
     },
     {
       title: 'Người đại diện',
@@ -206,38 +222,44 @@ const CompaniesListPage = () => {
       title: 'Hành động',
       key: 'actions',
       width: 200,
+      fixed: 'right',
       render: (_, record) => (
         <Space>
-          <Tooltip title="Xem chi tiết">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => navigate(`/companies/${record.id}`)}
-            />
-          </Tooltip>
-          
-          {record.verified === false && (
+          {record.status === 'pending' && (
             <>
-              <Tooltip title="Duyệt công ty">
+              <Tooltip title="Chấp nhận đơn đăng ký">
                 <Button
-                  type="text"
+                  type="primary"
                   icon={<CheckCircleOutlined />}
-                  style={{ color: '#52c41a' }}
+                  size="small"
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
                   loading={reviewMutation.isLoading}
                   onClick={() => handleReview(record, 'approve')}
-                />
+                >
+                  Chấp nhận
+                </Button>
               </Tooltip>
               
-              <Tooltip title="Từ chối">
+              <Tooltip title="Từ chối đơn đăng ký">
                 <Button
-                  type="text"
-                  icon={<CloseCircleOutlined />}
                   danger
+                  icon={<CloseCircleOutlined />}
+                  size="small"
                   loading={reviewMutation.isLoading}
                   onClick={() => handleReview(record, 'reject')}
-                />
+                >
+                  Từ chối
+                </Button>
               </Tooltip>
             </>
+          )}
+          
+          {record.status === 'accepted' && (
+            <Tag color="green" icon={<CheckCircleOutlined />}>Đã chấp nhận</Tag>
+          )}
+          
+          {record.status === 'rejected' && (
+            <Tag color="red" icon={<CloseCircleOutlined />}>Đã từ chối</Tag>
           )}
         </Space>
       )
@@ -250,7 +272,7 @@ const CompaniesListPage = () => {
   return (
     <div>
       <Title level={2}>
-        Danh Sách Companies 
+        🏢 Duyệt công ty đăng ký
         {pendingCount > 0 && (
           <Badge count={pendingCount} style={{ marginLeft: 8 }} />
         )}
@@ -258,33 +280,43 @@ const CompaniesListPage = () => {
       
       {/* Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Tổng Companies"
+              title="Tổng công ty"
               value={companyStats?.total || 0}
               prefix={<BuildOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Đã duyệt"
-              value={companyStats?.verified || 0}
+              title="Đã chấp nhận"
+              value={companyStats?.accepted || 0}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
           <Card>
             <Statistic
               title="Chờ duyệt"
               value={companyStats?.pending || 0}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title="Đã từ chối"
+              value={companyStats?.rejected || 0}
+              prefix={<CloseCircleOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>
@@ -301,15 +333,15 @@ const CompaniesListPage = () => {
           />
           
           <Select
-            placeholder="Trạng thái duyệt"
-            style={{ width: 150 }}
+            placeholder="Lọc theo trạng thái"
+            style={{ width: 180 }}
             allowClear
             onChange={handleStatusFilter}
+            value={filters.status || undefined}
           >
-            <Option value="all">Tất cả</Option>
-            <Option value="pending">⏳ Chờ duyệt</Option>
-            <Option value="verified">✅ Đã duyệt</Option>
-            <Option value="rejected">❌ Từ chối</Option>
+            <Option value="pending">Chờ duyệt</Option>
+            <Option value="accepted">Đã chấp nhận</Option>
+            <Option value="rejected">Đã từ chối</Option>
           </Select>
         </Space>
         
@@ -338,7 +370,7 @@ const CompaniesListPage = () => {
         title={
           <Space>
             <ExclamationCircleOutlined style={{ color: '#faad14' }} />
-            {reviewModal.action === 'approve' ? '✅ Duyệt Company' : '❌ Từ chối Company'}
+            {reviewModal.action === 'approve' ? '✅ Chấp nhận công ty' : '❌ Từ chối công ty'}
           </Space>
         }
         open={reviewModal.visible}
@@ -348,22 +380,47 @@ const CompaniesListPage = () => {
           setAdminNote('')
         }}
         confirmLoading={reviewMutation.isLoading}
-        okText="Xác nhận"
+        okText={reviewModal.action === 'approve' ? 'Chấp nhận' : 'Từ chối'}
         cancelText="Hủy"
+        okButtonProps={{
+          danger: reviewModal.action === 'reject'
+        }}
         width={600}
       >
         <div style={{ marginBottom: 16 }}>
-          <strong>🏢 Công ty:</strong> {reviewModal.company?.name}
+          <strong>🏢 Công ty:</strong> {reviewModal.company?.company_name}
         </div>
         <div style={{ marginBottom: 16 }}>
-          <strong>📧 Email:</strong> {reviewModal.company?.email}
+          <strong>� Người liên hệ:</strong> {reviewModal.company?.contact_person}
         </div>
         <div style={{ marginBottom: 16 }}>
-          <strong>🌐 Website:</strong> {reviewModal.company?.website || 'N/A'}
+          <strong>🌐 Website:</strong> {reviewModal.company?.company_website || 'Chưa cập nhật'}
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <strong>🏭 Ngành nghề:</strong> {reviewModal.company?.industry || 'Chưa cập nhật'}
+        </div>
+        
+        <div style={{ 
+          padding: '12px', 
+          backgroundColor: reviewModal.action === 'approve' ? '#f6ffed' : '#fff2f0',
+          border: `1px solid ${reviewModal.action === 'approve' ? '#b7eb8f' : '#ffccc7'}`,
+          borderRadius: '4px',
+          marginBottom: '16px'
+        }}>
+          <strong>
+            {reviewModal.action === 'approve' 
+              ? '⚠️ Xác nhận chấp nhận đơn đăng ký?' 
+              : '⚠️ Xác nhận từ chối đơn đăng ký?'}
+          </strong>
+          <div style={{ marginTop: '8px', fontSize: '13px' }}>
+            {reviewModal.action === 'approve' 
+              ? 'Công ty sẽ được phép đăng tin tuyển dụng sau khi chấp nhận.'
+              : 'Công ty sẽ không được phép sử dụng hệ thống.'}
+          </div>
         </div>
         
         <div style={{ marginBottom: 8 }}>
-          <strong>📝 Ghi chú admin:</strong>
+          <strong>📝 Ghi chú (tùy chọn):</strong>
         </div>
         <TextArea
           rows={4}

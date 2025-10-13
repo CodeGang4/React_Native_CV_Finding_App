@@ -18,6 +18,7 @@ import {
   SearchOutlined, 
   UserOutlined, 
   EyeOutlined,
+  TeamOutlined,
   MailOutlined
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
@@ -140,6 +141,7 @@ const UsersListPage = () => {
             <Statistic
               title="Ứng viên"
               value={userStats?.candidates || 0}
+              prefix={<UserOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
@@ -149,6 +151,7 @@ const UsersListPage = () => {
             <Statistic
               title="Nhà tuyển dụng"
               value={userStats?.employers || 0}
+              prefix={<TeamOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
           </Card>

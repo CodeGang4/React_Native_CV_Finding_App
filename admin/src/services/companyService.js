@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase'
 
-// Lấy danh sách employers chờ duyệt và đã duyệt
+// Lấy danh sách employers với status: pending/accepted/rejected
 export const getCompanies = async (filters = {}) => {
   let query = supabase
     .from('employers')
@@ -15,16 +15,17 @@ export const getCompanies = async (filters = {}) => {
       industry,
       contact_person,
       description,
-      verified,
+      status,
+      isverified,
       created_at,
       updated_at,
       users(email, username)
     `)
     .order('created_at', { ascending: false })
 
-  // Filter theo trạng thái duyệt
-  if (filters.is_verified !== undefined) {
-    query = query.eq('verified', filters.is_verified)
+  // Filter theo status (pending/accepted/rejected)
+  if (filters.status) {
+    query = query.eq('status', filters.status)
   }
   
   if (filters.search) {
@@ -47,7 +48,7 @@ export const getCompanies = async (filters = {}) => {
   return { data, error, count }
 }
 
-// Lấy employers chờ duyệt
+// Lấy employers chờ duyệt (status = pending)
 export const getPendingCompanies = async () => {
   const { data, error } = await supabase
     .from('employers')
@@ -60,26 +61,31 @@ export const getPendingCompanies = async () => {
       company_logo,
       industry,
       company_size,
+      status,
       created_at,
       users(email, username)
     `)
-    .eq('verified', false)
+    .eq('status', 'pending')
     .order('created_at', { ascending: false })
 
   return { data, error }
 }
 
-// Duyệt employer (approve/reject) 
+// Duyệt employer (approve = 'accepted' / reject = 'rejected') 
 export const reviewCompany = async (companyId, isApproved, adminNote = '') => {
+  const newStatus = isApproved ? 'accepted' : 'rejected'
+  
   const { data, error } = await supabase
     .from('employers')
     .update({
-      verified: isApproved,
+      status: newStatus,
+      isverified: isApproved, // Update isverified khi accept
       updated_at: new Date().toISOString()
     })
     .eq('id', companyId)
     .select()
 
+  if (error) throw error
   return { data, error }
 }
 
@@ -103,21 +109,24 @@ export const getCompanyById = async (id) => {
   return { data, error }
 }
 
-// Lấy thống kê employers
+// Lấy thống kê employers theo status (pending/accepted/rejected)
 export const getCompanyStats = async () => {
   const [
     { count: totalCompanies },
-    { count: verifiedCompanies },
-    { count: pendingCompanies }
+    { count: acceptedCompanies },
+    { count: pendingCompanies },
+    { count: rejectedCompanies }
   ] = await Promise.all([
     supabase.from('employers').select('*', { count: 'exact', head: true }),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('verified', true),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('verified', false)
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'accepted'),
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'rejected')
   ])
 
   return {
     total: totalCompanies || 0,
-    verified: verifiedCompanies || 0,
-    pending: pendingCompanies || 0
+    accepted: acceptedCompanies || 0,
+    pending: pendingCompanies || 0,
+    rejected: rejectedCompanies || 0
   }
 }
