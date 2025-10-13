@@ -33,23 +33,38 @@ export default function EditJobModal({
     jobType: "Toàn thời gian",
     description: "",
     requirements: "",
-    benefits: "",
-    skills: "",
     quantity: "1",
   });
 
   useEffect(() => {
     if (job && visible) {
+      // Debug: Log job data để kiểm tra cấu trúc
+      console.log("EditJobModal - Job data:", job);
+      console.log("EditJobModal - Deadline fields:", {
+        deadline: job.deadline,
+        expired_date: job.expired_date,
+        exprired_date: job.exprired_date,
+      });
+
       // Format deadline từ ISO string về dd/mm/yyyy
       const formatDeadline = (dateString) => {
         if (!dateString) return "";
+        console.log("Formatting date string:", dateString);
         try {
           const date = new Date(dateString);
+          console.log("Parsed date object:", date);
+          console.log("Date is valid:", !isNaN(date.getTime()));
+
+          if (isNaN(date.getTime())) return ""; // Check if date is invalid
+
           const day = date.getDate().toString().padStart(2, "0");
           const month = (date.getMonth() + 1).toString().padStart(2, "0");
           const year = date.getFullYear();
-          return `${day}/${month}/${year}`;
+          const formatted = `${day}/${month}/${year}`;
+          console.log("Formatted date:", formatted);
+          return formatted;
         } catch (error) {
+          console.error("Date formatting error:", error);
           return "";
         }
       };
@@ -61,18 +76,14 @@ export default function EditJobModal({
         salary: job.salary || "",
         location: job.location || "",
         education: job.education || "",
-        deadline: formatDeadline(job.deadline || job.exprired_date),
+        deadline: formatDeadline(
+          job.deadline || job.expired_date || job.exprired_date
+        ),
         jobType: job.jobType || "Toàn thời gian",
         description: job.description || "",
         requirements: Array.isArray(job.requirements)
           ? job.requirements.join("\n")
           : job.requirements || "",
-        benefits: Array.isArray(job.benefits)
-          ? job.benefits.join("\n")
-          : job.benefits || "",
-        skills: Array.isArray(job.skills)
-          ? job.skills.join(", ")
-          : job.skills || "",
         quantity: job.quantity?.toString() || "1",
       });
     }
@@ -332,36 +343,6 @@ export default function EditJobModal({
                 placeholder="Có ít nhất 2 năm kinh nghiệm với React Native. Thành thạo JavaScript, TypeScript..."
                 multiline
                 numberOfLines={5}
-              />
-            </View>
-
-            {/* Phúc lợi */}
-            <View style={styles.group}>
-              <Text style={styles.label}>Phúc lợi</Text>
-              <Text style={styles.note}>Mô tả các phúc lợi cho nhân viên</Text>
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                value={formData.benefits}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, benefits: text })
-                }
-                placeholder="Lương tháng 13, bảo hiểm sức khỏe, làm việc từ xa..."
-                multiline
-                numberOfLines={5}
-              />
-            </View>
-
-            {/* Kỹ năng */}
-            <View style={styles.group}>
-              <Text style={styles.label}>Kỹ năng yêu cầu</Text>
-              <Text style={styles.note}>Phân tách bằng dấu phẩy</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.skills}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, skills: text })
-                }
-                placeholder="React Native, JavaScript, TypeScript, Redux"
               />
             </View>
           </ScrollView>

@@ -1,6 +1,7 @@
 import BaseRepository from "./BaseRepository.js";
 import apiClient from "../services/api/ApiClient.js";
 import Constants from "expo-constants";
+import { calculateJobStatus } from "../utils/jobStatusUtils.js";
 
 /**
  * Employer Job Repository - Handles employer job data operations with caching
@@ -11,8 +12,14 @@ export class EmployerJobRepository extends BaseRepository {
     this.baseEndpoint = "/employer";
   }
 
-  // Helper method để tạo request với correct base URL cho employer job endpoints
+  // Helper method để tạo request cho employer job endpoints
   async makeJobRequest(method, endpoint, data = null, config = {}) {
+    console.log(
+      `🔗 Making job request: ${method} ${endpoint}`,
+      data ? "with data" : "no data"
+    );
+
+    // Get base URL without /client suffix for job endpoints
     const baseUrl =
       Constants.expoConfig?.extra?.API?.replace("/client", "") ||
       "http://localhost:3000";
@@ -20,7 +27,7 @@ export class EmployerJobRepository extends BaseRepository {
 
     const requestConfig = {
       ...config,
-      url: fullUrl,
+      url: fullUrl, // Sử dụng full URL cho job endpoints
       method,
       ...(data && { data }),
     };
@@ -155,6 +162,23 @@ export class EmployerJobRepository extends BaseRepository {
   // Cập nhật job
   async updateJob(jobId, jobData) {
     try {
+      console.log(
+        `🔄 Updating job ${jobId} with data:`,
+        JSON.stringify(jobData, null, 2)
+      );
+
+      // Kiểm tra job có tồn tại không trước khi update
+      try {
+        await this.getJobById(jobId);
+        console.log(`✅ Job ${jobId} exists, proceeding with update`);
+      } catch (error) {
+        console.error(
+          `❌ Job ${jobId} not found before update:`,
+          error.message
+        );
+        throw new Error(`Job ${jobId} not found - cannot update`);
+      }
+
       const response = await this.makeJobRequest(
         "PUT",
         `/job/updateJob/${jobId}`,
@@ -238,13 +262,18 @@ export class EmployerJobRepository extends BaseRepository {
       salary: jobData.salary || "Thỏa thuận",
       location: jobData.location || "Không xác định",
       experience: jobData.experience || "Không yêu cầu",
-      deadline: jobData.exprired_date
-        ? new Date(jobData.exprired_date).toLocaleDateString("vi-VN")
-        : "N/A",
+      deadline: jobData.expired_date || jobData.exprired_date || null,
+      expired_date: jobData.expired_date || jobData.exprired_date || null,
+      formattedDeadline:
+        jobData.expired_date || jobData.exprired_date
+          ? new Date(
+              jobData.expired_date || jobData.exprired_date
+            ).toLocaleDateString("vi-VN")
+          : "N/A",
       postedDate: jobData.created_at
         ? new Date(jobData.created_at).toLocaleDateString("vi-VN")
         : "N/A",
-      status: jobData.isAccepted ? "Đang tuyển" : "Chờ duyệt",
+      status: calculateJobStatus(jobData),
       views: jobData.views || 0,
       applications: jobData.applications || 0,
       shortlisted: jobData.shortlisted || 0,
@@ -255,10 +284,18 @@ export class EmployerJobRepository extends BaseRepository {
       requirements: Array.isArray(jobData.requirements)
         ? jobData.requirements
         : jobData.requirements
-        ? [jobData.requirements]
+        ? jobData.requirements.split("\n").filter((req) => req.trim())
         : [],
-      benefits: jobData.benefits || [],
-      skills: jobData.skills || [],
+      benefits: Array.isArray(jobData.benefits)
+        ? jobData.benefits
+        : jobData.benefits
+        ? jobData.benefits.split("\n").filter((benefit) => benefit.trim())
+        : [],
+      skills: Array.isArray(jobData.skills)
+        ? jobData.skills
+        : jobData.skills
+        ? jobData.skills.split(", ").filter((skill) => skill.trim())
+        : [],
       workLocation: jobData.location || "",
       workTime: jobData.work_time || "Thứ 2 - Thứ 6: 8:00 - 17:30",
       quantity: jobData.quantity || 1,
@@ -270,23 +307,35 @@ export class EmployerJobRepository extends BaseRepository {
 
   // Transform UI format sang API format
   transformJobDataToAPI(jobData) {
+    // Tính toán is_expired dựa trên deadline
+    let isExpired = false;
+    if (jobData.deadline) {
+      const deadlineDate = new Date(jobData.deadline);
+      isExpired = deadlineDate < new Date();
+    }
+
     return {
       title: jobData.title,
       description: jobData.description,
       requirements: Array.isArray(jobData.requirements)
         ? jobData.requirements.join("\n")
         : jobData.requirements,
+      benefits: Array.isArray(jobData.benefits)
+        ? jobData.benefits.join("\n")
+        : jobData.benefits,
+      skills: Array.isArray(jobData.skills)
+        ? jobData.skills.join(", ")
+        : jobData.skills,
       location: jobData.location || jobData.workLocation,
       job_type: this.mapJobTypeToAPI(jobData.jobType),
       salary: jobData.salary,
       quantity: jobData.quantity || 1,
       position: jobData.position,
       education: jobData.education,
-      exprired_date: jobData.deadline
+      expired_date: jobData.deadline
         ? new Date(jobData.deadline).toISOString()
         : null,
-      isAccepted:
-        jobData.status === "Đang tuyển" || jobData.isAccepted === true,
+      is_expired: isExpired,
     };
   }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { DeviceEventEmitter } from "react-native";
 import applicationRepository from "../repositories/ApplicationRepository.js";
+import { getJobStatusWithColor } from "../utils/jobStatusUtils.js";
 
 /**
  * Custom hook for job card statistics (views, candidates, expiry)
@@ -152,41 +153,9 @@ export const useJobCardStats = (job) => {
   }, []);
 
   // Get job status based on expiry and other factors
-  const getJobStatus = useCallback(
-    (job) => {
-      const deadline = formatDeadline(job);
-
-      // Check explicit status first
-      if (job?.status === "inactive" || job?.status === "closed") {
-        return {
-          text: job.status === "inactive" ? "Tạm dừng" : "Đã đóng",
-          color: "#757575",
-        };
-      }
-
-      if (job?.status === "draft") {
-        return {
-          text: "Bản nháp",
-          color: "#2196F3",
-        };
-      }
-
-      // Check if expired
-      if (deadline && typeof deadline === "object" && deadline.isExpired) {
-        return {
-          text: "Hết hạn",
-          color: "#F44336",
-        };
-      }
-
-      // Default to active
-      return {
-        text: "Đang tuyển",
-        color: "#4CAF50",
-      };
-    },
-    [formatDeadline]
-  );
+  const getJobStatus = useCallback((job) => {
+    return getJobStatusWithColor(job);
+  }, []);
 
   // Fetch candidates count when job changes
   useEffect(() => {
