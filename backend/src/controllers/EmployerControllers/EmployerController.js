@@ -95,6 +95,70 @@ class EmployerController {
         }
     }
 
+    async updateStatusCompany(req, res) {
+        const company_id = req.params.companyId;
+        const allowedStatus = ['accepted', 'rejected', 'pending'];
+        const { status } = req.body;
+        if (!allowedStatus.includes(status)) {
+            return res
+                .status(400)
+                .json({ error: 'Invalid status. Allowed values: accepted, rejected, pending' });
+        }
+        if(!company_id){
+            return res.status(400).json({ error: 'Company ID is required' });
+        }
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .update({
+                    status: status,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('user_id', company_id)
+                .select();
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: 'Company not found or not updated' });
+            }
+            res.status(200).json(data[0]);
+        } catch (error) {
+            console.error('Error accepting company:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    async getCompanyWithStatus(req, res) {
+        const status = req.params.status;
+        const allowedStatus = ['accepted', 'rejected', 'pending'];
+        if (!allowedStatus.includes(status)) {
+            return res
+                .status(400)
+                .json({ error: 'Invalid status. Allowed values: accepted, rejected, pending' });
+        }
+        try {
+            const { data, error } = await supabase
+                .from('employers')
+                .select('*')
+                .eq('status', status);
+            if (error) {
+                throw error;
+            }
+            if (!data || data.length === 0) {
+                return res
+                    .status(404)
+                    .json({ error: `No companies found with status: ${status}` });
+            }
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error fetching companies by status:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
     async updateInfo(req, res) {
         const companyId = req.params.companyId;
         const {
