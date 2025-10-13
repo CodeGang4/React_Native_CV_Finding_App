@@ -191,6 +191,18 @@ class CandidatesController {
 
         res.status(200).json({ portfolio_url: publicData.publicUrl });
     }
+    async getAllCandidates(req, res) {
+        const { data, error } = await supabase
+            .from('candidates')
+            .select('*');
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'No candidates found' });
+        }
+        res.status(200).json(data);
+    }
 }
 
 module.exports = new CandidatesController();
