@@ -7,10 +7,16 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import CommonHeader from "../../../components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
 import JobCard from "../../../components/home/cards/JobCard";
+import { useHomeData } from "../../../../shared/services/HomeDataManager";
+import { useAuth } from "../../../../shared/contexts/AuthContext";
+import HomeApiService from "../../../../shared/services/api/HomeApiService";
+import JobDetailScreen from "../../shared/JobDetailScreen";
 
 const bestJobs = [
   {
@@ -185,11 +191,25 @@ const FilterModal = ({
 );
 
 export default function BestJobsPage({ onBack }) {
+  const { user } = useAuth();
+  const { data, loading, error } = useHomeData();
+  const { jobs } = data;
+
+  // Debug logs
+  console.log("[BestJobsPage] Component state:", {
+    jobs: jobs?.length || 0,
+    loading,
+    error,
+  });
+
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [showIndustryModal, setShowIndustryModal] = useState(false);
+  const [showJobDetail, setShowJobDetail] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
 
+  const [searchText, setSearchText] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("Khu vực");
   const [selectedExperience, setSelectedExperience] = useState("Kinh nghiệm");
   const [selectedSalary, setSelectedSalary] = useState("Mức");
@@ -200,6 +220,152 @@ export default function BestJobsPage({ onBack }) {
       onBack();
     }
   };
+
+  const handleJobPress = (job) => {
+    console.log("[BestJobsPage] Job pressed:", job.id);
+    setSelectedJob(job);
+    setShowJobDetail(true);
+  };
+
+  const handleJobDetailBack = () => {
+    setShowJobDetail(false);
+    setSelectedJob(null);
+  };
+
+  const resetAllFilters = () => {
+    setSearchText("");
+    setSelectedRegion("Khu vực");
+    setSelectedExperience("Kinh nghiệm");
+    setSelectedSalary("Mức");
+    setSelectedIndustry("");
+  };
+
+  // Check if current user owns the job
+  const isJobOwner = (job) => {
+    return user && job && user.id === job.employer_id;
+  };
+
+  const handleJobEdit = async (updatedJob) => {
+    try {
+      if (!isJobOwner(selectedJob)) {
+        Alert.alert("Lỗi", "Bạn không có quyền chỉnh sửa tin tuyển dụng này");
+        return;
+      }
+
+      await HomeApiService.updateJob(updatedJob.id, updatedJob);
+      setSelectedJob(updatedJob);
+      Alert.alert("Thành công", "Đã cập nhật tin tuyển dụng");
+    } catch (error) {
+      console.error("[BestJobsPage] Edit job error:", error);
+      Alert.alert("Lỗi", error.message || "Không thể cập nhật tin tuyển dụng");
+    }
+  };
+
+  const handleJobDelete = async (jobId) => {
+    try {
+      if (!isJobOwner(selectedJob)) {
+        Alert.alert("Lỗi", "Bạn không có quyền xóa tin tuyển dụng này");
+        return;
+      }
+
+      await HomeApiService.deleteJob(jobId);
+      Alert.alert("Thành công", "Đã xóa tin tuyển dụng", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowJobDetail(false);
+            setSelectedJob(null);
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("[BestJobsPage] Delete job error:", error);
+      Alert.alert("Lỗi", error.message || "Không thể xóa tin tuyển dụng");
+    }
+  };
+
+  // Show job detail screen if job is selected
+  if (showJobDetail && selectedJob) {
+    const canEdit = isJobOwner(selectedJob);
+
+    return (
+      <JobDetailScreen
+        job={selectedJob}
+        onBack={handleJobDetailBack}
+        onEdit={canEdit ? handleJobEdit : null}
+        onDelete={canEdit ? handleJobDelete : null}
+        canViewCandidates={canEdit}
+      />
+    );
+  }
+
+  // Sử dụng data từ backend, fallback về data cũ nếu có lỗi
+  const baseJobs = error.jobs ? bestJobs : jobs || [];
+
+  console.log("[BestJobsPage] Base jobs:", {
+    baseJobsCount: baseJobs?.length || 0,
+    hasError: !!error.jobs,
+    jobsFromAPI: jobs?.length || 0,
+  });
+
+  // Áp dụng các filter
+  const displayJobs = baseJobs.filter((job) => {
+    // Filter theo search text (tìm kiếm trong title, company, location)
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase();
+      const titleMatch = job.title?.toLowerCase().includes(searchLower);
+      const companyMatch =
+        job.company?.toLowerCase().includes(searchLower) ||
+        job.company_name?.toLowerCase().includes(searchLower);
+      const locationMatch = job.location?.toLowerCase().includes(searchLower);
+
+      if (!titleMatch && !companyMatch && !locationMatch) {
+        return false;
+      }
+    }
+
+    // Filter theo region
+    if (
+      selectedRegion !== "Tất cả" &&
+      selectedRegion !== "Khu vực" &&
+      job.location &&
+      !job.location.includes(selectedRegion)
+    ) {
+      return false;
+    }
+
+    // Filter theo experience (nếu có field tương ứng)
+    if (
+      selectedExperience !== "Tất cả" &&
+      selectedExperience !== "Kinh nghiệm" &&
+      job.experience &&
+      !job.experience.includes(selectedExperience)
+    ) {
+      return false;
+    }
+
+    // Filter theo salary (nếu có field tương ứng)
+    if (
+      selectedSalary !== "Tất cả" &&
+      selectedSalary !== "Mức" &&
+      job.salary &&
+      !job.salary.includes(selectedSalary)
+    ) {
+      return false;
+    }
+
+    // Filter theo industry (nếu có field tương ứng)
+    if (
+      selectedIndustry !== "Tất cả" &&
+      selectedIndustry &&
+      job.industry &&
+      !job.industry.includes(selectedIndustry)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <View style={styles.container}>
@@ -214,13 +380,15 @@ export default function BestJobsPage({ onBack }) {
           style={styles.searchInput}
           placeholder="Địa điểm - Công ty - Vị trí - Ngành nghề"
           placeholderTextColor="#999"
+          value={searchText}
+          onChangeText={setSearchText}
         />
       </View>
 
       <View style={styles.filterContainer}>
-        <TouchableOpacity style={styles.filterButton}>
+        <TouchableOpacity style={styles.filterButton} onPress={resetAllFilters}>
           <Text style={styles.filterIcon}>⚙️</Text>
-          <Text style={styles.filterText}>Lọc</Text>
+          <Text style={styles.filterText}>Xóa bộ lọc</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.filterButton}
@@ -247,24 +415,36 @@ export default function BestJobsPage({ onBack }) {
 
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsText}>
-          <Text style={styles.resultsNumber}>859</Text> kết quả
+          <Text style={styles.resultsNumber}>{displayJobs.length}</Text> kết quả
         </Text>
       </View>
 
-      <ScrollView
-        style={styles.jobList}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={TAB_BAR_PADDING}
-      >
-        {bestJobs.map((job) => (
-          <JobCard
-            key={job.id}
-            item={job}
-            onPress={(job) => console.log("Job pressed:", job)}
-            showLogoColor={true}
-          />
-        ))}
-      </ScrollView>
+      {loading.jobs ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00b14f" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu việc làm...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.jobList}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={TAB_BAR_PADDING}
+        >
+          {error.jobs && (
+            <Text style={styles.errorText}>
+              Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+            </Text>
+          )}
+          {displayJobs.map((job, index) => (
+            <JobCard
+              key={job.id || `fallback-${index}`}
+              item={job}
+              onPress={handleJobPress}
+              showLogoColor={true}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <FilterModal
         visible={showRegionModal}
@@ -382,6 +562,26 @@ const styles = StyleSheet.create({
   optionText: { fontSize: 16, color: "#333" },
   selectedOptionText: { color: "#00b14f", fontWeight: "bold" },
   modalFooter: { flexDirection: "row", padding: 16, gap: 12 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+  },
+  errorText: {
+    backgroundColor: "#fff3cd",
+    color: "#856404",
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 8,
+    textAlign: "center",
+  },
   clearButton: {
     flex: 1,
     paddingVertical: 12,

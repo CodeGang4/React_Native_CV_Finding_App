@@ -172,7 +172,8 @@ class HomeDataManager {
       };
     };
 
-    const jobs = await Promise.all(allJobs.slice(0, 3).map(transformJob));
+    // Hiển thị toàn bộ jobs từ database thay vì chỉ 3 jobs đầu tiên
+    const jobs = await Promise.all(allJobs.map(transformJob));
     const topJobs = await Promise.all(bestJobs.map(transformJob));
 
     return { jobs, topJobs };

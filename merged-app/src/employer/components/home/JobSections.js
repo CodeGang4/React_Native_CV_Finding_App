@@ -93,13 +93,15 @@ export default function JobSections({
         ) : (
           <>
             {jobs.length > 0
-              ? jobs.map((item, index) => (
-                  <JobCard
-                    item={item}
-                    key={`job-${item.id || index}`}
-                    onPress={handleJobPress}
-                  />
-                ))
+              ? jobs
+                  .slice(0, 3)
+                  .map((item, index) => (
+                    <JobCard
+                      item={item}
+                      key={`job-${item.id || index}`}
+                      onPress={handleJobPress}
+                    />
+                  ))
               : suggestionList.map((item, index) => (
                   <JobCard
                     item={item}
@@ -132,13 +134,15 @@ export default function JobSections({
         ) : (
           <>
             {topJobs.length > 0
-              ? topJobs.map((item, index) => (
-                  <JobCard
-                    item={item}
-                    key={`topjob-${item.id || index}`}
-                    onPress={handleJobPress}
-                  />
-                ))
+              ? topJobs
+                  .slice(0, 3)
+                  .map((item, index) => (
+                    <JobCard
+                      item={item}
+                      key={`topjob-${item.id || index}`}
+                      onPress={handleJobPress}
+                    />
+                  ))
               : bestJobsList.map((item, index) => (
                   <JobCard
                     item={item}

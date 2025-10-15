@@ -5,9 +5,11 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import CommonHeader from "../../../components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
+import { useHomeData } from "../../../../shared/services/HomeDataManager";
 
 const allBrands = [
   {
@@ -128,11 +130,46 @@ const BrandCard = ({ brand }) => (
 );
 
 export default function TopBrandsPage({ onBack }) {
+  const { companies, loading, error, refetch } = useHomeData();
+
   const handleBackPress = () => {
     if (onBack && typeof onBack === "function") {
       onBack();
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <CommonHeader
+          title="Top Brands"
+          onBack={handleBackPress}
+          showAI={false}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00b14f" />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <CommonHeader
+          title="Top Brands"
+          onBack={handleBackPress}
+          showAI={false}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+            <Text style={styles.retryText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -146,8 +183,8 @@ export default function TopBrandsPage({ onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={TAB_BAR_PADDING}
       >
-        {allBrands.map((brand) => (
-          <BrandCard key={brand.id} brand={brand} />
+        {companies.map((company) => (
+          <BrandCard key={company.id} brand={company} />
         ))}
       </ScrollView>
     </View>
@@ -157,6 +194,34 @@ export default function TopBrandsPage({ onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   brandsList: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#00b14f",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   brandCard: {
     backgroundColor: "#fff",
     borderRadius: 12,

@@ -5,9 +5,11 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import CommonHeader from "../../../components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
+import { useHomeData } from "../../../../shared/services/HomeDataManager";
 
 const allPodcasts = [
   {
@@ -86,11 +88,42 @@ const PodcastCard = ({ podcast }) => (
 );
 
 export default function PodcastPage({ onBack }) {
+  const { podcasts, loading, error, refetch } = useHomeData();
+
   const handleBackPress = () => {
     if (onBack && typeof onBack === "function") {
       onBack();
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00b14f" />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+            <Text style={styles.retryText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Sử dụng data từ backend, fallback về allPodcasts nếu không có data
+  const displayPodcasts =
+    podcasts && podcasts.length > 0 ? podcasts : allPodcasts;
 
   return (
     <View style={styles.container}>
@@ -100,7 +133,7 @@ export default function PodcastPage({ onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={TAB_BAR_PADDING}
       >
-        {allPodcasts.map((podcast) => (
+        {displayPodcasts.map((podcast) => (
           <PodcastCard key={podcast.id} podcast={podcast} />
         ))}
       </ScrollView>
@@ -111,6 +144,34 @@ export default function PodcastPage({ onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   podcastsList: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#00b14f",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   podcastCard: {
     flexDirection: "row",
     backgroundColor: "#fff",
