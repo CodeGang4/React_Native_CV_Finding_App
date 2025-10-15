@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -6,10 +6,13 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import CommonHeader from "../../../components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
 import { useHomeData } from "../../../../shared/services/HomeDataManager";
+import CompanyDetailScreen from "../../shared/CompanyDetailScreen";
+import HomeApiService from "../../../../shared/services/api/HomeApiService";
 
 const allBrands = [
   {
@@ -104,33 +107,111 @@ const allBrands = [
   },
 ];
 
-const BrandCard = ({ brand }) => (
-  <View style={styles.brandCard}>
-    {brand.tag && (
-      <View style={styles.tagContainer}>
-        <Text style={styles.tagText}>{brand.tag}</Text>
+const BrandCard = ({ brand, onPress }) => {
+  const [jobCount, setJobCount] = React.useState(
+    brand.jobCount || brand.job_count || 0
+  );
+  const [loadingJobs, setLoadingJobs] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchJobCount = async () => {
+      const companyId = brand.id || brand.company_id;
+      console.log(
+        "[BrandCard] Fetching job count for company:",
+        companyId,
+        brand.name
+      );
+
+      try {
+        setLoadingJobs(true);
+        const jobs = await HomeApiService.getJobsByCompanyId(companyId);
+        console.log(
+          "[BrandCard] Job count fetched:",
+          jobs?.length || 0,
+          "for company:",
+          brand.name
+        );
+        setJobCount(jobs?.length || 0);
+      } catch (error) {
+        console.log(
+          "[BrandCard] Failed to fetch job count for company:",
+          brand.name,
+          "Error:",
+          error
+        );
+        // Keep existing job count or fallback
+        setJobCount(brand.jobCount || brand.job_count || 0);
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+
+    // Only fetch if we have a company ID from backend data
+    if (brand.id || brand.company_id) {
+      fetchJobCount();
+    } else {
+      // Use existing job count for fallback data
+      setJobCount(brand.jobCount || brand.job_count || 0);
+    }
+  }, [brand.id, brand.company_id]);
+
+  return (
+    <TouchableOpacity
+      style={styles.brandCard}
+      onPress={() => onPress && onPress(brand)}
+    >
+      {brand.tag && (
+        <View style={styles.tagContainer}>
+          <Text style={styles.tagText}>{brand.tag}</Text>
+        </View>
+      )}
+      <View style={styles.logoContainer}>
+        {brand.logo &&
+        typeof brand.logo === "string" &&
+        brand.logo.startsWith("http") ? (
+          <Image
+            source={{ uri: brand.logo }}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <View
+            style={[
+              styles.logo,
+              { backgroundColor: brand.logoColor || "#00b14f" },
+            ]}
+          >
+            <Text style={styles.logoText}>
+              {(brand.name || brand.company_name || "C")
+                .charAt(0)
+                .toUpperCase()}
+            </Text>
+          </View>
+        )}
       </View>
-    )}
-    <View style={styles.logoContainer}>
-      <View style={[styles.logo, { backgroundColor: brand.logoColor }]}>
-        <Text style={styles.logoText}>{brand.logo}</Text>
+      <View style={styles.brandInfo}>
+        <Text style={styles.brandName} numberOfLines={2}>
+          {brand.name || brand.company_name}
+        </Text>
+        <Text style={styles.brandCategory}>
+          {brand.category || brand.industry || "Chưa phân loại"}
+        </Text>
+        <Text style={styles.jobCount}>
+          {loadingJobs ? "..." : jobCount} việc làm
+        </Text>
       </View>
-    </View>
-    <View style={styles.brandInfo}>
-      <Text style={styles.brandName} numberOfLines={2}>
-        {brand.name}
-      </Text>
-      <Text style={styles.brandCategory}>{brand.category}</Text>
-      <Text style={styles.jobCount}>{brand.jobCount} việc làm</Text>
-    </View>
-    <TouchableOpacity style={styles.followButton}>
-      <Text style={styles.followButtonText}>Theo dõi</Text>
+      <TouchableOpacity style={styles.followButton}>
+        <Text style={styles.followButtonText}>Theo dõi</Text>
+      </TouchableOpacity>
     </TouchableOpacity>
-  </View>
-);
+  );
+};
 
 export default function TopBrandsPage({ onBack }) {
-  const { companies, loading, error, refetch } = useHomeData();
+  const { data, loading, error, refetch } = useHomeData();
+  const { companies } = data;
+  const [showCompanyDetail, setShowCompanyDetail] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   const handleBackPress = () => {
     if (onBack && typeof onBack === "function") {
@@ -138,7 +219,28 @@ export default function TopBrandsPage({ onBack }) {
     }
   };
 
-  if (loading) {
+  const handleCompanyPress = (company) => {
+    console.log("[TopBrandsPage] Company pressed:", company.id);
+    setSelectedCompany(company);
+    setShowCompanyDetail(true);
+  };
+
+  const handleCompanyDetailBack = () => {
+    setShowCompanyDetail(false);
+    setSelectedCompany(null);
+  };
+
+  // Show company detail screen if selected
+  if (showCompanyDetail && selectedCompany) {
+    return (
+      <CompanyDetailScreen
+        company={selectedCompany}
+        onBack={handleCompanyDetailBack}
+      />
+    );
+  }
+
+  if (loading.companies) {
     return (
       <View style={styles.container}>
         <CommonHeader
@@ -148,12 +250,13 @@ export default function TopBrandsPage({ onBack }) {
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00b14f" />
+          <Text style={styles.loadingText}>Đang tải danh sách công ty...</Text>
         </View>
       </View>
     );
   }
 
-  if (error) {
+  if (error.companies) {
     return (
       <View style={styles.container}>
         <CommonHeader
@@ -162,7 +265,7 @@ export default function TopBrandsPage({ onBack }) {
           showAI={false}
         />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+          <Text style={styles.errorText}>Có lỗi xảy ra: {error.companies}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={refetch}>
             <Text style={styles.retryText}>Thử lại</Text>
           </TouchableOpacity>
@@ -170,6 +273,9 @@ export default function TopBrandsPage({ onBack }) {
       </View>
     );
   }
+
+  // Sử dụng data từ backend, fallback về data cũ nếu có lỗi
+  const displayCompanies = error.companies ? allBrands : companies || [];
 
   return (
     <View style={styles.container}>
@@ -183,8 +289,17 @@ export default function TopBrandsPage({ onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={TAB_BAR_PADDING}
       >
-        {companies.map((company) => (
-          <BrandCard key={company.id} brand={company} />
+        {error.companies && (
+          <Text style={styles.errorText}>
+            Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+          </Text>
+        )}
+        {displayCompanies.map((company, index) => (
+          <BrandCard
+            key={company.id || company.company_id || `fallback-${index}`}
+            brand={company}
+            onPress={handleCompanyPress}
+          />
         ))}
       </ScrollView>
     </View>
@@ -198,6 +313,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
   },
   errorContainer: {
     flex: 1,
@@ -246,6 +366,11 @@ const styles = StyleSheet.create({
   },
   tagText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
   logoContainer: { alignItems: "center", marginBottom: 12 },
+  logoImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
   logo: {
     width: 80,
     height: 80,

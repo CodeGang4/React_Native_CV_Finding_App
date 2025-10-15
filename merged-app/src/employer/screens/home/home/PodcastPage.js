@@ -88,7 +88,8 @@ const PodcastCard = ({ podcast }) => (
 );
 
 export default function PodcastPage({ onBack }) {
-  const { podcasts, loading, error, refetch } = useHomeData();
+  const { data, loading, error, refetch } = useHomeData();
+  const { podcasts } = data;
 
   const handleBackPress = () => {
     if (onBack && typeof onBack === "function") {
@@ -96,23 +97,24 @@ export default function PodcastPage({ onBack }) {
     }
   };
 
-  if (loading) {
+  if (loading.podcasts) {
     return (
       <View style={styles.container}>
         <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00b14f" />
+          <Text style={styles.loadingText}>Đang tải danh sách podcast...</Text>
         </View>
       </View>
     );
   }
 
-  if (error) {
+  if (error.podcasts) {
     return (
       <View style={styles.container}>
         <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+          <Text style={styles.errorText}>Có lỗi xảy ra: {error.podcasts}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={refetch}>
             <Text style={styles.retryText}>Thử lại</Text>
           </TouchableOpacity>
@@ -121,9 +123,8 @@ export default function PodcastPage({ onBack }) {
     );
   }
 
-  // Sử dụng data từ backend, fallback về allPodcasts nếu không có data
-  const displayPodcasts =
-    podcasts && podcasts.length > 0 ? podcasts : allPodcasts;
+  // Sử dụng data từ backend, fallback về allPodcasts nếu có lỗi
+  const displayPodcasts = error.podcasts ? allPodcasts : podcasts || [];
 
   return (
     <View style={styles.container}>
@@ -133,8 +134,16 @@ export default function PodcastPage({ onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={TAB_BAR_PADDING}
       >
-        {displayPodcasts.map((podcast) => (
-          <PodcastCard key={podcast.id} podcast={podcast} />
+        {error.podcasts && (
+          <Text style={styles.errorText}>
+            Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+          </Text>
+        )}
+        {displayPodcasts.map((podcast, index) => (
+          <PodcastCard
+            key={podcast.id || `fallback-${index}`}
+            podcast={podcast}
+          />
         ))}
       </ScrollView>
     </View>
@@ -148,6 +157,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
   },
   errorContainer: {
     flex: 1,

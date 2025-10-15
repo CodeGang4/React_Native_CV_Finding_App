@@ -160,6 +160,29 @@ export class HomeApiService {
       `job-delete-${jobId}` // cache key
     );
   }
+
+  // Get jobs by company ID
+  static async getJobsByCompanyId(companyId) {
+    return requestQueue.enqueue(
+      async () => {
+        const response = await fetch(
+          `http://192.168.110.49:3000/job/getJobByCompanyId/${companyId}`
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log(
+          "[HomeApiService] getJobsByCompanyId success:",
+          data.length,
+          "jobs for company",
+          companyId
+        );
+        return data;
+      },
+      `jobs-company-${companyId}` // cache key
+    );
+  }
 }
 
 export default HomeApiService;
