@@ -136,7 +136,11 @@ export default function TopBrandsPage({ onBack }) {
 
   return (
     <View style={styles.container}>
-      <CommonHeader title="Top Brands" onBack={handleBackPress} showAI={true} />
+      <CommonHeader
+        title="Top Brands"
+        onBack={handleBackPress}
+        showAI={false}
+      />
       <ScrollView
         style={styles.brandsList}
         showsVerticalScrollIndicator={false}

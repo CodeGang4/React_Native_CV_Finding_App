@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 
 export default function BrandCard({
   brand,
@@ -14,9 +14,19 @@ export default function BrandCard({
         </View>
       )}
       <View style={styles.logoContainer}>
-        <Text style={styles.logoEmoji}>{brand.logo}</Text>
+        {brand.logo && brand.logo.startsWith("http") ? (
+          <Image
+            source={{ uri: brand.logo }}
+            style={styles.logoImage}
+            onError={(e) =>
+              console.log("Brand logo load error:", e.nativeEvent.error)
+            }
+          />
+        ) : (
+          <Text style={styles.logoEmoji}>{brand.logo || "🏢"}</Text>
+        )}
       </View>
-      <Text style={styles.brandName} numberOfLines={3}>
+      <Text style={styles.brandName} numberOfLines={2} ellipsizeMode="tail">
         {brand.name}
       </Text>
       <Text style={styles.brandCategory}>{brand.category}</Text>
@@ -54,32 +64,56 @@ const styles = StyleSheet.create({
   },
   tagText: { color: "#fff", fontSize: 10, fontWeight: "bold" },
   logoContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     backgroundColor: "#f0f0f0",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    alignSelf: "center",
   },
-  logoEmoji: { fontSize: 24 },
+  logoEmoji: { fontSize: 22 },
+  logoImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 17,
+    resizeMode: "contain",
+  },
   brandName: {
     fontWeight: "600",
-    fontSize: 14,
+    fontSize: 13,
     color: "#333",
-    marginBottom: 4,
-    lineHeight: 18,
+    marginBottom: 6,
+    lineHeight: 17,
+    textAlign: "center",
+    paddingHorizontal: 4,
+    minHeight: 34,
   },
-  brandCategory: { color: "#666", fontSize: 12, marginBottom: 12 },
+  brandCategory: {
+    color: "#666",
+    fontSize: 12,
+    marginBottom: 12,
+    textAlign: "center",
+  },
   followButton: {
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#00b14f",
     borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: "center",
+    minWidth: 100,
+    alignItems: "center",
   },
-  followText: { color: "#00b14f", fontSize: 12, fontWeight: "600" },
+  followText: {
+    color: "#00b14f",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });

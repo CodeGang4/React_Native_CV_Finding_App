@@ -1,7 +1,15 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
+import useHomePodcasts from "../../../shared/hooks/useHomePodcasts";
 
 // Temporary: Use a placeholder image or remove image requirement
 const podcastList = [
@@ -51,26 +59,55 @@ const PodcastCard = ({ podcast }) => (
 );
 
 export default function PodcastSection({ onPodcastPress }) {
+  const { podcasts, loading, error } = useHomePodcasts();
+
   return (
     <View style={styles.section}>
       <LinearGradient
         colors={["#2c5f41", "#00b14f"]}
         style={styles.podcastHeader}
       >
-        <Text style={styles.headerTitle}>TopCV Podcast</Text>
+        <Text style={styles.headerTitle}>JobBridge Podcast</Text>
         <View style={styles.micIcon}>
           <MaterialIcons name="mic" size={24} color="white" />
         </View>
       </LinearGradient>
 
       <View style={styles.podcastContainer}>
-        {podcastList.map((podcast) => (
-          <PodcastCard key={podcast.id} podcast={podcast} />
-        ))}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#00b14f" />
+            <Text style={styles.loadingText}>Đang tải podcast...</Text>
+          </View>
+        ) : (
+          <>
+            {error && (
+              <Text style={styles.errorText}>
+                Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+              </Text>
+            )}
+            {error || podcasts.length === 0
+              ? podcastList.map((podcast, index) => (
+                  <PodcastCard
+                    key={`static-podcast-${podcast.id || index}`}
+                    podcast={podcast}
+                  />
+                ))
+              : podcasts.map((podcast, index) => (
+                  <PodcastCard
+                    key={`podcast-${podcast.id || index}`}
+                    podcast={podcast}
+                  />
+                ))}
 
-        <TouchableOpacity style={styles.seeMoreButton} onPress={onPodcastPress}>
-          <Text style={styles.seeMoreText}>Xem thêm →</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={onPodcastPress}
+            >
+              <Text style={styles.seeMoreText}>Xem thêm →</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
@@ -155,5 +192,21 @@ const styles = StyleSheet.create({
     color: "#00b14f",
     fontSize: 16,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    padding: 20,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#666",
+    fontSize: 12,
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 12,
+    fontStyle: "italic",
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
 });

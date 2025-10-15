@@ -206,7 +206,7 @@ export default function BestJobsPage({ onBack }) {
       <CommonHeader
         title="Việc làm tốt nhất"
         onBack={handleBackPress}
-        showAI={true}
+        showAI={false}
       />
       <View style={styles.searchBar}>
         <Text style={styles.searchIcon}>🔍</Text>

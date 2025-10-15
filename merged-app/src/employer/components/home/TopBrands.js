@@ -1,7 +1,8 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import SectionHeader from "../common/SectionHeader";
 import BrandCard from "../cards/BrandCard";
+import useHomeCompanies from "../../../shared/hooks/useHomeCompanies";
 
 const brandsList = [
   {
@@ -35,16 +36,52 @@ const brandsList = [
 ];
 
 export default function TopBrands({ onTopBrandsPress }) {
+  const { companies, loading, error } = useHomeCompanies();
+
+  console.log("[TopBrands] Component state:", {
+    companiesCount: companies.length,
+    loading,
+    error,
+    companies: companies.slice(0, 2), // Log first 2 companies for debugging
+  });
+
+  if (loading) {
+    return (
+      <View style={styles.section}>
+        <SectionHeader
+          title="Thương hiệu lớn tiêu biểu"
+          onSeeAllPress={onTopBrandsPress}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#00b14f" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu công ty...</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
       <SectionHeader
         title="Thương hiệu lớn tiêu biểu"
         onSeeAllPress={onTopBrandsPress}
       />
+      {error && (
+        <Text style={styles.errorText}>
+          Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+        </Text>
+      )}
       <View style={styles.brandsGrid}>
-        {brandsList.map((brand) => (
-          <BrandCard key={brand.id} brand={brand} />
-        ))}
+        {error || companies.length === 0
+          ? brandsList.map((brand, index) => (
+              <BrandCard
+                key={`static-brand-${brand.id || index}`}
+                brand={brand}
+              />
+            ))
+          : companies.map((brand, index) => (
+              <BrandCard key={`company-${brand.id || index}`} brand={brand} />
+            ))}
       </View>
     </View>
   );
@@ -60,5 +97,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    padding: 20,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#666",
+    fontSize: 12,
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 12,
+    fontStyle: "italic",
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
 });

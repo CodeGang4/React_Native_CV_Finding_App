@@ -1,7 +1,8 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import JobCard from "./cards/JobCard";
 import SectionHeader from "../common/SectionHeader";
+import useHomeJobs from "../../../shared/hooks/useHomeJobs";
 
 const suggestionList = [
   {
@@ -49,6 +50,17 @@ export default function JobSections({
   onJobSuggestionsPress,
   onBestJobsPress,
 }) {
+  const { jobs, topJobs, loading, error } = useHomeJobs();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#00b14f" />
+        <Text style={styles.loadingText}>Đang tải dữ liệu việc làm...</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <View style={styles.section}>
@@ -56,9 +68,32 @@ export default function JobSections({
           title="Gợi ý việc làm phù hợp"
           onSeeAllPress={onJobSuggestionsPress}
         />
-        {suggestionList.map((item) => (
-          <JobCard item={item} key={item.id} />
-        ))}
+        {error ? (
+          <>
+            <Text style={styles.errorText}>
+              Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+            </Text>
+            {suggestionList.map((item, index) => (
+              <JobCard
+                item={item}
+                key={`static-suggestion-${item.id || index}`}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            {jobs.length > 0
+              ? jobs.map((item, index) => (
+                  <JobCard item={item} key={`job-${item.id || index}`} />
+                ))
+              : suggestionList.map((item, index) => (
+                  <JobCard
+                    item={item}
+                    key={`fallback-suggestion-${item.id || index}`}
+                  />
+                ))}
+          </>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -66,9 +101,29 @@ export default function JobSections({
           title="Việc làm tốt nhất"
           onSeeAllPress={onBestJobsPress}
         />
-        {bestJobsList.map((item) => (
-          <JobCard item={item} key={item.id} />
-        ))}
+        {error ? (
+          <>
+            <Text style={styles.errorText}>
+              Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
+            </Text>
+            {bestJobsList.map((item, index) => (
+              <JobCard item={item} key={`static-bestjob-${item.id || index}`} />
+            ))}
+          </>
+        ) : (
+          <>
+            {topJobs.length > 0
+              ? topJobs.map((item, index) => (
+                  <JobCard item={item} key={`topjob-${item.id || index}`} />
+                ))
+              : bestJobsList.map((item, index) => (
+                  <JobCard
+                    item={item}
+                    key={`fallback-bestjob-${item.id || index}`}
+                  />
+                ))}
+          </>
+        )}
       </View>
     </>
   );
@@ -76,4 +131,20 @@ export default function JobSections({
 
 const styles = StyleSheet.create({
   section: { marginTop: 12, marginHorizontal: 0, paddingHorizontal: 16 },
+  loadingContainer: {
+    alignItems: "center",
+    padding: 20,
+    gap: 10,
+  },
+  loadingText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 12,
+    fontStyle: "italic",
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
 });

@@ -77,7 +77,7 @@ export default function JobSuggestionsPage({ onBack }) {
       <CommonHeader
         title="Gợi ý việc làm phù hợp"
         onBack={handleBackPress}
-        showAI={true}
+        showAI={false}
       />
       <ScrollView style={styles.jobList} showsVerticalScrollIndicator={false}>
         {jobSuggestions.map((job) => (
