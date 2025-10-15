@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import JobCard from "./cards/JobCard";
 import SectionHeader from "../common/SectionHeader";
-import useHomeJobs from "../../../shared/hooks/useHomeJobs";
+import { useHomeData } from "../../../shared/services/HomeDataManager";
 
 const suggestionList = [
   {
@@ -51,7 +51,8 @@ export default function JobSections({
   onBestJobsPress,
   onJobPress, // New prop to handle job press from parent
 }) {
-  const { jobs, topJobs, loading, error } = useHomeJobs();
+  const { data, loading, error } = useHomeData();
+  const { jobs, topJobs } = data;
 
   const handleJobPress = (job) => {
     console.log("[JobSections] Job pressed:", job.id);
@@ -60,7 +61,7 @@ export default function JobSections({
     }
   };
 
-  if (loading) {
+  if (loading.jobs) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#00b14f" />
@@ -76,7 +77,7 @@ export default function JobSections({
           title="Gợi ý việc làm phù hợp"
           onSeeAllPress={onJobSuggestionsPress}
         />
-        {error ? (
+        {error.jobs ? (
           <>
             <Text style={styles.errorText}>
               Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
@@ -115,7 +116,7 @@ export default function JobSections({
           title="Việc làm tốt nhất"
           onSeeAllPress={onBestJobsPress}
         />
-        {error ? (
+        {error.jobs ? (
           <>
             <Text style={styles.errorText}>
               Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu

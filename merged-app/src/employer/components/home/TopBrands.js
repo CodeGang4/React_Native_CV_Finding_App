@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import SectionHeader from "../common/SectionHeader";
 import BrandCard from "../cards/BrandCard";
-import useHomeCompanies from "../../../shared/hooks/useHomeCompanies";
+import { useHomeData } from "../../../shared/services/HomeDataManager";
 
 const brandsList = [
   {
@@ -36,7 +36,8 @@ const brandsList = [
 ];
 
 export default function TopBrands({ onTopBrandsPress }) {
-  const { companies, loading, error } = useHomeCompanies();
+  const { data, loading, error } = useHomeData();
+  const { companies } = data;
 
   console.log("[TopBrands] Component state:", {
     companiesCount: companies.length,
@@ -45,7 +46,7 @@ export default function TopBrands({ onTopBrandsPress }) {
     companies: companies.slice(0, 2), // Log first 2 companies for debugging
   });
 
-  if (loading) {
+  if (loading.companies) {
     return (
       <View style={styles.section}>
         <SectionHeader
@@ -66,13 +67,13 @@ export default function TopBrands({ onTopBrandsPress }) {
         title="Thương hiệu lớn tiêu biểu"
         onSeeAllPress={onTopBrandsPress}
       />
-      {error && (
+      {error.companies && (
         <Text style={styles.errorText}>
           Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
         </Text>
       )}
       <View style={styles.brandsGrid}>
-        {error || companies.length === 0
+        {error.companies || companies.length === 0
           ? brandsList.map((brand, index) => (
               <BrandCard
                 key={`static-brand-${brand.id || index}`}

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import useHomePodcasts from "../../../shared/hooks/useHomePodcasts";
+import { useHomeData } from "../../../shared/services/HomeDataManager";
 
 // Temporary: Use a placeholder image or remove image requirement
 const podcastList = [
@@ -59,7 +59,8 @@ const PodcastCard = ({ podcast }) => (
 );
 
 export default function PodcastSection({ onPodcastPress }) {
-  const { podcasts, loading, error } = useHomePodcasts();
+  const { data, loading, error } = useHomeData();
+  const { podcasts } = data;
 
   return (
     <View style={styles.section}>
@@ -74,19 +75,19 @@ export default function PodcastSection({ onPodcastPress }) {
       </LinearGradient>
 
       <View style={styles.podcastContainer}>
-        {loading ? (
+        {loading.podcasts ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#00b14f" />
             <Text style={styles.loadingText}>Đang tải podcast...</Text>
           </View>
         ) : (
           <>
-            {error && (
+            {error.podcasts && (
               <Text style={styles.errorText}>
                 Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
               </Text>
             )}
-            {error || podcasts.length === 0
+            {error.podcasts || podcasts.length === 0
               ? podcastList.map((podcast, index) => (
                   <PodcastCard
                     key={`static-podcast-${podcast.id || index}`}

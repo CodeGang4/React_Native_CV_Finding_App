@@ -15,15 +15,11 @@ export const useHomeJobs = () => {
       setLoading(true);
       setError(null);
 
-      // Gọi tuần tự với delay để tránh rate limit
+      // RequestQueue sẽ tự động quản lý delay và queue
       const allJobs = await HomeApiService.getJobs();
+      const bestJobs = await HomeApiService.getTopJobs(3);
 
-      // Delay 200ms giữa các calls
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      const bestJobs = await HomeApiService.getTopJobs(3); // Chỉ lấy 3 top jobs
-
-      // Transform data for UI with company info
+      // Transform data for UI với company info (queue sẽ handle requests)
       const transformJobWithCompany = async (job) => {
         let companyInfo = null;
 
@@ -34,10 +30,7 @@ export const useHomeJobs = () => {
               job.employer_id
             );
           } catch (error) {
-            console.warn(
-              `Không thể lấy thông tin công ty cho employer_id: ${job.employer_id}`,
-              error
-            );
+            // Không log error nữa để tránh spam console
           }
         }
 
@@ -55,18 +48,14 @@ export const useHomeJobs = () => {
         };
       };
 
-      // Transform jobs với delay để tránh rate limit
-      const suggestionsJobs = [];
-      for (let i = 0; i < Math.min(allJobs.length, 3); i++) {
-        if (i > 0) await new Promise((resolve) => setTimeout(resolve, 100));
-        suggestionsJobs.push(await transformJobWithCompany(allJobs[i]));
-      }
+      // RequestQueue sẽ tự động serialize các company requests
+      const suggestionsJobs = await Promise.all(
+        allJobs.slice(0, 3).map(transformJobWithCompany)
+      );
 
-      const bestJobsData = [];
-      for (let i = 0; i < bestJobs.length; i++) {
-        if (i > 0) await new Promise((resolve) => setTimeout(resolve, 100));
-        bestJobsData.push(await transformJobWithCompany(bestJobs[i]));
-      }
+      const bestJobsData = await Promise.all(
+        bestJobs.map(transformJobWithCompany)
+      );
 
       setJobs(suggestionsJobs);
       setTopJobs(bestJobsData);

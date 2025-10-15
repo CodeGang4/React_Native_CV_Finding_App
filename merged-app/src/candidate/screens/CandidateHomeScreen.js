@@ -1,58 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useAuth } from "../../shared/contexts/AuthContext";
+import { useHomeData } from "../../shared/services/HomeDataManager";
 import JobList from "../components/JobList";
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading } = useHomeData();
+  const { jobs } = data;
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await fetch("http://192.168.1.3:3000/job/getJobs");
-        const data = await response.json();
-        console.log("Job API response:", data);
+  const transformedJobs = jobs.map((job) => ({
+    id: job.id,
+    title: job.title,
+    company_name: job.company,
+    salary: job.salary,
+    location: job.location,
+    logo: job.logo,
+    company_logo: job.logo,
+  }));
 
-        let jobsData = Array.isArray(data) ? data : data.jobs || [];
-
-        const jobsWithCompany = await Promise.all(
-          jobsData.map(async (job) => {
-            try {
-              const res = await fetch(
-                `http://192.168.1.3:3000/employer/getCompanyInfo/${job.employer_id}`
-              );
-              const companyData = await res.json();
-
-              return {
-                ...job,
-                company_name: companyData.company_name || "Không rõ công ty",
-                company_logo: companyData.company_logo || null,
-              };
-            } catch (err) {
-              console.error("Lỗi fetch company info:", err);
-              return {
-                ...job,
-                company_name: "Không rõ công ty",
-                company_logo: null,
-              };
-            }
-          })
-        );
-
-        setJobs(jobsWithCompany);
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobs();
-  }, []);
-
-  if (loading) {
+  if (loading.jobs) {
     return (
       <ActivityIndicator
         size="large"
@@ -72,7 +39,7 @@ export default function CandidateHomeScreen({ navigation }) {
       </View>
 
       <JobList
-        jobs={jobs}
+        jobs={transformedJobs}
         onJobPress={(job) => navigation.navigate("JobDetail", { job })}
       />
     </View>
