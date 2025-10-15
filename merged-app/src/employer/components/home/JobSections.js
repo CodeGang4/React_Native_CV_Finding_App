@@ -49,8 +49,16 @@ const bestJobsList = [
 export default function JobSections({
   onJobSuggestionsPress,
   onBestJobsPress,
+  onJobPress, // New prop to handle job press from parent
 }) {
   const { jobs, topJobs, loading, error } = useHomeJobs();
+
+  const handleJobPress = (job) => {
+    console.log("[JobSections] Job pressed:", job.id);
+    if (onJobPress) {
+      onJobPress(job);
+    }
+  };
 
   if (loading) {
     return (
@@ -77,6 +85,7 @@ export default function JobSections({
               <JobCard
                 item={item}
                 key={`static-suggestion-${item.id || index}`}
+                onPress={handleJobPress}
               />
             ))}
           </>
@@ -84,12 +93,17 @@ export default function JobSections({
           <>
             {jobs.length > 0
               ? jobs.map((item, index) => (
-                  <JobCard item={item} key={`job-${item.id || index}`} />
+                  <JobCard
+                    item={item}
+                    key={`job-${item.id || index}`}
+                    onPress={handleJobPress}
+                  />
                 ))
               : suggestionList.map((item, index) => (
                   <JobCard
                     item={item}
                     key={`fallback-suggestion-${item.id || index}`}
+                    onPress={handleJobPress}
                   />
                 ))}
           </>
@@ -107,19 +121,28 @@ export default function JobSections({
               Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
             </Text>
             {bestJobsList.map((item, index) => (
-              <JobCard item={item} key={`static-bestjob-${item.id || index}`} />
+              <JobCard
+                item={item}
+                key={`static-bestjob-${item.id || index}`}
+                onPress={handleJobPress}
+              />
             ))}
           </>
         ) : (
           <>
             {topJobs.length > 0
               ? topJobs.map((item, index) => (
-                  <JobCard item={item} key={`topjob-${item.id || index}`} />
+                  <JobCard
+                    item={item}
+                    key={`topjob-${item.id || index}`}
+                    onPress={handleJobPress}
+                  />
                 ))
               : bestJobsList.map((item, index) => (
                   <JobCard
                     item={item}
                     key={`fallback-bestjob-${item.id || index}`}
+                    onPress={handleJobPress}
                   />
                 ))}
           </>

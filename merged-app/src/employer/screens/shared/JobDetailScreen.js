@@ -10,12 +10,13 @@ import { useJobCandidates } from "../../../shared/hooks/useJobCandidates";
 import { useJobViews } from "../../../shared/hooks/useJobViews";
 
 // A shared Job Detail screen for both Account and JobPosting flows
-// Props: { job, onBack, onEdit, onDelete }
+// Props: { job, onBack, onEdit, onDelete, onCandidatePress }
 export default function JobDetailScreen({
   job,
   onBack,
   onEdit,
   onDelete,
+  onCandidatePress,
   loading = false,
 }) {
   const navigation = useNavigation();
@@ -109,9 +110,13 @@ export default function JobDetailScreen({
             refreshing={candidatesRefreshing}
             error={candidatesError}
             onOpenInterview={() => setShowInterviewModal(true)}
-            onPressCandidate={(cand) =>
-              navigation.navigate("CandidateDetail", { candidate: cand })
-            }
+            onPressCandidate={(cand) => {
+              if (onCandidatePress) {
+                onCandidatePress(cand);
+              } else {
+                navigation.navigate("CandidateDetail", { candidate: cand });
+              }
+            }}
             onRefresh={refreshCandidates}
           />
         )}

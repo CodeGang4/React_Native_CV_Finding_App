@@ -15,10 +15,13 @@ export const useHomeJobs = () => {
       setLoading(true);
       setError(null);
 
-      const [allJobs, bestJobs] = await Promise.all([
-        HomeApiService.getJobs(),
-        HomeApiService.getTopJobs(3), // Chỉ lấy 3 top jobs
-      ]);
+      // Gọi tuần tự với delay để tránh rate limit
+      const allJobs = await HomeApiService.getJobs();
+
+      // Delay 200ms giữa các calls
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const bestJobs = await HomeApiService.getTopJobs(3); // Chỉ lấy 3 top jobs
 
       // Transform data for UI with company info
       const transformJobWithCompany = async (job) => {
@@ -52,14 +55,18 @@ export const useHomeJobs = () => {
         };
       };
 
-      // Transform jobs with company info - chỉ lấy 3 jobs cho home
-      const suggestionsJobs = await Promise.all(
-        allJobs.slice(0, 3).map(transformJobWithCompany)
-      );
+      // Transform jobs với delay để tránh rate limit
+      const suggestionsJobs = [];
+      for (let i = 0; i < Math.min(allJobs.length, 3); i++) {
+        if (i > 0) await new Promise((resolve) => setTimeout(resolve, 100));
+        suggestionsJobs.push(await transformJobWithCompany(allJobs[i]));
+      }
 
-      const bestJobsData = await Promise.all(
-        bestJobs.map(transformJobWithCompany)
-      );
+      const bestJobsData = [];
+      for (let i = 0; i < bestJobs.length; i++) {
+        if (i > 0) await new Promise((resolve) => setTimeout(resolve, 100));
+        bestJobsData.push(await transformJobWithCompany(bestJobs[i]));
+      }
 
       setJobs(suggestionsJobs);
       setTopJobs(bestJobsData);
