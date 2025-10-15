@@ -8,15 +8,41 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
+// Helper function to format deadline
+const formatDeadline = (dateString) => {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch (error) {
+    return dateString;
+  }
+};
+
 // Shared Overview Section
-// Props: { job, views, candidatesStats, onEdit: () => void, onDelete: () => void }
+// Props: { job, views, candidatesStats, onEdit: () => void, onDelete: () => void, showActions: boolean }
 export default function JobOverviewSection({
   job,
   views,
   candidatesStats,
   onEdit,
   onDelete,
+  showActions = true, // Default to true for backward compatibility
 }) {
+  // Debug logging
+  console.log("[JobOverviewSection] Job data:", {
+    id: job?.id,
+    title: job?.title,
+    description: job?.description ? "Has description" : "No description",
+    requirements: job?.requirements ? "Has requirements" : "No requirements",
+    benefits: job?.benefits ? "Has benefits" : "No benefits",
+    deadline: job?.deadline || job?.expired_date,
+    experience: job?.experience || job?.education,
+  });
   return (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       <View style={styles.statsContainer}>
@@ -54,11 +80,15 @@ export default function JobOverviewSection({
           label="Địa điểm"
           value={job?.location || "—"}
         />
-        <InfoRow icon="schedule" label="Hạn nộp" value={job?.deadline || "—"} />
+        <InfoRow
+          icon="schedule"
+          label="Hạn nộp"
+          value={formatDeadline(job?.deadline || job?.expired_date) || "—"}
+        />
         <InfoRow
           icon="business-center"
           label="Kinh nghiệm"
-          value={job?.experience || "—"}
+          value={job?.experience || job?.education || "—"}
         />
       </View>
 
@@ -85,16 +115,22 @@ export default function JobOverviewSection({
         </View>
       ) : null}
 
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity style={styles.editJobButton} onPress={onEdit}>
-          <MaterialIcons name="edit" size={20} color="#fff" />
-          <Text style={styles.editJobButtonText}>Chỉnh sửa tin</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteJobButton} onPress={onDelete}>
-          <MaterialIcons name="delete" size={20} color="#fff" />
-          <Text style={styles.deleteJobButtonText}>Xóa tin</Text>
-        </TouchableOpacity>
-      </View>
+      {showActions && (onEdit || onDelete) && (
+        <View style={styles.actionButtonsContainer}>
+          {onEdit && (
+            <TouchableOpacity style={styles.editJobButton} onPress={onEdit}>
+              <MaterialIcons name="edit" size={20} color="#fff" />
+              <Text style={styles.editJobButtonText}>Chỉnh sửa tin</Text>
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity style={styles.deleteJobButton} onPress={onDelete}>
+              <MaterialIcons name="delete" size={20} color="#fff" />
+              <Text style={styles.deleteJobButtonText}>Xóa tin</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
       <View style={{ height: 20 }} />
     </ScrollView>
   );
@@ -113,16 +149,34 @@ function InfoRow({ icon, label, value }) {
 }
 
 function BulletedSection({ title, data }) {
-  if (!Array.isArray(data) || data.length === 0) return null;
+  // Handle both string and array data
+  if (!data) return null;
+
+  let items = [];
+  if (typeof data === "string") {
+    // Split string by common delimiters and filter empty items
+    items = data.split(/[.\n\r]/).filter((item) => item.trim().length > 0);
+  } else if (Array.isArray(data)) {
+    items = data;
+  }
+
+  if (items.length === 0) return null;
+
   return (
     <View style={styles.infoSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {data.map((item, index) => (
-        <View key={index} style={styles.requirementItem}>
-          <Text style={styles.requirementBullet}>•</Text>
-          <Text style={styles.requirementText}>{item}</Text>
-        </View>
-      ))}
+      {typeof data === "string" && items.length === 1 ? (
+        // If it's a single paragraph, display as text
+        <Text style={styles.descriptionText}>{data}</Text>
+      ) : (
+        // Display as bulleted list
+        items.map((item, index) => (
+          <View key={index} style={styles.requirementItem}>
+            <Text style={styles.requirementBullet}>•</Text>
+            <Text style={styles.requirementText}>{item.trim()}</Text>
+          </View>
+        ))
+      )}
     </View>
   );
 }

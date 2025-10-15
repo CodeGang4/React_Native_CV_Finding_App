@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Alert } from "react-native";
 import HomeHeader from "../../../components/home/HomeHeader";
 import JobSections from "../../../components/home/JobSections";
 import TopBrands from "../../../components/home/TopBrands";
@@ -11,9 +11,12 @@ import TopBrandsPage from "./TopBrandsPage";
 import PodcastPage from "./PodcastPage";
 import JobDetailScreen from "../../shared/JobDetailScreen";
 import CandidateDetailNavigationScreen from "../../shared/CandidateDetailNavigationScreen";
+import HomeApiService from "../../../../shared/services/api/HomeApiService";
+import { useAuth } from "../../../../shared/contexts/AuthContext";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [showJobSuggestions, setShowJobSuggestions] = useState(false);
   const [showBestJobs, setShowBestJobs] = useState(false);
@@ -53,6 +56,66 @@ export default function HomePage() {
     setSelectedCandidate(null);
   };
 
+  // Check if current user owns the job
+  const isJobOwner = (job) => {
+    console.log("[HomePage] Permission check:", {
+      userId: user?.id,
+      jobEmployerId: job?.employer_id,
+      isOwner: user && job && user.id === job.employer_id,
+    });
+    return user && job && user.id === job.employer_id;
+  };
+
+  const handleJobEdit = async (updatedJob) => {
+    try {
+      // Check permission
+      if (!isJobOwner(selectedJob)) {
+        Alert.alert("Lỗi", "Bạn không có quyền chỉnh sửa tin tuyển dụng này");
+        return;
+      }
+
+      console.log("[HomePage] Editing job:", updatedJob.id);
+
+      // Call API to update job
+      await HomeApiService.updateJob(updatedJob.id, updatedJob);
+
+      // Update local job data
+      setSelectedJob(updatedJob);
+
+      Alert.alert("Thành công", "Đã cập nhật tin tuyển dụng");
+    } catch (error) {
+      console.error("[HomePage] Edit job error:", error);
+      Alert.alert("Lỗi", error.message || "Không thể cập nhật tin tuyển dụng");
+    }
+  };
+
+  const handleJobDelete = async (jobId) => {
+    try {
+      // Check permission
+      if (!isJobOwner(selectedJob)) {
+        Alert.alert("Lỗi", "Bạn không có quyền xóa tin tuyển dụng này");
+        return;
+      }
+
+      console.log("[HomePage] Deleting job:", jobId);
+
+      // Call API to delete job
+      await HomeApiService.deleteJob(jobId);
+
+      Alert.alert("Thành công", "Đã xóa tin tuyển dụng", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowJobDetail(false);
+            setSelectedJob(null);
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("[HomePage] Delete job error:", error);
+      Alert.alert("Lỗi", error.message || "Không thể xóa tin tuyển dụng");
+    }
+  };
   if (showCandidateDetail && selectedCandidate)
     return (
       <CandidateDetailNavigationScreen
@@ -60,14 +123,20 @@ export default function HomePage() {
         onBack={handleCandidateDetailBack}
       />
     );
-  if (showJobDetail && selectedJob)
+  if (showJobDetail && selectedJob) {
+    const canEdit = isJobOwner(selectedJob);
+
     return (
       <JobDetailScreen
         job={selectedJob}
         onBack={handleJobDetailBack}
         onCandidatePress={handleCandidatePress}
+        onEdit={canEdit ? handleJobEdit : null}
+        onDelete={canEdit ? handleJobDelete : null}
+        canViewCandidates={canEdit} // Only job owner can view candidates
       />
     );
+  }
   if (showJobSuggestions)
     return <JobSuggestionsPage onBack={() => setShowJobSuggestions(false)} />;
   if (showBestJobs)

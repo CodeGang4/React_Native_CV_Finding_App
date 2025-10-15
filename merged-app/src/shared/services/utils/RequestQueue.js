@@ -89,6 +89,16 @@ class RequestQueueManager {
   }
 
   /**
+   * Clear specific cache key
+   */
+  clearCacheKey(cacheKey) {
+    if (this.cache.has(cacheKey)) {
+      this.cache.delete(cacheKey);
+      console.log(`[RequestQueue] Cache key "${cacheKey}" cleared`);
+    }
+  }
+
+  /**
    * Get cache stats
    */
   getCacheStats() {

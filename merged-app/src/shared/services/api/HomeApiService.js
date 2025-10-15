@@ -103,6 +103,63 @@ export class HomeApiService {
       "podcasts-list" // cache key
     );
   }
+
+  // Update job (for edit functionality)
+  static async updateJob(jobId, jobData) {
+    return requestQueue.enqueue(
+      async () => {
+        const response = await fetch(
+          `http://192.168.110.49:3000/job/updateJob/${jobId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(jobData),
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("[HomeApiService] updateJob success:", jobId);
+
+        // Invalidate cache for this job and related lists
+        requestQueue.clearCacheKey(`job-${jobId}`);
+        requestQueue.clearCacheKey("jobs-list");
+        requestQueue.clearCacheKey("top-jobs-3");
+
+        return data;
+      },
+      `job-update-${jobId}` // cache key
+    );
+  }
+
+  // Delete job
+  static async deleteJob(jobId) {
+    return requestQueue.enqueue(
+      async () => {
+        const response = await fetch(
+          `http://192.168.110.49:3000/job/deleteJob/${jobId}`,
+          {
+            method: "DELETE",
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        console.log("[HomeApiService] deleteJob success:", jobId);
+
+        // Invalidate cache for this job and related lists
+        requestQueue.clearCacheKey(`job-${jobId}`);
+        requestQueue.clearCacheKey("jobs-list");
+        requestQueue.clearCacheKey("top-jobs-3");
+
+        return { success: true };
+      },
+      `job-delete-${jobId}` // cache key
+    );
+  }
 }
 
 export default HomeApiService;

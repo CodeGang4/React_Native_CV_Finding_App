@@ -137,16 +137,38 @@ class HomeDataManager {
       }
 
       return {
+        // Keep all original job data
+        ...job,
+        // Override/add specific fields for display
         id: job.id,
         title: job.title || job.position || "Chưa có tiêu đề",
         company:
           companyInfo?.company_name ||
           job.company_name ||
           "Chưa có tên công ty",
+        company_name:
+          companyInfo?.company_name ||
+          job.company_name ||
+          "Chưa có tên công ty",
         salary: job.salary || "Thỏa thuận",
         location: job.location || job.city || "Chưa có địa điểm",
         logo: companyInfo?.company_logo || this.getLogoForJob(job),
+        company_logo: companyInfo?.company_logo || this.getLogoForJob(job),
         verified: companyInfo?.isverified || job.isverified || false,
+        // Ensure important job detail fields are available
+        description: job.description || "",
+        requirements: job.requirements || "",
+        benefits: job.benefits || "", // Note: benefits might not be in API response
+        deadline: job.expired_date || job.deadline || "",
+        experience: job.education || job.experience || "", // Using education field from API
+        skills: job.skills || [],
+        job_type: job.job_type || "",
+        quantity: job.quantity || 1,
+        education: job.education || "",
+        employer_id: job.employer_id,
+        views: job.views || 0,
+        applications: job.applications || 0,
+        shortlisted: job.shortlisted || 0,
       };
     };
 
