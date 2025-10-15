@@ -280,7 +280,7 @@ export default function TopBrandsPage({ onBack }) {
   return (
     <View style={styles.container}>
       <CommonHeader
-        title="Top Brands"
+        title="Thương hiệu tiêu biểu"
         onBack={handleBackPress}
         showAI={false}
       />

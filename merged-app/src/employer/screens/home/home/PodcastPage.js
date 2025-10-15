@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import CommonHeader from "../../../components/common/CommonHeader";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
-import { useHomeData } from "../../../../shared/services/HomeDataManager";
+import HomeApiService from "../../../../shared/services/api/HomeApiService";
 
 const allPodcasts = [
   {
@@ -88,8 +88,9 @@ const PodcastCard = ({ podcast }) => (
 );
 
 export default function PodcastPage({ onBack }) {
-  const { data, loading, error, refetch } = useHomeData();
-  const { podcasts } = data;
+  const [podcasts, setPodcasts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleBackPress = () => {
     if (onBack && typeof onBack === "function") {
@@ -97,10 +98,42 @@ export default function PodcastPage({ onBack }) {
     }
   };
 
-  if (loading.podcasts) {
+  const fetchAllPodcasts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("[PodcastPage] Fetching all podcasts...");
+      const allPodcastsData = await HomeApiService.getAllPodcasts();
+
+      // Transform data to ensure consistent format
+      const transformedPodcasts = allPodcastsData.map((podcast) => ({
+        id: podcast.id,
+        title: podcast.title || "Chưa có tiêu đề",
+        duration: podcast.duration || podcast.length || "00:00:00",
+        category: podcast.category || "Khác",
+        thumbnail: podcast.thumbnail || null,
+      }));
+
+      console.log("[PodcastPage] Loaded podcasts:", transformedPodcasts.length);
+      setPodcasts(transformedPodcasts);
+    } catch (err) {
+      console.error("[PodcastPage] Failed to fetch podcasts:", err);
+      setError(err.message || "Không thể tải danh sách podcast");
+      // Fallback to mock data on error
+      setPodcasts(allPodcasts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllPodcasts();
+  }, []);
+
+  if (loading) {
     return (
       <View style={styles.container}>
-        <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
+        <CommonHeader title="Podcast" onBack={handleBackPress} showAI={false} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00b14f" />
           <Text style={styles.loadingText}>Đang tải danh sách podcast...</Text>
@@ -109,22 +142,7 @@ export default function PodcastPage({ onBack }) {
     );
   }
 
-  if (error.podcasts) {
-    return (
-      <View style={styles.container}>
-        <CommonHeader title="Podcast" onBack={handleBackPress} showAI={true} />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Có lỗi xảy ra: {error.podcasts}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={refetch}>
-            <Text style={styles.retryText}>Thử lại</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // Sử dụng data từ backend, fallback về allPodcasts nếu có lỗi
-  const displayPodcasts = error.podcasts ? allPodcasts : podcasts || [];
+  const displayPodcasts = podcasts;
 
   return (
     <View style={styles.container}>
@@ -134,11 +152,24 @@ export default function PodcastPage({ onBack }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={TAB_BAR_PADDING}
       >
-        {error.podcasts && (
-          <Text style={styles.errorText}>
-            Không thể tải dữ liệu từ server, hiển thị dữ liệu mẫu
-          </Text>
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Có lỗi xảy ra: {error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={fetchAllPodcasts}
+            >
+              <Text style={styles.retryText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
         )}
+
+        {displayPodcasts.length === 0 && !loading && !error && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Chưa có podcast nào</Text>
+          </View>
+        )}
+
         {displayPodcasts.map((podcast, index) => (
           <PodcastCard
             key={podcast.id || `fallback-${index}`}
@@ -169,6 +200,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 50,
+  },
   errorText: {
     fontSize: 16,
     color: "#666",
@@ -185,6 +223,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: "center",
   },
   podcastCard: {
     flexDirection: "row",

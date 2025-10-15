@@ -35,7 +35,7 @@ const brandsList = [
   },
 ];
 
-export default function TopBrands({ onTopBrandsPress }) {
+export default function TopBrands({ onTopBrandsPress, onCompanyPress }) {
   const { data, loading, error } = useHomeData();
   const { companies } = data;
 
@@ -78,10 +78,15 @@ export default function TopBrands({ onTopBrandsPress }) {
               <BrandCard
                 key={`static-brand-${brand.id || index}`}
                 brand={brand}
+                onPress={() => onCompanyPress && onCompanyPress(brand)}
               />
             ))
           : companies.map((brand, index) => (
-              <BrandCard key={`company-${brand.id || index}`} brand={brand} />
+              <BrandCard
+                key={`company-${brand.id || index}`}
+                brand={brand}
+                onPress={() => onCompanyPress && onCompanyPress(brand)}
+              />
             ))}
       </View>
     </View>

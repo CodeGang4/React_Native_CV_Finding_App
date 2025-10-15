@@ -11,6 +11,7 @@ import TopBrandsPage from "./TopBrandsPage";
 import PodcastPage from "./PodcastPage";
 import JobDetailScreen from "../../shared/JobDetailScreen";
 import CandidateDetailNavigationScreen from "../../shared/CandidateDetailNavigationScreen";
+import CompanyDetailScreen from "../../shared/CompanyDetailScreen";
 import HomeApiService from "../../../../shared/services/api/HomeApiService";
 import { useAuth } from "../../../../shared/contexts/AuthContext";
 import { TAB_BAR_PADDING } from "../../../../shared/styles/layout";
@@ -26,6 +27,8 @@ export default function HomePage() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showCandidateDetail, setShowCandidateDetail] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [showCompanyDetail, setShowCompanyDetail] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   const handleJobSuggestionsPress = () => setShowJobSuggestions(true);
   const handleBestJobsPress = () => setShowBestJobs(true);
@@ -49,6 +52,17 @@ export default function HomePage() {
     // Chỉ cần set state để hiển thị candidate modal
     setSelectedCandidate(candidate);
     setShowCandidateDetail(true);
+  };
+
+  const handleCompanyPress = (company) => {
+    console.log("[HomePage] Company pressed:", company.id);
+    setSelectedCompany(company);
+    setShowCompanyDetail(true);
+  };
+
+  const handleCompanyDetailBack = () => {
+    setShowCompanyDetail(false);
+    setSelectedCompany(null);
   };
 
   const handleCandidateDetailBack = () => {
@@ -137,6 +151,14 @@ export default function HomePage() {
       />
     );
   }
+  if (showCompanyDetail && selectedCompany) {
+    return (
+      <CompanyDetailScreen
+        company={selectedCompany}
+        onBack={handleCompanyDetailBack}
+      />
+    );
+  }
   if (showJobSuggestions)
     return <JobSuggestionsPage onBack={() => setShowJobSuggestions(false)} />;
   if (showBestJobs)
@@ -157,7 +179,10 @@ export default function HomePage() {
           onBestJobsPress={handleBestJobsPress}
           onJobPress={handleJobPress}
         />
-        <TopBrands onTopBrandsPress={handleTopBrandsPress} />
+        <TopBrands
+          onTopBrandsPress={handleTopBrandsPress}
+          onCompanyPress={handleCompanyPress}
+        />
         <PodcastSection onPodcastPress={handlePodcastPress} />
         <BannerSections />
       </ScrollView>

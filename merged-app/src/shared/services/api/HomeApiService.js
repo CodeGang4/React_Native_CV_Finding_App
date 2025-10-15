@@ -104,6 +104,22 @@ export class HomeApiService {
     );
   }
 
+  // Get all podcasts for PodcastPage (no limit)
+  static async getAllPodcasts() {
+    return requestQueue.enqueue(
+      async () => {
+        const response = await apiClient.get("/podcast");
+        console.log(
+          "[HomeApiService] getAllPodcasts success:",
+          response.data.length,
+          "total podcasts"
+        );
+        return response.data;
+      },
+      "all-podcasts-list" // cache key
+    );
+  }
+
   // Update job (for edit functionality)
   static async updateJob(jobId, jobData) {
     return requestQueue.enqueue(
