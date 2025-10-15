@@ -54,22 +54,25 @@ const getUserStats = async () => {
   }
 }
 
-// Thống kê employers
+// Thống kê employers - CHỈ dùng status
 const getCompanyStats = async () => {
   const [
     { count: totalCompanies },
-    { count: verifiedCompanies },
-    { count: pendingCompanies }
+    { count: acceptedCompanies },
+    { count: pendingCompanies },
+    { count: rejectedCompanies }
   ] = await Promise.all([
     supabase.from('employers').select('*', { count: 'exact', head: true }),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('isverified', true),
-    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('isverified', false)
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'accepted'),
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('employers').select('*', { count: 'exact', head: true }).eq('status', 'rejected')
   ])
 
   return {
     total: totalCompanies || 0,
-    verified: verifiedCompanies || 0,
-    pending: pendingCompanies || 0
+    accepted: acceptedCompanies || 0,
+    pending: pendingCompanies || 0,
+    rejected: rejectedCompanies || 0
   }
 }
 
