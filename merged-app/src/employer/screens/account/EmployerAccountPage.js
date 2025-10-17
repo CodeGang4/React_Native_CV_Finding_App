@@ -30,6 +30,7 @@ const EmployerAccountPage = () => {
     error,
     updating,
     updateCompanyInfoWithFeedback,
+    uploadCompanyLogo,
     refreshCompanyInfo,
   } = useCompanyInfo();
 
@@ -132,6 +133,28 @@ const EmployerAccountPage = () => {
     } catch (error) {
       // Error đã được handle trong hook
       console.error("Save company error:", error);
+    }
+  };
+
+  const handleLogoUpdate = async (imageUri) => {
+    try {
+      // Lấy tên file từ URI
+      const filename = imageUri.split("/").pop();
+      const fileType = filename.split(".").pop();
+
+      // Tạo object file phù hợp với React Native
+      const imageFile = {
+        uri: imageUri,
+        name: filename,
+        type: `image/${fileType}`,
+      };
+
+      await uploadCompanyLogo(imageFile);
+
+      Alert.alert("Thành công", "Logo công ty đã được cập nhật thành công!");
+    } catch (error) {
+      console.error("Logo update error:", error);
+      Alert.alert("Lỗi", "Không thể cập nhật logo. Vui lòng thử lại.");
     }
   };
 
@@ -344,6 +367,7 @@ const EmployerAccountPage = () => {
                 "Tính năng nâng cấp tài khoản đang phát triển"
               )
             }
+            onLogoUpdate={handleLogoUpdate}
           />
         </Animated.View>
 

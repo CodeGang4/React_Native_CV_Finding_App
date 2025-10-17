@@ -10,18 +10,27 @@ import { useJobCandidates } from "../../../shared/hooks/useJobCandidates";
 import { useJobViews } from "../../../shared/hooks/useJobViews";
 
 // A shared Job Detail screen for both Account and JobPosting flows
-// Props: { job, onBack, onEdit, onDelete }
+// Props: { job, onBack, onEdit, onDelete, onCandidatePress, canViewCandidates }
 export default function JobDetailScreen({
   job,
   onBack,
   onEdit,
   onDelete,
+  onCandidatePress,
+  canViewCandidates = true, // Default to true for backward compatibility
   loading = false,
 }) {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState("overview");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
+
+  // Auto switch to overview if user can't view candidates but is on applicants tab
+  React.useEffect(() => {
+    if (activeTab === "applicants" && !canViewCandidates) {
+      setActiveTab("overview");
+    }
+  }, [canViewCandidates, activeTab]);
 
   // Use real candidates data from backend
   const {
@@ -87,11 +96,13 @@ export default function JobDetailScreen({
           isActive={activeTab === "overview"}
           onPress={() => setActiveTab("overview")}
         />
-        <TabButton
-          title="Ứng viên"
-          isActive={activeTab === "applicants"}
-          onPress={() => setActiveTab("applicants")}
-        />
+        {canViewCandidates && (
+          <TabButton
+            title="Ứng viên"
+            isActive={activeTab === "applicants"}
+            onPress={() => setActiveTab("applicants")}
+          />
+        )}
       </View>
       <View style={styles.content}>
         {activeTab === "overview" ? (
@@ -99,39 +110,48 @@ export default function JobDetailScreen({
             job={job}
             views={views}
             candidatesStats={candidatesStats}
-            onEdit={() => setShowEditModal(true)}
-            onDelete={handleDelete}
+            onEdit={onEdit ? () => setShowEditModal(true) : null}
+            onDelete={onDelete ? handleDelete : null}
+            showActions={!!(onEdit || onDelete)} // Show edit/delete buttons only if callbacks provided
           />
-        ) : (
+        ) : canViewCandidates ? (
           <ApplicantsList
             applicants={applicants}
             loading={candidatesLoading}
             refreshing={candidatesRefreshing}
             error={candidatesError}
             onOpenInterview={() => setShowInterviewModal(true)}
-            onPressCandidate={(cand) =>
-              navigation.navigate("CandidateDetail", { candidate: cand })
-            }
+            onPressCandidate={(cand) => {
+              if (onCandidatePress) {
+                onCandidatePress(cand);
+              } else {
+                navigation.navigate("CandidateDetail", { candidate: cand });
+              }
+            }}
             onRefresh={refreshCandidates}
           />
-        )}
+        ) : null}
       </View>
-      <EditJobModal
-        visible={showEditModal}
-        job={job}
-        onClose={() => setShowEditModal(false)}
-        onSubmit={handleSubmitEdit}
-        loading={loading}
-      />
-      <InterviewNotificationModal
-        visible={showInterviewModal}
-        onClose={() => setShowInterviewModal(false)}
-        onSend={() => {
-          setShowInterviewModal(false);
-          Alert.alert("Thành công", "Đã gửi thông báo phỏng vấn!");
-        }}
-        applicants={interviewCandidates}
-      />
+      {onEdit && (
+        <EditJobModal
+          visible={showEditModal}
+          job={job}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={handleSubmitEdit}
+          loading={loading}
+        />
+      )}
+      {canViewCandidates && (
+        <InterviewNotificationModal
+          visible={showInterviewModal}
+          onClose={() => setShowInterviewModal(false)}
+          onSend={() => {
+            setShowInterviewModal(false);
+            Alert.alert("Thành công", "Đã gửi thông báo phỏng vấn!");
+          }}
+          applicants={interviewCandidates}
+        />
+      )}
     </View>
   );
 }

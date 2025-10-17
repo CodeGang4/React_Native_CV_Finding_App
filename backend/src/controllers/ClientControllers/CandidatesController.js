@@ -156,7 +156,14 @@ class CandidatesController {
             .from('candidates')
             .update({ cv_url: publicURL })
             .eq('user_id', userId);
-        console.log('CV uploaded and URL saved:', publicURL);
+
+
+        const {data:userData,error:userError} = await supabase.from("candidates").select("cv_url").eq("user_id",userId).single()
+        console.log({
+            cv_url: publicURL,
+            user_id: userId,
+            userData,
+        });
 
         res.status(200).json({ cv_url: publicURL });
     }

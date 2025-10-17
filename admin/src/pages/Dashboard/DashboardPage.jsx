@@ -245,7 +245,13 @@ const DashboardPage = () => {
               valueStyle={{ color: '#722ed1' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
-              {stats?.companies?.pending || 0} chờ duyệt
+              <Space size={4} split="|">
+                <span style={{ color: '#52c41a' }}>{stats?.companies?.accepted || 0} đã duyệt</span>
+                <span style={{ color: '#faad14' }}>{stats?.companies?.pending || 0} chờ duyệt</span>
+                {(stats?.companies?.rejected || 0) > 0 && (
+                  <span style={{ color: '#ff4d4f' }}>{stats?.companies?.rejected || 0} từ chối</span>
+                )}
+              </Space>
             </div>
           </Card>
         </Col>

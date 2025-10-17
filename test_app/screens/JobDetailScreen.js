@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-const api = 'http://192.168.1.3:3000'
+const api = 'http://192.168.84.11:3000'
 export default function JobDetailScreen({ route }) {
     const { job, onViewsUpdate } = route.params || {};
     const [jobDetail, setJobDetail] = useState(null);

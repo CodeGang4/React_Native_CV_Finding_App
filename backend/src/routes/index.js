@@ -12,6 +12,7 @@ const InterviewScheduleRouter = require('./EmployerRoutes/InterviewScheduleRoute
 const ApplicationRouter = require('./ClientRoutes/ApplicationRouter');
 const PodcastRouter = require('./ClientRoutes/PodcastRouter');
 const SavePodcastRouter = require('./ClientRoutes/SavePodcastRouter');
+const NotificationRouter = require('./AdminRoutes/NotificationRouter');
 function route(app) {
     // Client Routes
     app.use('/client/saveJobs', saveJobRouter);
@@ -30,6 +31,7 @@ function route(app) {
 
     //Shared Routes
     app.use('/application', ApplicationRouter);
+    app.use('/notice', NotificationRouter)
 
     //Employer Routes
     app.use('/job', JobRouter);

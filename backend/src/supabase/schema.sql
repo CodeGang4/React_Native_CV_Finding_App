@@ -181,4 +181,48 @@ create table save_podcast(
     podcast_id int8 references podcast(id) on delete cascade,
     saved_at timestamp default now(),
     unique(podcast_id) -- không lưu trùng podcast
-)
+);
+
+-- Bảng notifications: thông báo hệ thống
+create table notifications (
+    id uuid primary key default gen_random_uuid(),
+    
+    -- Người nhận (có thể là candidate, employer hoặc admin)
+    recipient_id uuid references users(id) on delete cascade,
+    recipient_type text check (recipient_type in ('candidate', 'employer', 'admin')),
+    
+    -- Người gửi (nullable cho system notifications)
+    sender_id uuid references users(id) on delete set null,
+    sender_type text check (sender_type in ('candidate', 'employer', 'admin', 'system')),
+    
+    -- Nội dung thông báo
+    title text not null,
+    message text not null,
+    
+    -- Loại thông báo
+    type text check (type in (
+        'application_status', -- cập nhật trạng thái ứng tuyển
+        'interview_schedule', -- lịch phỏng vấn
+        'job_posted', -- công việc mới
+        'profile_update', -- cập nhật hồ sơ
+        'system_announcement', -- thông báo hệ thống
+        'email_notification', -- thông báo email
+        'account_verification', -- xác thực tài khoản
+        'other' -- khác
+    )) default 'other',
+    
+    -- Dữ liệu bổ sung (JSON)
+    data jsonb, -- chứa job_id, application_id, etc.
+    
+    -- Trạng thái
+    is_read boolean default false,
+    is_archived boolean default false,
+    
+    -- Thời gian
+    created_at timestamp default now(),
+    read_at timestamp,
+    
+    -- Index cho performance
+    index idx_notifications_recipient on notifications(recipient_id, created_at desc),
+    index idx_notifications_unread on notifications(recipient_id, is_read, created_at desc)
+);

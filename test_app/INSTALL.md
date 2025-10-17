@@ -10,6 +10,10 @@ expo install @react-navigation/native @react-navigation/native-stack react-nativ
 
 npm install @react-navigation/native-stack
 
+# 2.5) Install bottom tabs package
+
+expo install @react-navigation/bottom-tabs
+
 # 3) Start the app
 
 npm run start

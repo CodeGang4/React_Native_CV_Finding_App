@@ -2,7 +2,7 @@ import React,{useState , useEffect, useCallback} from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import JobCard from '../components/JobCard';
 import axios from "axios"
-const api = 'http://192.168.1.3:3000/job'
+const api = 'http://192.168.84.11:3000/job'
 
 export default function HomeScreen({ navigation }) {
     const [jobs,setJobs] = useState([]);
@@ -120,7 +120,7 @@ export default function HomeScreen({ navigation }) {
     return (
         <View style={styles.container}>
             <FlatList
-                data={(jobs.filter(job => job.isAccepted))}
+                data={(jobs.filter(job => job.is_expired === false))}
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 contentContainerStyle={styles.list}

@@ -6,18 +6,60 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 export default function CompanyProfileCard({
   companyInfo,
   loading = false,
   onUpgrade,
+  onLogoUpdate,
 }) {
+  const handleSelectImage = async () => {
+    try {
+      // Yêu cầu quyền truy cập thư viện ảnh
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert(
+          "Quyền truy cập bị từ chối",
+          "Bạn cần cấp quyền truy cập thư viện ảnh để chọn logo công ty."
+        );
+        return;
+      }
+
+      // Mở thư viện ảnh
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], // Tỷ lệ vuông cho logo
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+
+        // Gọi callback để cập nhật logo
+        if (onLogoUpdate) {
+          onLogoUpdate(selectedImage.uri);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi chọn ảnh:", error);
+      Alert.alert("Lỗi", "Không thể chọn ảnh. Vui lòng thử lại.");
+    }
+  };
   return (
     <View style={styles.companyCard}>
       <View style={styles.companyHeader}>
-        <View style={styles.companyLogoContainer}>
+        <TouchableOpacity
+          style={styles.companyLogoContainer}
+          onPress={handleSelectImage}
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator size="small" color="#4CAF50" />
           ) : companyInfo.logo ? (
@@ -29,7 +71,15 @@ export default function CompanyProfileCard({
           ) : (
             <MaterialIcons name="business" size={30} color="#ccc" />
           )}
-        </View>
+          {/* Overlay để hiển thị icon camera khi hover */}
+          <View style={styles.logoOverlay}>
+            <MaterialIcons
+              name="camera-alt"
+              size={20}
+              color="rgba(255,255,255,0.8)"
+            />
+          </View>
+        </TouchableOpacity>
         <View style={styles.companyInfo}>
           <Text
             style={[
@@ -81,6 +131,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 15,
     flexShrink: 0,
+    position: "relative",
+    overflow: "hidden",
+  },
+  logoOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 8,
+    padding: 2,
   },
   companyLogo: {
     width: 60,
