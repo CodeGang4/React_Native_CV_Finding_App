@@ -4,7 +4,7 @@ import apiClient from "./ApiClient.js";
  * Auth API Service - Handles authentication-related API calls
  */
 export class AuthApiService {
-  static endpoint = "/auth";
+  static endpoint = "/client/auth";
 
   // Login
   static async login(email, password) {

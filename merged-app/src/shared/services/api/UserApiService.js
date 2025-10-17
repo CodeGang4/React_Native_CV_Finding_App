@@ -4,51 +4,44 @@ import apiClient from "./ApiClient.js";
  * User API Service - Handles user-related API calls
  */
 export class UserApiService {
-  static endpoint = "/users";
+  static endpoint = "/client/user";
 
-  // Get user by ID
+  // Get user profile by ID
   static async getUserById(userId) {
-    const response = await apiClient.get(`${this.endpoint}/${userId}`);
+    const response = await apiClient.get(`${this.endpoint}/getInfor/${userId}`);
     return response.data;
   }
 
-  // Update user
+  // Update user profile
   static async updateUser(userId, userData) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${userId}`,
+    const response = await apiClient.post(
+      `${this.endpoint}/updateProfile/${userId}`,
       userData
     );
     return response.data;
   }
 
-  // Delete user
-  static async deleteUser(userId) {
-    const response = await apiClient.delete(`${this.endpoint}/${userId}`);
-    return response.data;
-  }
-
-  // Get user settings
-  static async getUserSettings(userId) {
-    const response = await apiClient.get(`${this.endpoint}/${userId}/settings`);
-    return response.data;
-  }
-
-  // Update user settings
-  static async updateUserSettings(userId, settings) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${userId}/settings`,
-      settings
+  // Update user information (role, etc.)
+  static async updateUserInfo(userId, userInfo) {
+    const response = await apiClient.post(
+      `${this.endpoint}/updateInfor/${userId}`,
+      userInfo
     );
     return response.data;
   }
 
-  // Upload user avatar
-  static async uploadAvatar(userId, imageFile) {
+  // Get user profile (alias for getUserById)
+  static async getUserProfile(userId) {
+    return this.getUserById(userId);
+  }
+
+  // Upload user portfolio
+  static async uploadPortfolio(userId, portfolioFile) {
     const formData = new FormData();
-    formData.append("avatar", imageFile);
+    formData.append("portfolio", portfolioFile);
 
     const response = await apiClient.post(
-      `${this.endpoint}/${userId}/avatar`,
+      `${this.endpoint}/uploadPortfolio/${userId}`,
       formData,
       {
         headers: {
@@ -59,50 +52,25 @@ export class UserApiService {
     return response.data;
   }
 
-  // Get user statistics
-  static async getUserStats(userId) {
-    const response = await apiClient.get(`${this.endpoint}/${userId}/stats`);
-    return response.data;
-  }
+  // Upload user CV
+  static async uploadCV(userId, cvFile) {
+    const formData = new FormData();
+    formData.append("cv", cvFile);
 
-  // Get user activity history
-  static async getUserActivity(userId, page = 1, limit = 20) {
-    const response = await apiClient.get(
-      `${this.endpoint}/${userId}/activity`,
+    const response = await apiClient.post(
+      `${this.endpoint}/uploadCV/${userId}`,
+      formData,
       {
-        params: { page, limit },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
     return response.data;
   }
 
-  // Get user notifications
-  static async getUserNotifications(userId, page = 1, limit = 20) {
-    const response = await apiClient.get(
-      `${this.endpoint}/${userId}/notifications`,
-      {
-        params: { page, limit },
-      }
-    );
-    return response.data;
-  }
-
-  // Mark notification as read
-  static async markNotificationAsRead(userId, notificationId) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${userId}/notifications/${notificationId}/read`
-    );
-    return response.data;
-  }
-
-  // Update notification settings
-  static async updateNotificationSettings(userId, settings) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${userId}/notification-settings`,
-      settings
-    );
-    return response.data;
-  }
+  // Features not implemented in backend yet
+  // Use NotificationApiService for notifications
 }
 
 export default UserApiService;

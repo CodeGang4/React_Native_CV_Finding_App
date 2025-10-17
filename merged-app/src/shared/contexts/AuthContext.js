@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
         if (token && role && userData) {
           // Verify token with backend
-          const response = await fetch(`${API}/auth/verify`, {
+          const response = await fetch(`${API}/client/auth/verify`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
         ]);
       };
 
-      const res = await fetchWithTimeout(`${API}/auth/login`, {
+      const res = await fetchWithTimeout(`${API}/client/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role }),
@@ -207,7 +207,7 @@ export const AuthProvider = ({ children }) => {
   ) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/register`, {
+      const res = await fetch(`${API}/client/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -271,7 +271,7 @@ export const AuthProvider = ({ children }) => {
       // Update user role in backend if needed
       try {
         const token = await SecureStore.getItemAsync("user_token");
-        await fetch(`${API}/auth/update-role`, {
+        await fetch(`${API}/client/auth/update-role`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

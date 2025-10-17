@@ -4,140 +4,88 @@ import apiClient from "./ApiClient.js";
  * Interview API Service - Handles interview-related API calls
  */
 export class InterviewApiService {
-  static endpoint = "/interviews";
+  static endpoint = "/interview-schedule";
 
-  // Get all interviews with pagination and filters
-  static async getInterviews(params = {}) {
-    const response = await apiClient.get(this.endpoint, { params });
+  // Get interviews by company/employer
+  static async getInterviewsByEmployer(employerId, params = {}) {
+    const response = await apiClient.get(`${this.endpoint}/${employerId}`, { params });
     return response.data;
   }
 
-  // Get interview by ID
-  static async getInterviewById(interviewId) {
-    const response = await apiClient.get(`${this.endpoint}/${interviewId}`);
+  // Get interviews by status for a company
+  static async getInterviewsByStatus(companyId, status, params = {}) {
+    const response = await apiClient.get(
+      `${this.endpoint}/getSchedulesByStatus/${companyId}`,
+      { params: { status, ...params } }
+    );
     return response.data;
   }
 
-  // Schedule new interview
+  // Get interview detail by schedule ID
+  static async getInterviewById(scheduleId) {
+    const response = await apiClient.get(`${this.endpoint}/detail/${scheduleId}`);
+    return response.data;
+  }
+
+  // Create new interview schedule
   static async scheduleInterview(interviewData) {
-    const response = await apiClient.post(this.endpoint, interviewData);
+    const response = await apiClient.post(`${this.endpoint}/create`, interviewData);
     return response.data;
   }
 
-  // Update interview
-  static async updateInterview(interviewId, interviewData) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${interviewId}`,
+  // Update interview schedule
+  static async updateInterview(scheduleId, interviewData) {
+    const response = await apiClient.patch(
+      `${this.endpoint}/update/${scheduleId}`,
       interviewData
     );
     return response.data;
   }
 
-  // Cancel interview
-  static async cancelInterview(interviewId, reason = "") {
-    const response = await apiClient.delete(`${this.endpoint}/${interviewId}`, {
-      data: { reason },
-    });
+  // Update interview status
+  static async updateInterviewStatus(scheduleId, status) {
+    const response = await apiClient.patch(
+      `${this.endpoint}/update-status/${scheduleId}`,
+      { status }
+    );
     return response.data;
   }
 
-  // Get interviews for a candidate
+  // Get interviews for a candidate (alias for getInterviewsByEmployer)
   static async getCandidateInterviews(candidateId, params = {}) {
-    const response = await apiClient.get(
-      `/candidates/${candidateId}/interviews`,
-      { params }
-    );
-    return response.data;
+    // May need separate endpoint for candidates
+    return this.getInterviewsByEmployer(candidateId, params);
   }
 
-  // Get interviews for an employer
+  // Get interviews for an employer (alias)
   static async getEmployerInterviews(employerId, params = {}) {
-    const response = await apiClient.get(
-      `/employers/${employerId}/interviews`,
-      { params }
-    );
-    return response.data;
+    return this.getInterviewsByEmployer(employerId, params);
   }
 
-  // Confirm interview attendance
+  // Additional methods that would need backend implementation
+  // These are placeholders for future features
+
+  // Confirm interview attendance (not implemented in backend yet)
   static async confirmInterview(interviewId) {
-    const response = await apiClient.post(
-      `${this.endpoint}/${interviewId}/confirm`
-    );
-    return response.data;
+    return this.updateInterviewStatus(interviewId, 'confirmed');
   }
 
-  // Add interview feedback
-  static async addInterviewFeedback(interviewId, feedbackData) {
-    const response = await apiClient.post(
-      `${this.endpoint}/${interviewId}/feedback`,
-      feedbackData
-    );
-    return response.data;
+  // Cancel interview (not implemented in backend yet)
+  static async cancelInterview(interviewId, reason = "") {
+    return this.updateInterviewStatus(interviewId, 'cancelled');
   }
 
-  // Get interview feedback
-  static async getInterviewFeedback(interviewId) {
-    const response = await apiClient.get(
-      `${this.endpoint}/${interviewId}/feedback`
-    );
-    return response.data;
+  // Reschedule interview (would use update endpoint)
+  static async rescheduleInterview(scheduleId, newDateTime, reason = "") {
+    return this.updateInterview(scheduleId, {
+      dateTime: newDateTime,
+      reason,
+    });
   }
 
-  // Reschedule interview
-  static async rescheduleInterview(interviewId, newDateTime, reason = "") {
-    const response = await apiClient.put(
-      `${this.endpoint}/${interviewId}/reschedule`,
-      {
-        dateTime: newDateTime,
-        reason,
-      }
-    );
-    return response.data;
-  }
-
-  // Get available time slots for interview
-  static async getAvailableTimeSlots(employerId, date) {
-    const response = await apiClient.get(
-      `/employers/${employerId}/available-slots`,
-      {
-        params: { date },
-      }
-    );
-    return response.data;
-  }
-
-  // Send interview reminder
-  static async sendInterviewReminder(interviewId) {
-    const response = await apiClient.post(
-      `${this.endpoint}/${interviewId}/reminder`
-    );
-    return response.data;
-  }
-
-  // Get interview statistics
-  static async getInterviewStats(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/stats`, { params });
-    return response.data;
-  }
-
-  // Start interview practice session
+  // Interview practice session (uses separate interview-practice router)
   static async startPracticeSession(practiceData) {
-    const response = await apiClient.post(
-      `${this.endpoint}/practice`,
-      practiceData
-    );
-    return response.data;
-  }
-
-  // Submit practice session answers
-  static async submitPracticeAnswers(sessionId, answers) {
-    const response = await apiClient.post(
-      `${this.endpoint}/practice/${sessionId}/submit`,
-      {
-        answers,
-      }
-    );
+    const response = await apiClient.post('/client/interview-practice', practiceData);
     return response.data;
   }
 }

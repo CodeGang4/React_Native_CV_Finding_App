@@ -5,17 +5,15 @@ import { requestQueue } from "../utils/RequestQueue.js";
  * Home API Service - Handles home page data from backend
  */
 export class HomeApiService {
+  static endpoint = "/job";
+
   // Get jobs for home page (suggestions and best jobs)
   static async getJobs() {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch("http://192.168.110.49:3000/job/getJobs");
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        console.log("[HomeApiService] getJobs success:", data.length, "jobs");
-        return data;
+        const response = await apiClient.get(`${this.endpoint}/getJobs`);
+        console.log("[HomeApiService] getJobs success:", response.data.length, "jobs");
+        return response.data;
       },
       "jobs-list" // cache key
     );
@@ -25,14 +23,8 @@ export class HomeApiService {
   static async getCompanyByEmployerId(employerId) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/employer/getCompanyInfo/${employerId}`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return data;
+        const response = await apiClient.get(`/employer/getCompanyInfo/${employerId}`);
+        return response.data;
       },
       `company-${employerId}` // cache key with employer ID
     );
@@ -42,19 +34,15 @@ export class HomeApiService {
   static async getTopJobs(number = 10) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/job/getTopJobs?number=${number}`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
+        const response = await apiClient.get(`${this.endpoint}/getTopJobs`, {
+          params: { number }
+        });
         console.log(
           "[HomeApiService] getTopJobs success:",
-          data.length,
+          response.data.length,
           "top jobs"
         );
-        return data;
+        return response.data;
       },
       `top-jobs-${number}` // cache key with number param
     );
@@ -64,13 +52,10 @@ export class HomeApiService {
   static async getTopCompanies(number = 10) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/employer/getTopCompanies?number=${number}&status=accepted`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
+        const response = await apiClient.get("/employer/getTopCompanies", {
+          params: { number, status: "accepted" }
+        });
+        const data = response.data;
 
         // Backend đã filter theo status=accepted trong query, nhưng vẫn giữ backup filter
         const acceptedCompanies = data.filter(
@@ -92,7 +77,7 @@ export class HomeApiService {
   static async getPodcasts() {
     return requestQueue.enqueue(
       async () => {
-        const response = await apiClient.get("/podcast");
+        const response = await apiClient.get("/client/podcast");
         console.log(
           "[HomeApiService] getPodcasts success:",
           response.data.length,
@@ -108,7 +93,7 @@ export class HomeApiService {
   static async getAllPodcasts() {
     return requestQueue.enqueue(
       async () => {
-        const response = await apiClient.get("/podcast");
+        const response = await apiClient.get("/client/podcast");
         console.log(
           "[HomeApiService] getAllPodcasts success:",
           response.data.length,
@@ -124,20 +109,8 @@ export class HomeApiService {
   static async updateJob(jobId, jobData) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/job/updateJob/${jobId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(jobData),
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
+        const response = await apiClient.put(`${this.endpoint}/updateJob/${jobId}`, jobData);
+        const data = response.data;
         console.log("[HomeApiService] updateJob success:", jobId);
 
         // Invalidate cache for this job and related lists
@@ -155,15 +128,7 @@ export class HomeApiService {
   static async deleteJob(jobId) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/job/deleteJob/${jobId}`,
-          {
-            method: "DELETE",
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        const response = await apiClient.delete(`${this.endpoint}/deleteJob/${jobId}`);
         console.log("[HomeApiService] deleteJob success:", jobId);
 
         // Invalidate cache for this job and related lists
@@ -181,13 +146,8 @@ export class HomeApiService {
   static async getJobsByCompanyId(companyId) {
     return requestQueue.enqueue(
       async () => {
-        const response = await fetch(
-          `http://192.168.110.49:3000/job/getJobByCompanyId/${companyId}`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
+        const response = await apiClient.get(`${this.endpoint}/getJobByCompanyId/${companyId}`);
+        const data = response.data;
         console.log(
           "[HomeApiService] getJobsByCompanyId success:",
           data.length,

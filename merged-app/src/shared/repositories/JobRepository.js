@@ -165,7 +165,9 @@ export class JobRepository extends BaseRepository {
 
   // Apply to job
   async applyToJob(jobId, applicationData) {
-    return await this.post(`${this.endpoint}/${jobId}/apply`, applicationData);
+    // Use application endpoint instead of jobs endpoint
+    const data = { ...applicationData, job_id: jobId };
+    return await this.apiClient.post("/application/create", data);
   }
 
   // Helper methods

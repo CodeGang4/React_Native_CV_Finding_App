@@ -4,18 +4,18 @@ import apiClient from "./ApiClient.js";
  * Job API Service - Handles job-related API calls
  */
 export class JobApiService {
-  static endpoint = "/jobs";
+  static endpoint = "/job";
 
   // Get all jobs
   static async getAllJobs(params = {}) {
-    const response = await apiClient.get(this.endpoint, { params });
+    const response = await apiClient.get(`${this.endpoint}/getJobs`, { params });
     return response.data;
   }
 
   // Get jobs by company
   static async getJobsByCompany(companyId, params = {}) {
     const response = await apiClient.get(
-      `${this.endpoint}/company/${companyId}`,
+      `${this.endpoint}/getJobByCompanyId/${companyId}`,
       { params }
     );
     return response.data;
@@ -23,25 +23,25 @@ export class JobApiService {
 
   // Get job by ID
   static async getJobById(jobId) {
-    const response = await apiClient.get(`${this.endpoint}/${jobId}`);
+    const response = await apiClient.get(`${this.endpoint}/getJobDetail/${jobId}`);
     return response.data;
   }
 
-  // Create new job
-  static async createJob(jobData) {
-    const response = await apiClient.post(this.endpoint, jobData);
+  // Create new job (requires companyId in route)
+  static async createJob(jobData, companyId) {
+    const response = await apiClient.post(`${this.endpoint}/addJob/${companyId}`, jobData);
     return response.data;
   }
 
   // Update job
   static async updateJob(jobId, jobData) {
-    const response = await apiClient.put(`${this.endpoint}/${jobId}`, jobData);
+    const response = await apiClient.put(`${this.endpoint}/updateJob/${jobId}`, jobData);
     return response.data;
   }
 
   // Delete job
   static async deleteJob(jobId) {
-    const response = await apiClient.delete(`${this.endpoint}/${jobId}`);
+    const response = await apiClient.delete(`${this.endpoint}/deleteJob/${jobId}`);
     return response.data;
   }
 
@@ -75,18 +75,33 @@ export class JobApiService {
     return response.data;
   }
 
-  // Apply to job
+  // Apply to job - Use ApplicationApiService instead
   static async applyToJob(jobId, applicationData) {
-    const response = await apiClient.post(
-      `${this.endpoint}/${jobId}/apply`,
-      applicationData
-    );
+    // Redirect to ApplicationApiService for consistency
+    const ApplicationApiService = await import('./ApplicationApiService.js');
+    return ApplicationApiService.default.createApplication({
+      job_id: jobId,
+      ...applicationData
+    });
+  }
+
+  // Hide job for candidate
+  static async hideJob(candidateId, jobId) {
+    const response = await apiClient.post(`${this.endpoint}/hideJob/${candidateId}/${jobId}`);
     return response.data;
   }
 
-  // Save job
+  // Get hidden jobs for candidate
+  static async getHiddenJobs(candidateId) {
+    const response = await apiClient.get(`${this.endpoint}/getHiddenJobs/${candidateId}`);
+    return response.data;
+  }
+
+  // Save job (may use separate save job router)
   static async saveJob(jobId, candidateId) {
-    const response = await apiClient.post(`${this.endpoint}/${jobId}/save`, {
+    // This might be handled by SaveJobRouter in /client/saveJobs
+    const response = await apiClient.post(`/client/saveJobs`, {
+      jobId,
       candidateId,
     });
     return response.data;
@@ -94,40 +109,38 @@ export class JobApiService {
 
   // Unsave job
   static async unsaveJob(jobId, candidateId) {
-    const response = await apiClient.delete(
-      `${this.endpoint}/${jobId}/save/${candidateId}`
-    );
+    const response = await apiClient.delete(`/client/saveJobs/${jobId}/${candidateId}`);
     return response.data;
   }
 
   // Get saved jobs
   static async getSavedJobs(candidateId) {
-    const response = await apiClient.get(
-      `${this.endpoint}/saved/${candidateId}`
-    );
+    const response = await apiClient.get(`/client/saveJobs/${candidateId}`);
     return response.data;
   }
 
   // Increment job views
   static async incrementJobViews(jobId) {
-    const response = await apiClient.post(`${this.endpoint}/${jobId}/view`);
+    const response = await apiClient.post(`${this.endpoint}/views/${jobId}`);
     return response.data;
   }
 
-  // Get featured jobs
+  // Get top jobs (featured/popular jobs)
+  static async getTopJobs(limit = 10) {
+    const response = await apiClient.get(`${this.endpoint}/getTopJobs`, {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  // Alias for backward compatibility
   static async getFeaturedJobs(limit = 10) {
-    const response = await apiClient.get(`${this.endpoint}/featured`, {
-      params: { limit },
-    });
-    return response.data;
+    return this.getTopJobs(limit);
   }
 
-  // Get urgent jobs
+  // Get urgent jobs (may not exist in backend, using getTopJobs)
   static async getUrgentJobs(limit = 10) {
-    const response = await apiClient.get(`${this.endpoint}/urgent`, {
-      params: { limit },
-    });
-    return response.data;
+    return this.getTopJobs(limit);
   }
 
   // Get job suggestions

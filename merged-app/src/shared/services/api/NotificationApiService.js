@@ -1,262 +1,79 @@
-/**
- * Notification API Service using fetch
- * Connects to backend notification endpoints
- */
-import Constants from "expo-constants";
-
-// Get base API URL and adjust for notification endpoints
-const CLIENT_API = Constants.expoConfig?.extra?.API || 'http://localhost:3000/client';
-const BASE_URL = CLIENT_API.replace('/client', ''); // Remove /client suffix to get base URL
-
-console.log('NotificationApiService: CLIENT_API:', CLIENT_API);
-console.log('NotificationApiService: BASE_URL initialized as:', BASE_URL);
+import apiClient from "./ApiClient.js";
 
 class NotificationApiService {
-    
-    /**
-     * Get user notifications
-     * @param {string} userId - User ID
-     * @param {object} options - Query options (page, limit, unread_only, type)
-     * @returns {Promise<object>} API response
-     */
+    static endpoint = "/notice";
+
     async getUserNotifications(userId, options = {}) {
         try {
-            const {
-                page = 1,
-                limit = 20,
-                unread_only = false,
-                type = null
-            } = options;
+            const params = {
+                page: (options.page || 1).toString(),
+                limit: (options.limit || 20).toString(),
+                unread_only: (options.unread_only || false).toString()
+            };
 
-            const queryParams = new URLSearchParams({
-                page: page.toString(),
-                limit: limit.toString(),
-                unread_only: unread_only.toString()
+            if (options.type) {
+                params.type = options.type;
+            }
+
+            const response = await apiClient.get(`${NotificationApiService.endpoint}/user/${userId}`, {
+                params
             });
 
-            if (type) {
-                queryParams.append('type', type);
-            }
-
-            const response = await fetch(
-                `${BASE_URL}/notice/user/${userId}?${queryParams.toString()}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Add auth token if needed
-                        // 'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data;
-
+            return response.data;
         } catch (error) {
             console.error('Error fetching user notifications:', error);
             throw error;
         }
     }
 
-    /**
-     * Create a new notification
-     * @param {object} notificationData - Notification data
-     * @returns {Promise<object>} API response
-     */
     async createNotification(notificationData) {
         try {
-            console.log('🚀 NotificationApiService: START - Creating notification');
-            console.log('📋 URL:', `${BASE_URL}/notice/create`);
-            console.log('📧 Notification data:', JSON.stringify(notificationData, null, 2));
-
-            const response = await fetch(`${BASE_URL}/notice/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(notificationData)
-            });
-
-            console.log('📡 HTTP Response status:', response.status, response.statusText);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ HTTP Error response body:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            console.log('✅ NotificationApiService: Response data:', JSON.stringify(data, null, 2));
-            return data;
-
+            const response = await apiClient.post(`${NotificationApiService.endpoint}/create`, notificationData);
+            return response.data;
         } catch (error) {
-            console.error('💥 NotificationApiService: Error creating notification:', error);
-            console.error('📋 Error details:', error.message);
+            console.error('Error creating notification:', error);
             throw error;
         }
     }
 
-    /**
-     * Mark notification as read
-     * @param {string} notificationId - Notification ID
-     * @param {string} userId - User ID for verification
-     * @returns {Promise<object>} API response
-     */
     async markAsRead(notificationId, userId) {
         try {
-            console.log('NotificationApiService: Marking as read:', { notificationId, userId });
-            
-            const response = await fetch(`${BASE_URL}/notice/read/${notificationId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId })
+            const response = await apiClient.put(`${NotificationApiService.endpoint}/read/${notificationId}`, {
+                userId: userId
             });
-
-            console.log('NotificationApiService: Mark as read response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('NotificationApiService: Mark as read error response:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            console.log('NotificationApiService: Mark as read success data:', data);
-            return data;
-
+            return response.data;
         } catch (error) {
-            console.error('NotificationApiService: Error marking notification as read:', error);
+            console.error('Error marking notification as read:', error);
             throw error;
         }
     }
 
-    /**
-     * Mark all notifications as read
-     * @param {string} userId - User ID
-     * @returns {Promise<object>} API response
-     */
     async markAllAsRead(userId) {
         try {
-            console.log('NotificationApiService: Marking all as read for user:', userId);
-            
-            const response = await fetch(`${BASE_URL}/notice/read-all/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            console.log('NotificationApiService: Mark all as read response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('NotificationApiService: Mark all as read error response:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            console.log('NotificationApiService: Mark all as read success data:', data);
-            return data;
-
+            const response = await apiClient.put(`${NotificationApiService.endpoint}/read-all/${userId}`);
+            return response.data;
         } catch (error) {
-            console.error('NotificationApiService: Error marking all notifications as read:', error);
+            console.error('Error marking all notifications as read:', error);
             throw error;
         }
     }
 
-    /**
-     * Delete notification (archive)
-     * @param {string} notificationId - Notification ID
-     * @param {string} userId - User ID for verification
-     * @returns {Promise<object>} API response
-     */
     async deleteNotification(notificationId, userId) {
         try {
-            console.log('NotificationApiService: Deleting notification:', { notificationId, userId });
-            
-            const response = await fetch(`${BASE_URL}/notice/${notificationId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId })
+            const response = await apiClient.delete(`${NotificationApiService.endpoint}/${notificationId}`, {
+                data: { userId: userId }
             });
-
-            console.log('NotificationApiService: Delete notification response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('NotificationApiService: Delete notification error response:', errorText);
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            }
-
-            const data = await response.json();
-            console.log('NotificationApiService: Delete notification success data:', data);
-            return data;
-
+            return response.data;
         } catch (error) {
-            console.error('NotificationApiService: Error deleting notification:', error);
+            console.error('Error deleting notification:', error);
             throw error;
         }
     }
 
-    /**
-     * Send push notification
-     * @param {object} pushData - Push notification data
-     * @returns {Promise<object>} API response
-     */
-    async sendPushNotification(pushData) {
-        try {
-            const response = await fetch(`${BASE_URL}/notice/send-push`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(pushData)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data;
-
-        } catch (error) {
-            console.error('Error sending push notification:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Send system notification (admin only)
-     * @param {object} systemNotificationData - System notification data
-     * @returns {Promise<object>} API response
-     */
     async sendSystemNotification(systemNotificationData) {
         try {
-            const response = await fetch(`${BASE_URL}/notice/system/broadcast`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(systemNotificationData)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data;
-
+            const response = await apiClient.post(`${NotificationApiService.endpoint}/system/broadcast`, systemNotificationData);
+            return response.data;
         } catch (error) {
             console.error('Error sending system notification:', error);
             throw error;
@@ -264,6 +81,5 @@ class NotificationApiService {
     }
 }
 
-// Export singleton instance
 const notificationApiService = new NotificationApiService();
 export default notificationApiService;

@@ -7,7 +7,7 @@ import { Candidate } from "../domain/entities/Candidate.js";
 export class CandidateRepository extends BaseRepository {
   constructor(apiClient) {
     super(apiClient);
-    this.endpoint = "/candidates";
+    this.endpoint = "/client/candidates";
   }
 
   // Get all candidates with filters

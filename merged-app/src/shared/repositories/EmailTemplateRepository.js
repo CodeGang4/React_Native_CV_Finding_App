@@ -4,7 +4,7 @@ import apiClient from "../services/api/ApiClient.js";
 class EmailTemplateRepository extends BaseRepository {
   constructor() {
     super(apiClient);
-    this.baseEndpoint = "/emailTemplate";
+    this.baseEndpoint = "/email-template";
   }
 
   // Get all templates for an employer

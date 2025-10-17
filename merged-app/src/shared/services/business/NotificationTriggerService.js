@@ -30,7 +30,7 @@ class NotificationTriggerService {
                 recipient_type: 'employer',
                 title: '🔖 Job được quan tâm',
                 message: `Một ứng viên đã lưu công việc "${jobData?.title || 'Không xác định'}" của bạn`,
-                type: 'job_saved',
+                type: 'other',
                 data: {
                     action: 'job_saved',
                     job_id: jobId,
@@ -79,7 +79,7 @@ class NotificationTriggerService {
                 recipient_type: 'employer',
                 title: '📋 Đơn ứng tuyển mới',
                 message: `${candidateData?.name || 'Một ứng viên'} đã ứng tuyển vào vị trí "${jobData?.title || 'Không xác định'}"`,
-                type: 'job_application',
+                type: 'application_status',
                 data: {
                     action: 'job_application',
                     job_id: jobId,
@@ -117,7 +117,7 @@ class NotificationTriggerService {
                     recipient_type: 'candidate',
                     title: '💼 Công việc mới phù hợp',
                     message: `Có công việc mới "${jobData?.title || 'Không xác định'}" có thể phù hợp với bạn`,
-                    type: 'new_job',
+                    type: 'job_posted',
                     data: {
                         action: 'new_job',
                         job_id: jobId,
@@ -157,7 +157,7 @@ class NotificationTriggerService {
                 recipient_type: 'candidate',
                 title: '👀 Hồ sơ được xem',
                 message: `Nhà tuyển dụng từ ${employerData?.company_name || 'một công ty'} đã xem hồ sơ của bạn`,
-                type: 'profile_view',
+                type: 'profile_update',
                 data: {
                     action: 'profile_view',
                     employer_id: employerId,
@@ -193,7 +193,7 @@ class NotificationTriggerService {
                 recipient_type: userType,
                 title: title,
                 message: message,
-                type: 'system',
+                type: 'system_announcement',
                 data: {
                     action: 'system',
                     ...data,

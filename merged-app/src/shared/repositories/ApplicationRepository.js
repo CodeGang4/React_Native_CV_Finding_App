@@ -1,6 +1,6 @@
 import BaseRepository from "./BaseRepository.js";
 import apiClient from "../services/api/ApiClient.js";
-import Constants from "expo-constants";
+import ApplicationApiService from "../services/api/ApplicationApiService.js";
 
 /**
  * Application Repository - Handles application and candidate data operations
@@ -9,23 +9,7 @@ export class ApplicationRepository extends BaseRepository {
   constructor() {
     super(apiClient);
     this.baseEndpoint = "/application";
-  }
-
-  // Helper method để tạo request
-  async makeApplicationRequest(method, endpoint, data = null, config = {}) {
-    const baseUrl =
-      Constants.expoConfig?.extra?.API?.replace("/client", "") ||
-      "http://localhost:3000";
-    const fullUrl = `${baseUrl}${endpoint}`;
-
-    const requestConfig = {
-      ...config,
-      url: fullUrl,
-      method,
-      ...(data && { data }),
-    };
-
-    return await apiClient.request(requestConfig);
+    this.apiService = ApplicationApiService;
   }
 
   // Lấy tất cả ứng viên của một job
@@ -42,21 +26,18 @@ export class ApplicationRepository extends BaseRepository {
     try {
       console.log(`[API Request] GET /application/getAllCandidates/${jobId}`);
 
-      const response = await this.makeApplicationRequest(
-        "GET",
-        `/application/getAllCandidates/${jobId}`
-      );
+      const response = await this.apiService.getAllCandidates(jobId);
 
-      console.log(`🔍 Raw backend response for job ${jobId}:`, response);
-      console.log(`🔍 Response data type:`, typeof response.data);
-      console.log(`🔍 Response data:`, JSON.stringify(response.data, null, 2));
+      console.log(`🔍 Raw backend response for job ${jobId}:`, { data: response });
+      console.log(`🔍 Response data type:`, typeof response);
+      console.log(`🔍 Response data:`, JSON.stringify(response, null, 2));
       console.log(
         `🔍 Response data length:`,
-        Array.isArray(response.data) ? response.data.length : "Not array"
+        Array.isArray(response) ? response.length : "Not array"
       );
 
       // Transform data từ backend format sang UI format
-      const transformedData = this.transformCandidatesData(response.data || []);
+      const transformedData = this.transformCandidatesData(response || []);
 
       console.log(
         `🔄 Transformed data for job ${jobId}:`,
@@ -173,13 +154,8 @@ export class ApplicationRepository extends BaseRepository {
   // Cập nhật trạng thái ứng viên
   async updateApplicationStatus(applicationId, status) {
     try {
-      const response = await this.makeApplicationRequest(
-        "PATCH",
-        `/application/updateStatus/${applicationId}`,
-        { status }
-      );
-
-      return response.data;
+      const response = await this.apiService.updateApplicationStatus(applicationId, status);
+      return response;
     } catch (error) {
       console.error(`Update application ${applicationId} status error:`, error);
       throw error;
@@ -203,55 +179,24 @@ export class ApplicationRepository extends BaseRepository {
       }
     }
 
-    const applicationCounts = {};
-    let totalApplications = 0;
-
     try {
       console.log(`🔄 Fetching application counts for ${jobIds.length} jobs`);
 
-      // Batch process với delay để tránh rate limiting
-      const batchSize = 3; // Giới hạn 3 concurrent requests
-      const delay = 200; // 200ms delay giữa batches
+      // Use ApplicationApiService with rate limiting protection
+      const batchResults = await this.apiService.batchGetApplications(jobIds, {
+        batchSize: 3,
+        delay: 200,
+        maxRetries: 2
+      });
 
-      for (let i = 0; i < jobIds.length; i += batchSize) {
-        const batch = jobIds.slice(i, i + batchSize);
-        console.log(
-          `📦 Processing batch ${Math.floor(i / batchSize) + 1}: ${
-            batch.length
-          } jobs`
-        );
+      const applicationCounts = {};
+      let totalApplications = 0;
 
-        // Process batch concurrently
-        const batchPromises = batch.map(async (jobId) => {
-          try {
-            const candidates = await this.getCandidatesByJobId(
-              jobId,
-              forceRefresh
-            );
-            return { jobId, count: candidates.length };
-          } catch (error) {
-            console.warn(
-              `⚠️ Failed to get candidates for job ${jobId}:`,
-              error.message
-            );
-            return { jobId, count: 0 };
-          }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-
-        // Update counts
-        batchResults.forEach(({ jobId, count }) => {
-          applicationCounts[jobId] = count;
-          totalApplications += count;
-        });
-
-        // Add delay between batches (except for last batch)
-        if (i + batchSize < jobIds.length) {
-          console.log(`⏱️ Waiting ${delay}ms before next batch...`);
-          await this.delay(delay);
-        }
-      }
+      Object.entries(batchResults).forEach(([jobId, result]) => {
+        const count = result.count || 0;
+        applicationCounts[jobId] = count;
+        totalApplications += count;
+      });
 
       const result = { applicationCounts, totalApplications };
 
@@ -289,18 +234,26 @@ export class ApplicationRepository extends BaseRepository {
       const uniqueCandidateIds = new Set();
       const candidateCountsByJob = {};
 
-      // Lấy candidates cho từng job
-      for (const jobId of jobIds) {
-        const candidates = await this.getCandidatesByJobId(jobId, forceRefresh);
-        candidateCountsByJob[jobId] = candidates.length;
+      // Use batch API with rate limiting
+      const batchResults = await this.apiService.batchGetApplications(jobIds, {
+        batchSize: 3,
+        delay: 200,
+        maxRetries: 2
+      });
+
+      Object.entries(batchResults).forEach(([jobId, result]) => {
+        const candidates = result.candidates || [];
+        const transformedCandidates = this.transformCandidatesData(candidates);
+        
+        candidateCountsByJob[jobId] = transformedCandidates.length;
 
         // Thêm candidate IDs vào Set để đếm unique
-        candidates.forEach((candidate) => {
+        transformedCandidates.forEach((candidate) => {
           if (candidate.id) {
             uniqueCandidateIds.add(candidate.id);
           }
         });
-      }
+      });
 
       const result = {
         applicationCounts: candidateCountsByJob, // Số applications per job

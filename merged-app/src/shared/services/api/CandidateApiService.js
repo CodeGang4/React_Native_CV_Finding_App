@@ -4,52 +4,44 @@ import apiClient from "./ApiClient.js";
  * Candidate API Service - Handles candidate-related API calls
  */
 export class CandidateApiService {
-  static endpoint = "/candidates";
+  static endpoint = "/client/candidates";
 
   // Get all candidates
-  static async getAllCandidates(params = {}) {
-    const response = await apiClient.get(this.endpoint, { params });
+  static async getAllCandidates() {
+    const response = await apiClient.get(`${this.endpoint}/getAll`);
     return response.data;
   }
 
-  // Get candidate by ID
+  // Get candidate profile by ID
   static async getCandidateById(candidateId) {
-    const response = await apiClient.get(`${this.endpoint}/${candidateId}`);
+    const response = await apiClient.get(`${this.endpoint}/getProfile/${candidateId}`);
     return response.data;
   }
 
-  // Search candidates
+  // Search candidates (fallback to client-side filtering)
   static async searchCandidates(query, filters = {}) {
-    const params = { q: query, ...filters };
-    const response = await apiClient.get(`${this.endpoint}/search`, { params });
-    return response.data;
+    const candidates = await this.getAllCandidates();
+    if (!query) return candidates;
+    
+    return candidates.filter(candidate => 
+      candidate.full_name?.toLowerCase().includes(query.toLowerCase()) ||
+      candidate.skills?.some(skill => skill.toLowerCase().includes(query.toLowerCase()))
+    );
   }
 
-  // Upload avatar
+  // Upload avatar - Use portfolio upload for now
   static async uploadAvatar(candidateId, avatarUri) {
-    const formData = new FormData();
-    formData.append("avatar", {
+    return this.uploadPortfolio(candidateId, {
       uri: avatarUri,
       name: "avatar.jpg",
       type: "image/jpeg",
     });
-
-    const response = await apiClient.post(
-      `${this.endpoint}/${candidateId}/avatar`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return response.data;
   }
 
   // Update candidate profile
   static async updateCandidateProfile(candidateId, profileData) {
-    const response = await apiClient.put(
-      `${this.endpoint}/${candidateId}`,
+    const response = await apiClient.post(
+      `${this.endpoint}/updateProfile/${candidateId}`,
       profileData
     );
     return response.data;
@@ -61,7 +53,7 @@ export class CandidateApiService {
     formData.append("cv", cvFile);
 
     const response = await apiClient.post(
-      `${this.endpoint}/${candidateId}/cv`,
+      `${this.endpoint}/uploadCV/${candidateId}`,
       formData,
       {
         headers: {
@@ -78,7 +70,7 @@ export class CandidateApiService {
     formData.append("portfolio", portfolioFile);
 
     const response = await apiClient.post(
-      `${this.endpoint}/${candidateId}/portfolio`,
+      `${this.endpoint}/uploadPortfolio/${candidateId}`,
       formData,
       {
         headers: {
