@@ -2,6 +2,7 @@ import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "./src/shared/contexts/AuthContext";
 import AppNavigator from "./src/shared/navigation/AppNavigator";
+import { NotificationProvider } from "./src/shared/contexts/NotificationContext";
 // import { debugUtils } from "./src/shared/utils/DebugUtils";
 
 // // Initialize debug utilities in development
@@ -12,7 +13,9 @@ import AppNavigator from "./src/shared/navigation/AppNavigator";
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <NotificationProvider>
+        <AppNavigator />
+      </NotificationProvider>
       <StatusBar style="auto" />
     </AuthProvider>
   );

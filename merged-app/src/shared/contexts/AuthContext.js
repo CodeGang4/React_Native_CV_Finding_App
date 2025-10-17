@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import * as LocalAuthentication from "expo-local-authentication";
 import { supabase } from "../../../supabase/config";
+import JobNotificationHelper from "../utils/JobNotificationHelper";
 
 const AuthContext = createContext();
 const API = Constants.expoConfig.extra.API;
@@ -98,6 +99,17 @@ export const AuthProvider = ({ children }) => {
         );
         await SecureStore.setItemAsync("user_role", data.user.role || role);
         await SecureStore.setItemAsync("user_data", JSON.stringify(data.user));
+
+        // 🔥 AUTO: Gửi thông báo nhắc nhở profile nếu chưa hoàn thiện (simulated check)
+        const profileComplete = data.user.profile_completed || false;
+        if (!profileComplete && data.user.id) {
+          setTimeout(() => {
+            JobNotificationHelper.autoNotifyProfileIncomplete(
+              data.user.id, 
+              data.user.role || role
+            );
+          }, 5000); // Delay 5 giây sau khi login
+        }
 
         // Ask for FaceID setup
         Alert.alert(
@@ -211,6 +223,16 @@ export const AuthProvider = ({ children }) => {
       console.log("Signup response:", data);
 
       if (res.ok && data.user) {
+        // 🔥 AUTO: Gửi notification chào mừng user mới
+        if (data.user.id && role) {
+          JobNotificationHelper.autoNotifyNewUserWelcome({
+            id: data.user.id,
+            role: role,
+            username: userName,
+            email: email
+          });
+        }
+
         Alert.alert("Success", "Đăng ký thành công! Vui lòng đăng nhập.", [
           {
             text: "OK",

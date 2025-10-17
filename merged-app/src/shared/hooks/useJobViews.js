@@ -17,7 +17,7 @@ export const useJobViews = (jobId, initialViews = 0) => {
     try {
       const baseUrl =
         Constants.expoConfig?.extra?.API?.replace("/client", "") ||
-        "http://localhost:3000";
+        "http://192.168.84.11:3000";
 
       const response = await fetch(`${baseUrl}/job/views/${jobId}`, {
         method: "POST",

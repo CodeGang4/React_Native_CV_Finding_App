@@ -1,12 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useAuth } from "../../shared/contexts/AuthContext";
+import { useJobActions } from "../../shared/hooks";
 import JobList from "../components/JobList";
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
+  const { saveJobWithNotification, loading: jobActionLoading } = useJobActions();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleSaveJob = async (job) => {
+    console.log('🏠 CandidateHomeScreen: handleSaveJob called');
+    console.log('📝 Job object:', JSON.stringify(job, null, 2));
+    
+    if (!job.id || !job.employer_id) {
+      console.error('❌ Missing job info:', { jobId: job.id, employerId: job.employer_id });
+      Alert.alert('Error', 'Thông tin job không đầy đủ');
+      return;
+    }
+
+    const jobData = {
+      title: job.title,
+      company_name: job.company_name
+    };
+
+    console.log('📧 Calling saveJobWithNotification with:', {
+      jobId: job.id,
+      jobData,
+      employerId: job.employer_id
+    });
+
+    const result = await saveJobWithNotification(job.id, jobData, job.employer_id);
+    
+    console.log('📬 SaveJob result:', JSON.stringify(result, null, 2));
+    
+    if (result.success) {
+      Alert.alert('Success', 'Đã lưu job và gửi thông báo!');
+    } else {
+      Alert.alert('Error', result.error || 'Không thể lưu job');
+    }
+  };
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -74,6 +108,7 @@ export default function CandidateHomeScreen({ navigation }) {
       <JobList
         jobs={jobs}
         onJobPress={(job) => navigation.navigate("JobDetail", { job })}
+        onFavoritePress={handleSaveJob}
       />
     </View>
   );

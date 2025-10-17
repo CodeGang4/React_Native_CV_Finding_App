@@ -1,4 +1,6 @@
 import applicationRepository from "../../repositories/ApplicationRepository.js";
+import jobRepository from "../../repositories/JobRepository.js";
+import JobNotificationHelper from "../../utils/JobNotificationHelper.js";
 
 /**
  * Application Business Service - Handles application business logic
@@ -6,6 +8,48 @@ import applicationRepository from "../../repositories/ApplicationRepository.js";
 export class ApplicationBusinessService {
   constructor() {
     this.repository = applicationRepository;
+    this.jobRepository = jobRepository;
+  }
+
+  // Apply job với auto notification
+  async applyToJob(jobId, applicationData, candidateInfo = {}) {
+    try {
+      console.log('🔄 Processing job application...', { jobId, candidateId: candidateInfo.id });
+
+      // Gọi API apply job
+      const result = await this.jobRepository.applyToJob(jobId, applicationData);
+
+      // 🔥 AUTO: Gửi thông báo cho employer khi có ứng viên mới apply
+      if (result && candidateInfo.id) {
+        try {
+          // Lấy thông tin job để có employer_id và job_title
+          const job = await this.jobRepository.getJobById(jobId);
+          
+          if (job && job.employer_id) {
+            await JobNotificationHelper.autoNotifyJobApplication(
+              job.employer_id,
+              candidateInfo.name || 'Ứng viên mới',
+              job.title || 'Vị trí tuyển dụng',
+              {
+                application_id: result.id || result.application_id,
+                candidate_id: candidateInfo.id,
+                job_id: jobId,
+                applied_at: new Date().toISOString()
+              }
+            );
+            console.log('✅ [AUTO] Job application notification sent to employer:', job.employer_id);
+          }
+        } catch (notifError) {
+          console.error('❌ [AUTO] Failed to send job application notification:', notifError);
+          // Không throw error để không ảnh hưởng tới việc apply job chính
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Apply to job business logic error:", error);
+      throw new Error("Không thể nộp đơn ứng tuyển. Vui lòng thử lại");
+    }
   }
 
   // Lấy danh sách ứng viên cho job
@@ -90,7 +134,7 @@ export class ApplicationBusinessService {
   }
 
   // Cập nhật trạng thái ứng viên
-  async updateCandidateStatus(applicationId, status, jobId) {
+  async updateCandidateStatus(applicationId, status, jobId, candidateData = {}) {
     try {
       if (!applicationId || !status) {
         throw new Error("Application ID and status are required");
@@ -103,6 +147,26 @@ export class ApplicationBusinessService {
       }
 
       await this.repository.updateApplicationStatus(applicationId, status);
+
+      // 🔥 AUTO: Gửi thông báo trạng thái ứng tuyển cho candidate
+      if (candidateData.candidateId && candidateData.jobTitle) {
+        try {
+          await JobNotificationHelper.autoNotifyApplicationStatus(
+            candidateData.candidateId,
+            status,
+            candidateData.jobTitle,
+            {
+              application_id: applicationId,
+              job_id: jobId,
+              updated_at: new Date().toISOString()
+            }
+          );
+          console.log('✅ [AUTO] Application status notification sent for status:', status);
+        } catch (notifError) {
+          console.error('❌ [AUTO] Failed to send application status notification:', notifError);
+          // Không throw error để không ảnh hưởng tới việc cập nhật status chính
+        }
+      }
 
       // Clear cache để refresh data
       if (jobId) {

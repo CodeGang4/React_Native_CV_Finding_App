@@ -6,11 +6,12 @@ import NotificationScreen from "../screens/notifications/NotificationScreen";
 import ConnectStack from "../screens/connect/ConnectStack";
 import JobPostingScreen from "../screens/jobs/JobPostingScreen";
 import EmployerTabBar from "../components/ui/TabBar/EmployerTabBar";
+import { useNotifications } from "../../shared/contexts/NotificationContext";
 
 const Tab = createBottomTabNavigator();
 
 export default function EmployerTabNavigator() {
-  const unreadNotifications = 3;
+  const { unreadCount } = useNotifications();
 
   return (
     <Tab.Navigator tabBar={(props) => <EmployerTabBar {...props} />}>
@@ -41,7 +42,7 @@ export default function EmployerTabNavigator() {
         options={{
           headerShown: false,
           tabBarLabel: "Thông báo",
-          tabBarBadge: unreadNotifications,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tab.Screen

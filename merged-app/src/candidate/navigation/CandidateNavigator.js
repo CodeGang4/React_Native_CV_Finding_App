@@ -8,6 +8,7 @@ import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
 import ProfileStackNavigator from "./ProfileStackNavigator";
 import { useAuth } from "../../shared/contexts/AuthContext";
+import { useNotifications } from "../../shared/contexts/NotificationContext";
 import CandidateStackNavigator from "./CandidateStackNavigator";
 
 
@@ -15,6 +16,7 @@ const Tab = createBottomTabNavigator();
 
 export default function CandidateNavigator() {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
 
   return (
     <Tab.Navigator
@@ -61,7 +63,10 @@ export default function CandidateNavigator() {
       <Tab.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ title: "Thông báo" }}
+        options={{ 
+          title: "Thông báo",
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+        }}
       />
       <Tab.Screen
         name="InterviewPractice"
