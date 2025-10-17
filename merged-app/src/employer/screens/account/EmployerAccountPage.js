@@ -139,9 +139,9 @@ const EmployerAccountPage = () => {
   const handleLogoUpdate = async (imageUri) => {
     try {
       // Lấy tên file từ URI
-      const filename = imageUri.split('/').pop();
-      const fileType = filename.split('.').pop();
-      
+      const filename = imageUri.split("/").pop();
+      const fileType = filename.split(".").pop();
+
       // Tạo object file phù hợp với React Native
       const imageFile = {
         uri: imageUri,
@@ -150,17 +150,11 @@ const EmployerAccountPage = () => {
       };
 
       await uploadCompanyLogo(imageFile);
-      
-      Alert.alert(
-        "Thành công",
-        "Logo công ty đã được cập nhật thành công!"
-      );
+
+      Alert.alert("Thành công", "Logo công ty đã được cập nhật thành công!");
     } catch (error) {
       console.error("Logo update error:", error);
-      Alert.alert(
-        "Lỗi",
-        "Không thể cập nhật logo. Vui lòng thử lại."
-      );
+      Alert.alert("Lỗi", "Không thể cập nhật logo. Vui lòng thử lại.");
     }
   };
 
