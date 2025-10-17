@@ -207,45 +207,123 @@ class EmployerController {
     }
 
     async uploadCompanyLogo(req, res) {
-        const companyId = req.params.companyId;
-        const file = req.file;
-        if (!file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-        const filePath = `${companyId}/${Date.now()}_${file.originalname}`;
-        const { data, error } = await supabaseStorage.storage
-            .from('Company_Logo_Buckets')
-            .upload(filePath, file.buffer, {
-                contentType: file.mimetype,
-                upsert: true,
+        try {
+            const companyId = req.params.companyId;
+            const file = req.file;
+            
+            if (!file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            if (!companyId) {
+                return res.status(400).json({ error: 'Company ID is required' });
+            }
+
+            console.log(`🔄 Starting Company Logo upload for company: ${companyId}`);
+            console.log(`📁 File info:`, {
+                originalname: file.originalname,
+                mimetype: file.mimetype,
+                size: file.size
             });
-        if (error) {
-            return res.status(500).json({ error: error.message });
+
+            // 1. Upload file to Supabase Storage
+            const filePath = `${companyId}/${Date.now()}_${file.originalname}`;
+            const { data: uploadData, error: uploadError } = await supabaseStorage.storage
+                .from('Company_Logo_Buckets')
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: true,
+                });
+
+            if (uploadError) {
+                console.error('❌ Company logo upload error:', uploadError);
+                return res.status(500).json({ error: 'Failed to upload logo file', details: uploadError.message });
+            }
+
+            console.log('✅ Company logo uploaded successfully:', uploadData);
+
+            // 2. Get public URL
+            const { data: publicData } = supabase.storage
+                .from('Company_Logo_Buckets')
+                .getPublicUrl(filePath);
+            
+            const publicURL = publicData.publicUrl;
+            console.log('🔗 Company logo URL generated:', publicURL);
+
+            // 3. Update employers table with logo URL
+            const { data: companyUpdateData, error: companyUpdateError } = await supabase
+                .from('employers')
+                .update({ company_logo: publicURL })
+                .eq('user_id', companyId)
+                .select();
+
+            if (companyUpdateError) {
+                console.error('❌ Company logo update error:', companyUpdateError);
+                return res.status(500).json({ 
+                    error: 'Failed to update company logo URL in database', 
+                    details: companyUpdateError.message 
+                });
+            }
+
+            if (!companyUpdateData || companyUpdateData.length === 0) {
+                console.error('❌ No company record found to update');
+                return res.status(404).json({ 
+                    error: 'Company profile not found. Please create company profile first.' 
+                });
+            }
+
+            console.log('✅ Company logo database updated successfully:', companyUpdateData[0]);
+
+            // 4. Update users table with avatar URL
+            const { data: userUpdateData, error: userUpdateError } = await supabase
+                .from('users')
+                .update({ avatar: publicURL })
+                .eq('id', companyId)
+                .select();
+
+            if (userUpdateError) {
+                console.error('❌ User avatar update error:', userUpdateError);
+                return res.status(500).json({ 
+                    error: 'Failed to update avatar URL in users table', 
+                    details: userUpdateError.message 
+                });
+            }
+
+            console.log('✅ User avatar updated successfully:', userUpdateData);
+
+            // 5. Verify the update by fetching the updated record
+            const { data: verificationData, error: verificationError } = await supabase
+                .from('employers')
+                .select('*')
+                .eq('user_id', companyId)
+                .single();
+
+            if (verificationError) {
+                console.error('❌ Verification fetch error:', verificationError);
+            } else {
+                console.log('🔍 Verification - Updated company data:', {
+                    user_id: verificationData.user_id,
+                    company_name: verificationData.company_name,
+                    company_logo: verificationData.company_logo
+                });
+            }
+
+            res.status(200).json({ 
+                logo_url: publicURL,
+                message: 'Company logo uploaded and saved successfully',
+                updated_data: {
+                    company: companyUpdateData[0],
+                    user_avatar_updated: userUpdateData?.length > 0
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Unexpected error in uploadCompanyLogo:', error);
+            res.status(500).json({ 
+                error: 'Internal server error during company logo upload',
+                details: error.message 
+            });
         }
-
-        const { data: publicData } = supabase.storage
-            .from('Company_Logo_Buckets')
-            .getPublicUrl(filePath);
-        const publicURL = publicData.publicUrl;
-        const success = await supabase
-            .from('employers')
-            .update({ company_logo: publicURL })
-            .eq('user_id', companyId);
-
-
-        await supabase.from('users').update({ avatar: publicURL }).eq('id', companyId);
-        console.log('Avatar updated in users table:', publicURL);
-        if (!success) {
-            return res
-                .status(500)
-                .json({ error: 'Failed to update company logo' });
-        }
-        console.log(success);
-
-        console.log('Company logo uploaded and URL saved:', publicURL);
-
-        
-        res.status(200).json({ logo_url: publicURL });
     }
 
     async updateCompanyName(req, res) {
