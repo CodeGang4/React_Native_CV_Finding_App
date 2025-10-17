@@ -8,7 +8,10 @@ export class JobApiService {
 
   // Get all jobs
   static async getAllJobs(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getJobs`, { params });
+    const response = await apiClient.get(`${this.endpoint}/getJobs`, { 
+      params,
+      priority: 'normal' // Normal priority cho danh sách jobs
+    });
     return response.data;
   }
 
@@ -16,32 +19,46 @@ export class JobApiService {
   static async getJobsByCompany(companyId, params = {}) {
     const response = await apiClient.get(
       `${this.endpoint}/getJobByCompanyId/${companyId}`,
-      { params }
+      { 
+        params,
+        priority: 'normal'
+      }
     );
     return response.data;
   }
 
   // Get job by ID
   static async getJobById(jobId) {
-    const response = await apiClient.get(`${this.endpoint}/getJobDetail/${jobId}`);
+    const response = await apiClient.get(`${this.endpoint}/getJobDetail/${jobId}`, {
+      priority: 'high' // High priority cho job detail
+    });
     return response.data;
   }
 
   // Create new job (requires companyId in route)
   static async createJob(jobData, companyId) {
-    const response = await apiClient.post(`${this.endpoint}/addJob/${companyId}`, jobData);
+    const response = await apiClient.post(`${this.endpoint}/addJob/${companyId}`, jobData, {
+      priority: 'high', // High priority cho create job
+      retryable: true   // Cho phép retry
+    });
     return response.data;
   }
 
   // Update job
   static async updateJob(jobId, jobData) {
-    const response = await apiClient.put(`${this.endpoint}/updateJob/${jobId}`, jobData);
+    const response = await apiClient.put(`${this.endpoint}/updateJob/${jobId}`, jobData, {
+      priority: 'high', // High priority cho update
+      retryable: true
+    });
     return response.data;
   }
 
   // Delete job
   static async deleteJob(jobId) {
-    const response = await apiClient.delete(`${this.endpoint}/deleteJob/${jobId}`);
+    const response = await apiClient.delete(`${this.endpoint}/deleteJob/${jobId}`, {
+      priority: 'normal',
+      retryable: false // Không retry delete để tránh double deletion
+    });
     return response.data;
   }
 

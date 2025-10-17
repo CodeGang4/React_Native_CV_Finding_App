@@ -1,7 +1,8 @@
 import { errorTracker } from "../../utils/ErrorTracker";
+import { RateLimitHandler } from "../../utils/RateLimitHandler";
 
 /**
- * API Client Configuration
+ * API Client Configuration with Rate Limiting
  */
 
 class ApiClient {
@@ -14,6 +15,13 @@ class ApiClient {
       request: [],
       response: [],
     };
+    
+    // Initialize rate limit handler
+    this.rateLimitHandler = new RateLimitHandler({
+      maxConcurrentRequests: 10,    // Giảm số request đồng thời
+      requestDelay: 100,            // Delay 100ms giữa các request
+      retryDelays: [1000, 2000, 4000, 8000, 16000] // Exponential backoff
+    });
   }
 
   setBaseURL(url) {
@@ -37,6 +45,18 @@ class ApiClient {
   }
 
   async request(config) {
+    // Wrap the original request with rate limiting
+    return this.rateLimitHandler.executeRequest(async () => {
+      return this._executeRequest(config);
+    }, {
+      priority: config.priority || 'normal',
+      retryable: config.retryable !== false, // Default to retryable
+      url: config.url,
+      method: config.method || 'GET'
+    });
+  }
+
+  async _executeRequest(config) {
     // Build full URL
     const url = config.url.startsWith("http")
       ? config.url
@@ -165,7 +185,7 @@ class ApiClient {
     }
   }
 
-  // Convenience methods
+  // Convenience methods with rate limiting support
   async get(url, config = {}) {
     return this.request({
       ...config,
@@ -180,6 +200,7 @@ class ApiClient {
       method: "POST",
       url,
       data,
+      priority: config.priority || 'high', // POST requests have higher priority
     });
   }
 
@@ -189,6 +210,7 @@ class ApiClient {
       method: "PUT",
       url,
       data,
+      priority: config.priority || 'high', // PUT requests have higher priority
     });
   }
 
@@ -198,6 +220,7 @@ class ApiClient {
       method: "PATCH",
       url,
       data,
+      priority: config.priority || 'high', // PATCH requests have higher priority
     });
   }
 
@@ -206,7 +229,25 @@ class ApiClient {
       ...config,
       method: "DELETE",
       url,
+      priority: config.priority || 'normal',
     });
+  }
+
+  // Rate limiting control methods
+  getRateLimitStatus() {
+    return this.rateLimitHandler.getQueueStatus();
+  }
+
+  setRateLimitConfig(config) {
+    this.rateLimitHandler.updateConfig(config);
+  }
+
+  pauseRequests() {
+    this.rateLimitHandler.pause();
+  }
+
+  resumeRequests() {
+    this.rateLimitHandler.resume();
   }
 }
 
