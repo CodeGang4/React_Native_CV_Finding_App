@@ -1,38 +1,117 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
-import applicationRepository from "../repositories/ApplicationRepository.js";
 import { getJobStatusWithColor } from "../utils/jobStatusUtils.js";
 
 /**
- * Custom hook for job card statistics (views, candidates, expiry)
- * Used in job lists where we don't want to increment views
+ * Job card statistics hook - ZERO HTTP 429 solution
+ * Uses CentralizedCandidateManager with fallback to avoid crashes
  */
 export const useJobCardStats = (job) => {
   const [candidatesCount, setCandidatesCount] = useState(0);
   const [views, setViews] = useState(job?.views || 0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [refreshInterval, setRefreshInterval] = useState(null);
 
-  // Get candidates count for this job
-  const fetchCandidatesCount = useCallback(
-    async (isInitial = false) => {
-      if (!job?.id) return;
+  const mountedRef = useRef(true);
+  const managerRef = useRef(null);
+  const unsubscribeRef = useRef(null);
+  const fallbackMode = useRef(false);
 
-      if (isInitial) {
-        setIsLoading(true);
-      }
-      setError(null);
-
+  // Lazy load CentralizedCandidateManager with comprehensive fallback
+  const initializeManager = useCallback(async () => {
+    if (!managerRef.current && !fallbackMode.current) {
       try {
-        // Use existing ApplicationRepository to get candidates (with cache)
-        const candidates = await applicationRepository.getCandidatesByJobId(
-          job.id,
-          false
-        ); // Use cache for performance
-        const newCount = candidates?.length || 0;
+        const CentralizedCandidateManager = await import(
+          "../services/utils/CentralizedCandidateManager"
+        )
+          .then((module) => module.default)
+          .catch((error) => {
+            console.warn("CentralizedCandidateManager import failed:", error);
+            fallbackMode.current = true;
+            return null;
+          });
 
-        // Only update if count changed to prevent unnecessary re-renders
+        if (CentralizedCandidateManager && !fallbackMode.current) {
+          managerRef.current = CentralizedCandidateManager.getInstance();
+          console.log("✅ CentralizedCandidateManager initialized");
+        } else {
+          fallbackMode.current = true;
+          console.log("⚠️ Using fallback mode for job card stats");
+        }
+      } catch (error) {
+        console.error(
+          "Failed to initialize CentralizedCandidateManager:",
+          error
+        );
+        fallbackMode.current = true;
+      }
+    }
+    return managerRef.current;
+  }, []);
+
+  // Fallback method to get candidate count using legacy approach
+  const getFallbackCandidateCount = useCallback(
+    async (jobId) => {
+      try {
+        // Try to use existing ApplicationRepository if available
+        const applicationRepository = await import(
+          "../repositories/ApplicationRepository"
+        )
+          .then((module) => module.default || module.ApplicationRepository)
+          .catch(() => null);
+
+        if (applicationRepository) {
+          const candidates = await applicationRepository.getCandidatesByJobId(
+            jobId
+          );
+          return Array.isArray(candidates) ? candidates.length : 0;
+        }
+      } catch (error) {
+        console.error("Fallback candidate count failed:", error);
+      }
+
+      // Ultimate fallback: return job's existing candidate count if available
+      return job?.applications?.length || job?.application_count || 0;
+    },
+    [job]
+  );
+
+  // Subscribe to centralized manager for real-time updates
+  useEffect(() => {
+    if (!job?.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    const setupSubscription = async () => {
+      setIsLoading(true);
+
+      const manager = await initializeManager();
+
+      if (!manager || fallbackMode.current) {
+        // Fallback mode: get candidate count once
+        try {
+          const count = await getFallbackCandidateCount(job.id);
+          if (mountedRef.current) {
+            setCandidatesCount(count);
+            setIsLoading(false);
+            setError(null);
+          }
+        } catch (error) {
+          if (mountedRef.current) {
+            setError("Failed to load candidate data");
+            setIsLoading(false);
+          }
+        }
+        return;
+      }
+
+      // Normal mode: use CentralizedManager
+      const handleCandidateUpdate = (candidateData) => {
+        if (!mountedRef.current) return;
+
+        const newCount = candidateData.total || 0;
+
         setCandidatesCount((prevCount) => {
           if (prevCount !== newCount) {
             console.log(
@@ -42,198 +121,158 @@ export const useJobCardStats = (job) => {
           }
           return prevCount;
         });
-      } catch (err) {
-        console.warn(
-          `⚠️ Failed to get candidates count for job ${job.id}:`,
-          err
+
+        setIsLoading(false);
+        setError(null);
+      };
+
+      try {
+        unsubscribeRef.current = manager.subscribe(
+          job.id,
+          handleCandidateUpdate
         );
-        setError(err.message);
-        // Fallback to job data if available
-        setCandidatesCount(job?.applications || job?.application_count || 0);
-      } finally {
-        if (isInitial) {
-          setIsLoading(false);
+
+        // Get current data immediately if available
+        const currentData = manager.getCurrentCounts(job.id);
+        if (currentData.total > 0 || currentData.lastUpdated) {
+          handleCandidateUpdate(currentData);
+        }
+      } catch (error) {
+        console.error("Failed to subscribe to candidate updates:", error);
+        // Fallback to legacy method
+        try {
+          const count = await getFallbackCandidateCount(job.id);
+          if (mountedRef.current) {
+            setCandidatesCount(count);
+            setIsLoading(false);
+            setError(null);
+          }
+        } catch (fallbackError) {
+          if (mountedRef.current) {
+            setError("Failed to load candidate data");
+            setIsLoading(false);
+          }
         }
       }
-    },
-    [job?.id, job?.applications, job?.application_count]
-  );
+    };
 
-  // Format deadline/expiry date (similar to JobDetailHeader)
+    setupSubscription();
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [job?.id, initializeManager, getFallbackCandidateCount]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  // Manual refresh function
+  const fetchCandidatesCount = useCallback(async () => {
+    if (!job?.id) return;
+
+    if (fallbackMode.current) {
+      // Fallback mode: direct fetch
+      try {
+        const count = await getFallbackCandidateCount(job.id);
+        setCandidatesCount(count);
+      } catch (error) {
+        console.error(
+          "Failed to refresh job candidates in fallback mode:",
+          error
+        );
+      }
+    } else {
+      // Normal mode: use manager
+      const manager = await initializeManager();
+      if (manager) {
+        try {
+          manager.refreshJob(job.id);
+        } catch (error) {
+          console.error("Failed to refresh job candidates:", error);
+        }
+      }
+    }
+  }, [job?.id, initializeManager, getFallbackCandidateCount]);
+
+  // Format deadline/expiry date
   const formatDeadline = useCallback((job) => {
-    // Check all possible deadline fields from backend
     const deadlineField =
       job?.exprired_date ||
       job?.expired_date ||
       job?.deadline ||
-      job?.expiry_date ||
-      job?.exprired_date;
-
-    console.log("🔍 Checking deadline fields for job:", job?.id, {
-      exprired_date: job?.exprired_date,
-      expired_date: job?.expired_date,
-      deadline: job?.deadline,
-      expiry_date: job?.expiry_date,
-      selected: deadlineField,
-    });
+      job?.expiry_date;
 
     if (!deadlineField) {
-      console.log("⚠️ No deadline field found, returning default");
       return "Không giới hạn";
     }
 
     try {
       let deadlineDate;
 
-      // Handle different date formats
       if (typeof deadlineField === "string" && deadlineField.includes("/")) {
-        // Handle dd/mm/yyyy or dd/mm format (Vietnamese format)
         const parts = deadlineField.split("/");
         if (parts.length === 3) {
-          // dd/mm/yyyy format
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-          const year = parseInt(parts[2], 10);
-          deadlineDate = new Date(year, month, day);
+          deadlineDate = new Date(
+            parseInt(parts[2]),
+            parseInt(parts[1]) - 1,
+            parseInt(parts[0])
+          );
         } else if (parts.length === 2) {
-          // dd/mm format, assume current year
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-          const year = new Date().getFullYear();
-          deadlineDate = new Date(year, month, day);
-        } else {
-          deadlineDate = new Date(deadlineField);
+          const currentYear = new Date().getFullYear();
+          deadlineDate = new Date(
+            currentYear,
+            parseInt(parts[1]) - 1,
+            parseInt(parts[0])
+          );
         }
       } else {
-        // Try standard date parsing
         deadlineDate = new Date(deadlineField);
       }
 
-      console.log("📅 Parsing deadline:", deadlineField, "→", deadlineDate);
-
-      // Check if date is valid
       if (isNaN(deadlineDate.getTime())) {
-        console.warn("❌ Invalid date:", deadlineField);
-        return "Không giới hạn";
+        return "Ngày không hợp lệ";
       }
 
-      // Check if expired
-      const now = new Date();
-      const isExpired = deadlineDate < now;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      deadlineDate.setHours(0, 0, 0, 0);
 
-      // Format similar to JobDetailHeader
-      const dateStr = deadlineDate.toLocaleDateString("vi-VN");
-      let formatted = dateStr;
+      const diffTime = deadlineDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      // Shorten format if too long (like JobDetailHeader)
-      if (dateStr.includes("/")) {
-        const parts = dateStr.split("/");
-        if (parts.length === 3) {
-          formatted = `${parts[0]}/${parts[1]}`; // Only show day/month
-        }
+      if (diffDays < 0) {
+        return "Đã hết hạn";
+      } else if (diffDays === 0) {
+        return "Hôm nay";
+      } else if (diffDays === 1) {
+        return "Ngày mai";
+      } else if (diffDays <= 7) {
+        return `${diffDays} ngày nữa`;
+      } else {
+        const day = deadlineDate.getDate().toString().padStart(2, "0");
+        const month = (deadlineDate.getMonth() + 1).toString().padStart(2, "0");
+        const year = deadlineDate.getFullYear();
+        return `${day}/${month}/${year}`;
       }
-
-      console.log("✅ Formatted deadline:", {
-        original: deadlineField,
-        formatted,
-        isExpired,
-        fullDate: dateStr,
-      });
-
-      return {
-        formatted,
-        isExpired,
-        date: deadlineDate,
-        fullDate: dateStr,
-      };
     } catch (error) {
-      console.error("❌ Error parsing deadline:", error);
-      return "Không giới hạn";
+      console.error("Error parsing deadline:", error);
+      return "Ngày không hợp lệ";
     }
   }, []);
 
-  // Get job status based on expiry and other factors
+  // Get job status with color
   const getJobStatus = useCallback((job) => {
     return getJobStatusWithColor(job);
   }, []);
-
-  // Fetch candidates count when job changes
-  useEffect(() => {
-    if (job?.id) {
-      // Initial fetch with loading state
-      fetchCandidatesCount(true);
-
-      // Set up auto-refresh every 60 seconds for live updates (longer interval for better performance)
-      const interval = setInterval(() => {
-        fetchCandidatesCount(false); // Background refresh without loading state
-      }, 60000); // 60 seconds
-
-      setRefreshInterval(interval);
-
-      return () => {
-        if (interval) {
-          clearInterval(interval);
-          setRefreshInterval(null);
-        }
-      };
-    } else {
-      setCandidatesCount(0);
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-        setRefreshInterval(null);
-      }
-    }
-  }, [job?.id]); // Remove fetchCandidatesCount from deps to avoid recreation
-
-  // Listen for refresh events (e.g., when returning from JobDetail)
-  useEffect(() => {
-    const handleRefreshEvent = () => {
-      console.log("📢 Received refresh event for job:", job?.id);
-      forceRefresh();
-    };
-
-    const subscription = DeviceEventEmitter.addListener(
-      "refreshJobCards",
-      handleRefreshEvent
-    );
-
-    return () => {
-      subscription.remove();
-    };
-  }, [forceRefresh]);
-
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [refreshInterval]);
-
-  // Fetch updated job data including views
-  const fetchJobData = useCallback(async () => {
-    if (!job?.id) return;
-
-    try {
-      // For now, we'll rely on job data refresh from parent component
-      // In future, we could add a job detail API call here
-      console.log("📊 Force refreshing job data for:", job.id);
-
-      // Clear cache and fetch fresh candidates
-      applicationRepository.clearJobCandidatesCache(job.id);
-      await fetchCandidatesCount(true);
-
-      // Views will be updated when parent component re-renders with fresh job data
-    } catch (error) {
-      console.error("Error refreshing job data:", error);
-    }
-  }, [job?.id, fetchCandidatesCount]);
-
-  // Force refresh when returning from JobDetail (e.g., when views might have increased)
-  const forceRefresh = useCallback(() => {
-    fetchJobData();
-  }, [fetchJobData]);
 
   // Update views when job data changes
   useEffect(() => {
@@ -257,11 +296,11 @@ export const useJobCardStats = (job) => {
     error,
 
     // Actions
-    refreshCandidatesCount: () => fetchCandidatesCount(true),
-    forceRefresh,
+    refreshCandidatesCount: () => fetchCandidatesCount(),
+    forceRefresh: () => fetchCandidatesCount(),
 
     // Computed
-    hasAutoRefresh: refreshInterval !== null,
+    hasAutoRefresh: true,
   };
 };
 

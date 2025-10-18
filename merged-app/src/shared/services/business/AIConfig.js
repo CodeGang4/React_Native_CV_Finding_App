@@ -8,11 +8,11 @@ export class AIConfig {
    * 1. Truy cập: https://makersuite.google.com/app/apikey
    * 2. Đăng nhập tài khoản Google
    * 3. Tạo API key mới
-   * 4. Copy và paste vào đây
+   * 4. Copy và paste vào file .env hoặc secure storage
    */
   static GEMINI_CONFIG = {
-    // 🚨 QUAN TRỌNG: Thay thế API key này bằng API key thật của bạn
-    API_KEY: "AIzaSyB1nZhXYudwuWMGUl4989Da78yMUfQ-AOQ", // Thay bằng API key thật
+    // 🚨 QUAN TRỌNG: API key được load từ environment variables hoặc secure storage
+    API_KEY: process.env.GEMINI_API_KEY || "YOUR_API_KEY_HERE", // Sẽ được override từ secure storage
 
     MODEL: "models/gemini-2.0-flash-lite", // Optimized for high-volume CV analysis
 
@@ -39,11 +39,112 @@ export class AIConfig {
   };
 
   /**
+   * Secure API Key Management
+   * Load và save API key từ AsyncStorage để bảo mật
+   */
+  static async loadAPIKeyFromStorage() {
+    try {
+      const AsyncStorage = await import(
+        "@react-native-async-storage/async-storage"
+      ).then((m) => m.default);
+      const storedKey = await AsyncStorage.getItem("GEMINI_API_KEY");
+
+      if (storedKey && this.isValidAPIKey(storedKey)) {
+        this.GEMINI_CONFIG.API_KEY = storedKey;
+        console.log("✅ API key loaded from secure storage");
+        return true;
+      }
+
+      console.log("⚠️ No valid API key found in storage");
+      return false;
+    } catch (error) {
+      console.error("❌ Failed to load API key from storage:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Save API key to secure storage
+   */
+  static async saveAPIKeyToStorage(apiKey) {
+    try {
+      if (!this.isValidAPIKey(apiKey)) {
+        throw new Error("Invalid API key format");
+      }
+
+      const AsyncStorage = await import(
+        "@react-native-async-storage/async-storage"
+      ).then((m) => m.default);
+      await AsyncStorage.setItem("GEMINI_API_KEY", apiKey);
+
+      this.GEMINI_CONFIG.API_KEY = apiKey;
+      console.log("✅ API key saved to secure storage");
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to save API key to storage:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get API key safely (masked for display)
+   */
+  static getMaskedAPIKey() {
+    const key = this.GEMINI_CONFIG.API_KEY;
+    if (!key || key === "YOUR_API_KEY_HERE") {
+      return "No API key configured";
+    }
+
+    if (key.length < 10) {
+      return "Invalid API key";
+    }
+
+    return key.substring(0, 8) + "..." + key.substring(key.length - 4);
+  }
+
+  /**
+   * Clear API key from storage (for logout/reset)
+   */
+  static async clearAPIKey() {
+    try {
+      const AsyncStorage = await import(
+        "@react-native-async-storage/async-storage"
+      ).then((m) => m.default);
+      await AsyncStorage.removeItem("GEMINI_API_KEY");
+
+      this.GEMINI_CONFIG.API_KEY = "YOUR_API_KEY_HERE";
+      console.log("✅ API key cleared from storage");
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to clear API key:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Initialize API key from storage on app start
+   */
+  static async initialize() {
+    console.log("🔑 Initializing AI Config...");
+
+    // Try to load from storage first
+    const loaded = await this.loadAPIKeyFromStorage();
+
+    if (!loaded) {
+      console.log("⚠️ Please configure your Gemini API key");
+      console.log("📖 Run AIConfig.getAPIKeyGuide() for instructions");
+    }
+
+    return this.getCurrentConfig();
+  }
+
+  /**
    * Kiểm tra API key có hợp lệ không
    */
   static isValidAPIKey(apiKey) {
     return (
       apiKey &&
+      apiKey !== "YOUR_API_KEY_HERE" &&
       apiKey !== "AIzaSyCXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" &&
       apiKey.startsWith("AIzaSy") &&
       apiKey.length > 30
@@ -56,6 +157,7 @@ export class AIConfig {
   static getCurrentConfig() {
     return {
       hasValidKey: this.isValidAPIKey(this.GEMINI_CONFIG.API_KEY),
+      maskedKey: this.getMaskedAPIKey(),
       model: this.GEMINI_CONFIG.MODEL,
       rateLimit: this.GEMINI_CONFIG.REQUESTS_PER_MINUTE,
       batchSize: this.GEMINI_CONFIG.MAX_BATCH_SIZE,
@@ -63,17 +165,25 @@ export class AIConfig {
   }
 
   /**
-   * Cập nhật API key
+   * Cập nhật API key (với secure storage)
    * @param {string} newAPIKey - API key mới
    */
-  static updateAPIKey(newAPIKey) {
-    if (this.isValidAPIKey(newAPIKey)) {
-      this.GEMINI_CONFIG.API_KEY = newAPIKey;
-      console.log("✅ API key đã được cập nhật thành công");
-      return true;
-    } else {
-      console.error("❌ API key không hợp lệ");
-      return false;
+  static async updateAPIKey(newAPIKey) {
+    try {
+      if (!this.isValidAPIKey(newAPIKey)) {
+        throw new Error("Invalid API key format");
+      }
+
+      const success = await this.saveAPIKeyToStorage(newAPIKey);
+      if (success) {
+        console.log("✅ API key đã được cập nhật thành công");
+        return { success: true, message: "API key updated successfully" };
+      } else {
+        throw new Error("Failed to save API key");
+      }
+    } catch (error) {
+      console.error("❌ API key update failed:", error);
+      return { success: false, message: error.message };
     }
   }
 
