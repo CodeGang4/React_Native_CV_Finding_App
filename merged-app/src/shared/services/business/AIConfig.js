@@ -1,10 +1,9 @@
-/**
- * AI Configuration - Cấu hình API keys và settings cho Gemini AI
- */
+import Constants from "expo-constants";
+const GEMINI_API_KEY = Constants.expoConfig.extra.GEMINI_APIKEY;
 export class AIConfig {
   static GEMINI_CONFIG = {
     // 🚨 QUAN TRỌNG: API key được load từ environment variables hoặc secure storage
-    API_KEY: process.env.GEMINI_API_KEY || "YOUR_API_KEY_HERE", // Sẽ được override từ secure storage
+    API_KEY: GEMINI_API_KEY || "YOUR_API_KEY_HERE", // Sẽ được override từ secure storage
 
     MODEL: "models/gemini-2.0-flash-lite", // Optimized for high-volume CV analysis
 
