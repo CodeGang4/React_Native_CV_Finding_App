@@ -1,18 +1,13 @@
 /**
  * AI Configuration - Cấu hình API keys và settings cho Gemini AI
  */
+import Constants from "expo-constants";
+const GEMINI_API_KEY = Constants.expoConfig.extra.GEMINI_APIKEY;
 export class AIConfig {
-  /**
-   * Cấu hình Google Gemini AI
-   * 🔑 Để lấy API key miễn phí:
-   * 1. Truy cập: https://makersuite.google.com/app/apikey
-   * 2. Đăng nhập tài khoản Google
-   * 3. Tạo API key mới
-   * 4. Copy và paste vào file .env hoặc secure storage
-   */
+
   static GEMINI_CONFIG = {
     // 🚨 QUAN TRỌNG: API key được load từ environment variables hoặc secure storage
-    API_KEY: process.env.GEMINI_API_KEY || "YOUR_API_KEY_HERE", // Sẽ được override từ secure storage
+    API_KEY: GEMINI_API_KEY || "YOUR_API_KEY_HERE", // Sẽ được override từ secure storage
 
     MODEL: "models/gemini-2.0-flash-lite", // Optimized for high-volume CV analysis
 
