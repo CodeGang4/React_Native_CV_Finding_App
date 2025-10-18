@@ -14,6 +14,8 @@ import CandidateCard from "../../components/candidates/CandidateCard";
 import SearchFiltersBar from "../../components/connect/SearchFiltersBar";
 import CandidatePreviewSheet from "../../components/connect/CandidatePreviewSheet";
 import AiSuggestionsModal from "../../components/connect/AiSuggestionsModal";
+import AICandidateInsights from "../../components/connect/AICandidateInsights";
+import { AISettingsModal } from "../../../shared/components/AISettingsModal";
 import { colors } from "../../../shared/styles/colors";
 import ConnectCandidateService from "../../../shared/services/business/ConnectCandidateService";
 import AIService from "../../../shared/services/business/AIService";
@@ -27,6 +29,8 @@ export default function ConnectScreen({ navigation }) {
   // Candidate used for the Invite modal (separate from `selected` used by bottom sheet)
   const [inviteCandidate, setInviteCandidate] = useState(null);
   const [showAi, setShowAi] = useState(false);
+  const [showAIInsights, setShowAIInsights] = useState(false);
+  const [showAISettings, setShowAISettings] = useState(false);
 
   // Backend integration state
   const [candidates, setCandidates] = useState([]);
@@ -134,6 +138,8 @@ export default function ConnectScreen({ navigation }) {
           selectedSkills={skills}
           onToggleSkill={toggleSkill}
           onOpenAi={() => setShowAi(true)}
+          onOpenAIInsights={() => setShowAIInsights(true)}
+          onOpenAISettings={() => setShowAISettings(true)}
           containerStyle={{ marginTop: -110 }}
         />
 
@@ -212,6 +218,25 @@ export default function ConnectScreen({ navigation }) {
           }}
         />
 
+        {/* Enhanced AI Candidate Insights */}
+        <AICandidateInsights
+          visible={showAIInsights}
+          candidates={filtered}
+          onClose={() => setShowAIInsights(false)}
+          onSelectCandidate={(candidate) => {
+            setSelected(candidate);
+            setShowAIInsights(false);
+          }}
+          searchCriteria={{
+            requiredSkills: skills,
+            preferredSkills: [],
+            level: level,
+            query: q,
+            jobTitle: "",
+            industry: "",
+          }}
+        />
+
         <InterviewNotificationModal
           visible={showInvite}
           onClose={() => {
@@ -219,6 +244,16 @@ export default function ConnectScreen({ navigation }) {
             setInviteCandidate(null);
           }}
           applicantName={inviteCandidate?.name || "Ứng viên"}
+        />
+
+        {/* AI Settings Modal */}
+        <AISettingsModal
+          visible={showAISettings}
+          onClose={() => setShowAISettings(false)}
+          onSave={() => {
+            // Reload AI services sau khi cấu hình
+            console.log("🔄 AI settings saved, reloading services...");
+          }}
         />
       </View>
     </SafeAreaView>

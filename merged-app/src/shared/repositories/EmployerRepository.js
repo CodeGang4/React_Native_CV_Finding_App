@@ -13,12 +13,19 @@ export class EmployerRepository extends BaseRepository {
 
   // Helper method để tạo request với correct base URL cho employer endpoints
   async makeEmployerRequest(method, endpoint, data = null, config = {}) {
-    const baseUrl =
-      Constants.expoConfig?.extra?.API?.replace("/client", "") ||
-      "http://localhost:3000";
+    // Get base URL and ensure it doesn't end with /client
+    let baseUrl = Constants.expoConfig?.extra?.API || "http://localhost:3000";
+
+    // Remove /client suffix if it exists
+    if (baseUrl.endsWith("/client")) {
+      baseUrl = baseUrl.replace("/client", "");
+    }
+
     const fullUrl = `${baseUrl}${endpoint}`;
 
     console.log(`[EmployerRepository] Making ${method} request to: ${fullUrl}`);
+    console.log(`[EmployerRepository] Base URL: ${baseUrl}`);
+    console.log(`[EmployerRepository] Endpoint: ${endpoint}`);
 
     const requestConfig = {
       ...config,
@@ -43,10 +50,14 @@ export class EmployerRepository extends BaseRepository {
     }
 
     try {
-      // Temporary: Sử dụng direct URL để test
-      const baseUrl =
-        Constants.expoConfig?.extra?.API?.replace("/client", "") ||
-        "http://localhost:3000";
+      // Get base URL and ensure it doesn't end with /client
+      let baseUrl = Constants.expoConfig?.extra?.API || "http://localhost:3000";
+
+      // Remove /client suffix if it exists
+      if (baseUrl.endsWith("/client")) {
+        baseUrl = baseUrl.replace("/client", "");
+      }
+
       const fullUrl = `${baseUrl}/employer/getCompanyInfo/${companyId}`;
 
       console.log(`[EmployerRepository] Direct request to: ${fullUrl}`);
@@ -119,19 +130,31 @@ export class EmployerRepository extends BaseRepository {
   // Upload logo công ty
   async uploadCompanyLogo(companyId, imageFile) {
     try {
+      console.log("🔄 EmployerRepository.uploadCompanyLogo called with:");
+      console.log("   Company ID:", companyId);
+      console.log(
+        "   Image file:",
+        imageFile ? "✅ File provided" : "❌ No file"
+      );
+
       const formData = new FormData();
       formData.append("companyLogo", imageFile);
+
+      console.log(
+        "📤 Making upload request to: /employer/uploadCompanyLogo/" + companyId
+      );
 
       const response = await this.makeEmployerRequest(
         "POST",
         `/employer/uploadCompanyLogo/${companyId}`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          // Don't set Content-Type for FormData - let browser handle it
+          headers: {},
         }
       );
+
+      console.log("✅ Upload response received:", response.status);
 
       // Cập nhật cache
       const cachedInfo = this.getFromCache(`company_info_${companyId}`);
