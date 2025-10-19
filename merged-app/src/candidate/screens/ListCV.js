@@ -14,6 +14,9 @@ import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import Constants from "expo-constants";
+
+const API_BASE = Constants.expoConfig.extra.API;
 
 export default function ListCV() {
   const { user } = useAuth();
@@ -24,9 +27,7 @@ export default function ListCV() {
   const fetchProfile = async () => {
     if (!user?.id) return;
     try {
-      const res = await axios.get(
-        `http://192.168.1.3:3000/client/candidates/getProfile/${user.id}`
-      );
+      const res = await axios.get(`${API_BASE}/client/candidates/getProfile/${user.id}`);
       const profile = res.data;
 
       if (Array.isArray(profile?.cvs) && profile.cvs.length > 0) {
@@ -66,18 +67,15 @@ export default function ListCV() {
         name: `cv_${Date.now()}.png`,
       });
 
-      const uploadRes = await axios.post(
-        "http://192.168.1.3:3000/client/candidates/uploadCV",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const uploadRes = await axios.post(`${API_BASE}/client/candidates/uploadCV`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       const newUrl = uploadRes.data.url;
 
-      await axios.put(
-        `http://192.168.1.3:3000/client/candidates/updateProfile/${user.id}`,
-        { cv_url: newUrl }
-      );
+      await axios.put(`${API_BASE}/client/candidates/updateProfile/${user.id}`, {
+        cv_url: newUrl,
+      });
 
       Alert.alert("Thành công", "Cập nhật CV mới thành công!");
       fetchProfile();
@@ -95,10 +93,9 @@ export default function ListCV() {
         style: "destructive",
         onPress: async () => {
           try {
-            await axios.put(
-              `http://192.168.1.3:3000/client/candidates/updateProfile/${user.id}`,
-              { cv_url: null }
-            );
+            await axios.put(`${API_BASE}/client/candidates/updateProfile/${user.id}`, {
+              cv_url: null,
+            });
             Alert.alert("Thành công", "Đã xóa CV");
             fetchProfile();
           } catch (error) {
@@ -138,9 +135,7 @@ export default function ListCV() {
                   style={styles.preview}
                   resizeMode="cover"
                 />
-                <Text style={styles.itemText}>
-                  {item.name || `CV thứ ${index + 1}`}
-                </Text>
+                <Text style={styles.itemText}>{item.name || `CV thứ ${index + 1}`}</Text>
               </TouchableOpacity>
 
               <View style={styles.actions}>

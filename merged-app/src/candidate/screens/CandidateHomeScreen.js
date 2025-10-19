@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import Constants from "expo-constants";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useJobActions } from "../../shared/hooks";
 import JobList from "../components/JobList";
+
+const API_BASE = Constants.expoConfig.extra.API;
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -11,41 +14,41 @@ export default function CandidateHomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   const handleSaveJob = async (job) => {
-    console.log('🏠 CandidateHomeScreen: handleSaveJob called');
-    console.log('📝 Job object:', JSON.stringify(job, null, 2));
-    
+    console.log("CandidateHomeScreen: handleSaveJob called");
+    console.log("Job object:", JSON.stringify(job, null, 2));
+
     if (!job.id || !job.employer_id) {
-      console.error('❌ Missing job info:', { jobId: job.id, employerId: job.employer_id });
-      Alert.alert('Error', 'Thông tin job không đầy đủ');
+      console.error("Missing job info:", { jobId: job.id, employerId: job.employer_id });
+      Alert.alert("Error", "Thông tin job không đầy đủ");
       return;
     }
 
     const jobData = {
       title: job.title,
-      company_name: job.company_name
+      company_name: job.company_name,
     };
 
-    console.log('📧 Calling saveJobWithNotification with:', {
+    console.log("Calling saveJobWithNotification with:", {
       jobId: job.id,
       jobData,
-      employerId: job.employer_id
+      employerId: job.employer_id,
     });
 
     const result = await saveJobWithNotification(job.id, jobData, job.employer_id);
-    
-    console.log('📬 SaveJob result:', JSON.stringify(result, null, 2));
-    
+
+    console.log("SaveJob result:", JSON.stringify(result, null, 2));
+
     if (result.success) {
-      Alert.alert('Success', 'Đã lưu job và gửi thông báo!');
+      Alert.alert("Success", "Đã lưu job và gửi thông báo!");
     } else {
-      Alert.alert('Error', result.error || 'Không thể lưu job');
+      Alert.alert("Error", result.error || "Không thể lưu job");
     }
   };
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch("http://192.168.1.3:3000/job/getJobs");
+        const response = await fetch(`${API_BASE}/job/getJobs`);
         const data = await response.json();
         console.log("Job API response:", data);
 
@@ -54,9 +57,7 @@ export default function CandidateHomeScreen({ navigation }) {
         const jobsWithCompany = await Promise.all(
           jobsData.map(async (job) => {
             try {
-              const res = await fetch(
-                `http://192.168.1.3:3000/employer/getCompanyInfo/${job.employer_id}`
-              );
+              const res = await fetch(`${API_BASE}/employer/getCompanyInfo/${job.employer_id}`);
               const companyData = await res.json();
 
               return {
@@ -87,21 +88,13 @@ export default function CandidateHomeScreen({ navigation }) {
   }, []);
 
   if (loading) {
-    return (
-      <ActivityIndicator
-        size="large"
-        color="#00b14f"
-        style={{ marginTop: 20 }}
-      />
-    );
+    return <ActivityIndicator size="large" color="#00b14f" style={{ marginTop: 20 }} />;
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>
-          Xin chào, {user?.username || "Bạn"}!
-        </Text>
+        <Text style={styles.greeting}>Xin chào, {user?.username || "Bạn"}!</Text>
         <Text style={styles.subtitle}>Sẵn sàng tìm công việc mơ ước?</Text>
       </View>
 

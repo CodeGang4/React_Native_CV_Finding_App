@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DeviceEventEmitter } from "react-native";
 import { getJobStatusWithColor } from "../utils/jobStatusUtils.js";
+import CentralizedCandidateManager from "../services/utils/CentralizedCandidateManager";
 
 /**
  * Job card statistics hook - ZERO HTTP 429 solution
@@ -18,27 +19,66 @@ export const useJobCardStats = (job) => {
   const fallbackMode = useRef(false);
 
   // Lazy load CentralizedCandidateManager with comprehensive fallback
+  // const initializeManager = useCallback(async () => {
+  //   if (!managerRef.current && !fallbackMode.current) {
+  //     try {
+  //       const CentralizedCandidateManager = await import(
+  //         "../services/utils/CentralizedCandidateManager"
+  //       )
+  //         .then((module) => module.default)
+  //         .catch((error) => {
+  //           console.warn("CentralizedCandidateManager import failed:", error);
+  //           fallbackMode.current = true;
+  //           return null;
+  //         });
+
+  //       if (CentralizedCandidateManager && !fallbackMode.current) {
+  //         managerRef.current = CentralizedCandidateManager.getInstance();
+  //         console.log("✅ CentralizedCandidateManager initialized");
+  //       } else {
+  //         fallbackMode.current = true;
+  //         console.log("⚠️ Using fallback mode for job card stats");
+  //       }
+  //     } catch (error) {
+  //       console.error(
+  //         "Failed to initialize CentralizedCandidateManager:",
+  //         error
+  //       );
+  //       fallbackMode.current = true;
+  //     }
+  //   }
+  //   return managerRef.current;
+  // }, []);
+
+  // Thay thế toàn bộ hàm initializeManager cũ bằng đoạn này:
   const initializeManager = useCallback(async () => {
     if (!managerRef.current && !fallbackMode.current) {
       try {
-        const CentralizedCandidateManager = await import(
-          "../services/utils/CentralizedCandidateManager"
-        )
-          .then((module) => module.default)
-          .catch((error) => {
-            console.warn("CentralizedCandidateManager import failed:", error);
-            fallbackMode.current = true;
-            return null;
-          });
+        // Sử dụng CentralizedCandidateManager đã được import tĩnh.
+        // KHÔNG cần dùng await import() nữa.
 
-        if (CentralizedCandidateManager && !fallbackMode.current) {
+        if (CentralizedCandidateManager) {
+          // Thử khởi tạo manager
           managerRef.current = CentralizedCandidateManager.getInstance();
-          console.log("✅ CentralizedCandidateManager initialized");
+
+          if (managerRef.current) {
+            console.log("✅ CentralizedCandidateManager initialized");
+          } else {
+            // Xảy ra lỗi trong getInstance() hoặc CentralizedCandidateManager không đúng định dạng
+            fallbackMode.current = true;
+            console.log(
+              "⚠️ Using fallback mode for job card stats (Manager instance is null)"
+            );
+          }
         } else {
+          // Trường hợp này KHÔNG nên xảy ra với import tĩnh, nhưng để an toàn.
           fallbackMode.current = true;
-          console.log("⚠️ Using fallback mode for job card stats");
+          console.log(
+            "⚠️ Using fallback mode for job card stats (Module not available)"
+          );
         }
       } catch (error) {
+        // Bắt lỗi nếu CentralizedCandidateManager.getInstance() thất bại.
         console.error(
           "Failed to initialize CentralizedCandidateManager:",
           error
@@ -47,7 +87,7 @@ export const useJobCardStats = (job) => {
       }
     }
     return managerRef.current;
-  }, []);
+  }, []); // Dependency array của useCallback
 
   // Fallback method to get candidate count using legacy approach
   const getFallbackCandidateCount = useCallback(
@@ -61,9 +101,8 @@ export const useJobCardStats = (job) => {
           .catch(() => null);
 
         if (applicationRepository) {
-          const candidates = await applicationRepository.getCandidatesByJobId(
-            jobId
-          );
+          const candidates =
+            await applicationRepository.getCandidatesByJobId(jobId);
           return Array.isArray(candidates) ? candidates.length : 0;
         }
       } catch (error) {

@@ -14,9 +14,9 @@ import axios from "axios";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/Ionicons";
+import Constants from "expo-constants";
 
 const PRIMARY_COLOR = "#00b14f";
-const API_BASE = "http://192.168.1.3:3000";
 
 export default function InterviewPracticeScreen() {
   const { user } = useAuth();
@@ -28,11 +28,13 @@ export default function InterviewPracticeScreen() {
   const [answers, setAnswers] = useState({});
   const [fetchingQuestions, setFetchingQuestions] = useState(false);
 
+  const API_BASE_URL = Constants.expoConfig?.extra?.API;
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `${API_BASE}/client/candidates/getProfile/${user.id}`
+          `${API_BASE_URL}/client/candidates/getProfile/${user.id}`
         );
         const prefs = res.data.job_preferences || [];
         const detectedIndustry =
@@ -60,7 +62,7 @@ export default function InterviewPracticeScreen() {
     setFetchingQuestions(true);
     try {
       const res = await axios.get(
-        `${API_BASE}/admin/questions/getQuestionsByIndustryAndLevel`,
+        `${API_BASE_URL}/admin/questions/getQuestionsByIndustryAndLevel`,
         { params: { industry, level } }
       );
       const fetchedQuestions = res.data;
@@ -75,7 +77,7 @@ export default function InterviewPracticeScreen() {
           answer_example: "Tôi là lập trình viên đam mê công nghệ...",
         };
         const createRes = await axios.post(
-          `${API_BASE}/admin/questions/create`,
+          `${API_BASE_URL}/admin/questions/create`,
           newQuestionData
         );
         setQuestions([createRes.data]);

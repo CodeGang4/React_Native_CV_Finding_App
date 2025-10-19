@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIConfig } from "./AIConfig.js";
+import { EnhancedAIService } from "./EnhancedAIService.js";
 
 /**
  * Gemini AI Service - Sử dụng Google Gemini AI để phân tích ứng viên
@@ -477,9 +478,20 @@ Chỉ trả lời JSON object trên, không thêm text hay giải thích gì kh�
   /**
    * Fallback về AI cũ nếu API thất bại
    */
+  // async fallbackToLocalAI(candidates, jobRequirements) {
+  //   console.log("⚠️ Fallback về AI local do lỗi API");
+  //   const { EnhancedAIService } = await import("./EnhancedAIService.js");
+  //   return EnhancedAIService.analyzeAndRankCandidates(
+  //     candidates,
+  //     jobRequirements
+  //   );
+  // }
+
+  // Thay thế hàm cũ bằng hàm này:
   async fallbackToLocalAI(candidates, jobRequirements) {
     console.log("⚠️ Fallback về AI local do lỗi API");
-    const { EnhancedAIService } = await import("./EnhancedAIService.js");
+
+    // KHÔNG CẦN import động nữa. Sử dụng trực tiếp đối tượng đã import ở đầu file.
     return EnhancedAIService.analyzeAndRankCandidates(
       candidates,
       jobRequirements

@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 const GEMINI_API_KEY = Constants.expoConfig.extra.GEMINI_APIKEY;
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export class AIConfig {
   static GEMINI_CONFIG = {
     // 🚨 QUAN TRỌNG: API key được load từ environment variables hoặc secure storage
@@ -33,26 +34,46 @@ export class AIConfig {
    * Secure API Key Management
    * Load và save API key từ AsyncStorage để bảo mật
    */
-  static async loadAPIKeyFromStorage() {
+  // static async loadAPIKeyFromStorage() {
+  //   try {
+  //     const AsyncStorage = await import(
+  //       "@react-native-async-storage/async-storage"
+  //     ).then((m) => m.default);
+  //     const storedKey = await AsyncStorage.getItem("GEMINI_API_KEY");
+
+  //     if (storedKey && this.isValidAPIKey(storedKey)) {
+  //       this.GEMINI_CONFIG.API_KEY = storedKey;
+  //       console.log("✅ API key loaded from secure storage");
+  //       return true;
+  //     }
+
+  //     console.log("⚠️ No valid API key found in storage");
+  //     return false;
+  //   } catch (error) {
+  //     console.error("❌ Failed to load API key from storage:", error);
+  //     return false;
+  //   }
+  // }
+
+  // Thay thế toàn bộ hàm cũ bằng hàm này:
+static async loadAPIKeyFromStorage() {
     try {
-      const AsyncStorage = await import(
-        "@react-native-async-storage/async-storage"
-      ).then((m) => m.default);
-      const storedKey = await AsyncStorage.getItem("GEMINI_API_KEY");
+        // Không cần import ở đây nữa, dùng biến AsyncStorage đã import ở đầu file.
+        const storedKey = await AsyncStorage.getItem("GEMINI_API_KEY");
 
-      if (storedKey && this.isValidAPIKey(storedKey)) {
-        this.GEMINI_CONFIG.API_KEY = storedKey;
-        console.log("✅ API key loaded from secure storage");
-        return true;
-      }
+        if (storedKey && this.isValidAPIKey(storedKey)) {
+            this.GEMINI_CONFIG.API_KEY = storedKey;
+            console.log("✅ API key loaded from secure storage");
+            return true;
+        }
 
-      console.log("⚠️ No valid API key found in storage");
-      return false;
+        console.log("⚠️ No valid API key found in storage");
+        return false;
     } catch (error) {
-      console.error("❌ Failed to load API key from storage:", error);
-      return false;
+        console.error("❌ Failed to load API key from storage:", error);
+        return false;
     }
-  }
+}
 
   /**
    * Save API key to secure storage

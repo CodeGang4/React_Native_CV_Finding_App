@@ -7,14 +7,13 @@ import {
   ScrollView,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
+import Constants from "expo-constants";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-import ListCV from "./ListCV";
-import EditProfile from "./EditProfile";
-import NotificationsScreen from "../screens/NotificationsScreen";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -22,23 +21,26 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.id) return;
-      setLoading(true);
-      try {
-        const res = await axios.get(
-          `http://192.168.1.3:3000/client/candidates/getProfile/${user.id}`
-        );
-        setProfile(res.data);
-      } catch (error) {
-        console.error("❌ Lỗi fetch profile:", error);
-        Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const API_BASE_URL = Constants.expoConfig?.extra?.API;
 
+  const fetchProfile = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/client/candidates/getProfile/${user.id}`
+      );
+      setProfile(res.data);
+    } catch (error) {
+      console.error("❌ Lỗi fetch profile:", error);
+      Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, [user]);
 
@@ -66,12 +68,8 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#00b14f" />
         <Text>Đang tải thông tin...</Text>
       </View>
     );
@@ -79,6 +77,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header thông tin */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           {profile?.portfolio ? (
@@ -90,12 +89,14 @@ export default function ProfileScreen() {
             <MaterialIcons name="person" size={60} color="#fff" />
           )}
         </View>
+
         <Text style={styles.name}>{profile?.full_name || user?.email}</Text>
         <Text style={styles.role}>
           {userRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng"}
         </Text>
       </View>
 
+      {/* Danh mục cài đặt */}
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() =>
@@ -170,6 +171,7 @@ export default function ProfileScreen() {
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
 
+      {/* Đăng xuất */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <MaterialIcons name="exit-to-app" size={24} color="#fff" />
         <Text style={styles.logoutText}>Đăng xuất</Text>
@@ -180,6 +182,11 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   header: {
     backgroundColor: "#fff",
     alignItems: "center",
@@ -198,16 +205,6 @@ const styles = StyleSheet.create({
   avatarImage: { width: 100, height: 100, borderRadius: 50 },
   name: { fontSize: 20, fontWeight: "bold", color: "#333", marginBottom: 5 },
   role: { fontSize: 14, color: "#666" },
-  section: { backgroundColor: "#fff", marginBottom: 20, paddingVertical: 10 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",

@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import RNPickerSelect from "react-native-picker-select";
+import Constants from "expo-constants";
 
 const PRIMARY_COLOR = "#00b14f";
 const ACCENT_COLOR = "#f0f2f5";
@@ -26,11 +27,13 @@ export default function EditProfile({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const API_BASE_URL = Constants.expoConfig?.extra?.API;
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get(
-          `http://192.168.1.3:3000/client/candidates/getProfile/${user.id}`
+          `${API_BASE_URL}/client/candidates/getProfile/${user.id}`
         );
         const formattedProfile = {
           ...res.data,
