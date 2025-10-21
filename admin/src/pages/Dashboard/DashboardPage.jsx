@@ -14,14 +14,15 @@ import {
   Badge
 } from 'antd'
 import { 
-  UserOutlined, 
-  FileTextOutlined, 
-  BuildOutlined,
-  TrophyOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined
-} from '@ant-design/icons'
+  MdPeople, 
+  MdWork, 
+  MdBusiness,
+  MdTrendingUp,
+  MdSchedule,
+  MdCheckCircle,
+  MdWarning,
+  MdVisibility
+} from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats, getAnalyticsData } from '../../services/dashboardService'
 import { Line } from 'react-chartjs-2'
@@ -156,6 +157,66 @@ const DashboardPage = () => {
     }
   ]
 
+  // Columns cho bảng Top Jobs theo Views
+  const topJobsColumns = [
+    {
+      title: '#',
+      key: 'rank',
+      width: 50,
+      render: (_, __, index) => (
+        <span style={{ 
+          fontWeight: 'bold',
+          color: index < 3 ? '#faad14' : '#666'
+        }}>
+          {index + 1}
+        </span>
+      )
+    },
+    {
+      title: 'Tiêu đề Job',
+      dataIndex: 'title',
+      key: 'title',
+      ellipsis: true,
+      render: (title, record) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{title}</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>
+            {record.employers?.company_name}
+          </div>
+        </div>
+      )
+    },
+    {
+      title: 'Lượt xem',
+      dataIndex: 'views',
+      key: 'views',
+      width: 100,
+      align: 'center',
+      render: (views) => (
+        <Space>
+          <MdVisibility style={{ color: '#1890ff' }} />
+          <strong style={{ color: '#1890ff' }}>{views || 0}</strong>
+        </Space>
+      ),
+      sorter: (a, b) => (a.views || 0) - (b.views || 0),
+      defaultSortOrder: 'descend'
+    },
+    {
+      title: 'Địa điểm',
+      dataIndex: 'location',
+      key: 'location',
+      width: 150,
+      ellipsis: true
+    },
+    {
+      title: 'Lương',
+      dataIndex: 'salary',
+      key: 'salary',
+      width: 150,
+      ellipsis: true
+    }
+  ]
+
   const applicationColumns = [
     {
       title: 'Ứng viên',
@@ -213,7 +274,7 @@ const DashboardPage = () => {
             <Statistic
               title="Tổng Users"
               value={stats?.users?.total || 0}
-              prefix={<UserOutlined />}
+              prefix={<MdPeople style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#1890ff' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
@@ -227,7 +288,7 @@ const DashboardPage = () => {
             <Statistic
               title="Tổng Jobs"
               value={stats?.jobs?.total || 0}
-              prefix={<FileTextOutlined />}
+              prefix={<MdWork style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#52c41a' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
@@ -241,7 +302,7 @@ const DashboardPage = () => {
             <Statistic
               title="Companies"
               value={stats?.companies?.total || 0}
-              prefix={<BuildOutlined />}
+              prefix={<MdBusiness style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#722ed1' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
@@ -261,7 +322,7 @@ const DashboardPage = () => {
             <Statistic
               title="Lượt ứng tuyển"
               value={stats?.applications?.total || 0}
-              prefix={<FileTextOutlined />}
+              prefix={<MdTrendingUp style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#faad14' }}
             />
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
@@ -277,11 +338,11 @@ const DashboardPage = () => {
           <Card title="Phân loại Users" size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>👔 Nhà tuyển dụng:</span>
+                <span><MdBusiness style={{ marginRight: 4 }} /> Nhà tuyển dụng:</span>
                 <strong>{stats?.users?.employers || 0}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>🎯 Ứng viên:</span>
+                <span><MdPeople style={{ marginRight: 4 }} /> Ứng viên:</span>
                 <strong>{stats?.users?.candidates || 0}</strong>
               </div>
             </Space>
@@ -292,11 +353,11 @@ const DashboardPage = () => {
           <Card title="Trạng thái Jobs" size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Đang tuyển:</span>
+                <span><MdCheckCircle style={{ color: '#52c41a', marginRight: 4 }} /> Đang tuyển:</span>
                 <strong>{stats?.jobs?.accepted || 0}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Hết hạn:</span>
+                <span><MdSchedule style={{ color: '#faad14', marginRight: 4 }} /> Hết hạn:</span>
                 <strong>{stats?.jobs?.expired || 0}</strong>
               </div>
             </Space>
@@ -307,11 +368,11 @@ const DashboardPage = () => {
           <Card title="Ứng tuyển" size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><ClockCircleOutlined style={{ color: '#faad14' }} /> Chờ xử lý:</span>
+                <span><MdSchedule style={{ color: '#faad14', marginRight: 4 }} /> Chờ xử lý:</span>
                 <strong>{stats?.applications?.pending || 0}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><CheckCircleOutlined style={{ color: '#52c41a' }} /> Đã duyệt:</span>
+                <span><MdCheckCircle style={{ color: '#52c41a', marginRight: 4 }} /> Đã duyệt:</span>
                 <strong>{stats?.applications?.accepted || 0}</strong>
               </div>
             </Space>
@@ -323,7 +384,12 @@ const DashboardPage = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>
           <Card 
-            title="📈 Biểu đồ hoạt động" 
+            title={
+              <Space>
+                <MdTrendingUp style={{ fontSize: '20px' }} />
+                Biểu đồ hoạt động
+              </Space>
+            }
             loading={analyticsLoading}
             extra={
               <Select
@@ -344,10 +410,47 @@ const DashboardPage = () => {
         </Col>
       </Row>
 
+      {/* Top Jobs by Views Section */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col span={24}>
+          <Card 
+            title={
+              <Space>
+                <MdVisibility style={{ fontSize: '20px', color: '#1890ff' }} />
+                <span>Top 5 Jobs Nổi Bật Theo Lượt Xem</span>
+              </Space>
+            }
+            extra={
+              <Tag color="blue">
+                Tổng: {stats?.recentActivity?.topJobsByViews?.length || 0} jobs
+              </Tag>
+            }
+          >
+            <Table
+              columns={topJobsColumns}
+              dataSource={stats?.recentActivity?.topJobsByViews || []}
+              pagination={false}
+              rowKey="id"
+              size="middle"
+              scroll={{ x: 800 }}
+              locale={{ emptyText: 'Chưa có dữ liệu' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
       {/* Recent Activity Tables */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>
-          <Card title="🆕 Jobs mới nhất" size="small">
+          <Card 
+            title={
+              <Space>
+                <MdWork style={{ fontSize: '18px' }} />
+                Jobs mới nhất
+              </Space>
+            }
+            size="small"
+          >
             <Table
               columns={jobColumns}
               dataSource={stats?.recentActivity?.recentJobs || []}
@@ -360,7 +463,15 @@ const DashboardPage = () => {
         </Col>
         
         <Col xs={24} lg={8}>
-          <Card title="📝 Ứng tuyển gần đây" size="small">
+          <Card 
+            title={
+              <Space>
+                <MdTrendingUp style={{ fontSize: '18px' }} />
+                Ứng tuyển gần đây
+              </Space>
+            }
+            size="small"
+          >
             <Table
               columns={applicationColumns}
               dataSource={stats?.recentActivity?.recentApplications || []}
@@ -376,7 +487,8 @@ const DashboardPage = () => {
           <Card 
             title={
               <Space>
-                🏢 Companies mới
+                <MdBusiness style={{ fontSize: '18px' }} />
+                Companies mới
                 {stats?.companies?.pending > 0 && (
                   <Badge count={stats.companies.pending} />
                 )}

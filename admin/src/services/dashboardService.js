@@ -126,7 +126,8 @@ const getRecentActivity = async () => {
   const [
     { data: recentJobs },
     { data: recentApplications },
-    { data: recentCompanies }
+    { data: recentCompanies },
+    { data: topJobsByViews }
   ] = await Promise.all([
     supabase
       .from('jobs')
@@ -154,13 +155,29 @@ const getRecentActivity = async () => {
       .from('employers')
       .select('id, company_name, created_at, verified')
       .order('created_at', { ascending: false })
+      .limit(5),
+    
+    // Thêm query lấy top jobs theo views
+    supabase
+      .from('jobs')
+      .select(`
+        id,
+        title,
+        views,
+        created_at,
+        salary,
+        location,
+        employers(company_name)
+      `)
+      .order('views', { ascending: false })
       .limit(5)
   ])
 
   return {
     recentJobs: recentJobs || [],
     recentApplications: recentApplications || [],
-    recentCompanies: recentCompanies || []
+    recentCompanies: recentCompanies || [],
+    topJobsByViews: topJobsByViews || []
   }
 }
 
