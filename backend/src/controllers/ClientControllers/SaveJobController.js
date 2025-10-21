@@ -168,49 +168,63 @@ class SaveJobController {
         res.status(200).json(data);
     }
 
-    //[DELETE] /deleteJob/:jobId : Delete a job
-    async UnSavedJob(req, res) {
-        const candidate_id = req.params.candidate_id;
-        const job_id = req.body.job_id;
-
-        if (!job_id) {
-            return res.status(400).json({ error: 'Job ID is required' });
-        }
-        if (!candidate_id) {
-            return res.status(400).json({ error: 'Candidate ID is required' });
-        }
-
-        const { data, error } = await supabase
-            .from('saved_jobs')
-            .delete()
-            .eq('candidate_id', candidate_id)
-            .eq('job_id', job_id)
-            .select();
-
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
-        if (!data || data.length === 0) {
-            return res
-                .status(404)
-                .json({ error: 'Saved job not found or not deleted' });
-        }
-        // Redis log
+    //[DELETE] /unsaveJob/:candidate_id : Unsave a job
+    async unsaveJob(req, res) {
         try {
-            await redis.setEx(
-                `log:unsaveJob:${candidate_id}:${job_id}:${Date.now()}`,
-                60 * 60 * 24,
-                JSON.stringify({
-                    action: 'unsaveJob',
-                    candidate_id,
-                    job_id,
-                    time: new Date().toISOString(),
-                }),
-            );
+            const candidate_id = req.params.candidate_id;
+            const job_id = req.body.job_id;
+
+            if (!job_id) {
+                return res.status(400).json({ error: 'Job ID is required' });
+            }
+            if (!candidate_id) {
+                return res.status(400).json({ error: 'Candidate ID is required' });
+            }
+
+            console.log(`Unsaving job for candidate: ${candidate_id}, job: ${job_id}`);
+
+            // Optional: Verify job exists before deleting (for better error messages)
+            const { data: existingSave, error: checkError } = await supabase
+                .from('saved_jobs')
+                .select('id')
+                .eq('candidate_id', candidate_id)
+                .eq('job_id', job_id)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                console.error('[unsaveJob] Check error:', checkError);
+                return res.status(500).json({ error: 'Database error while checking saved job' });
+            }
+
+            if (!existingSave) {
+                console.log(`Job not saved by this candidate: ${candidate_id} -> ${job_id}`);
+                return res.status(404).json({ error: 'Job is not saved by this candidate' });
+            }
+
+            // Perform delete operation
+            const { data, error } = await supabase
+                .from('saved_jobs')
+                .delete()
+                .eq('candidate_id', candidate_id)
+                .eq('job_id', job_id)
+                .select();
+
+            if (error) {
+                console.error('[unsaveJob] Delete error:', error);
+                return res.status(500).json({ error: 'Failed to unsave job', details: error.message });
+            }
+
+            console.log(`Job unsaved successfully: ${candidate_id} -> ${job_id}`);
+
+            res.status(200).json({
+                message: 'Job unsaved successfully',
+                deleted_record: data[0] // Return the deleted record for confirmation
+            });
+
         } catch (err) {
-            console.error('Redis log error (unsaveJob):', err);
+            console.error('[unsaveJob] Internal error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
         }
-        res.status(200).json({ message: 'Job deleted successfully' });
     }
 
     //[PUT] /updateJob/:jobId : Update a job
