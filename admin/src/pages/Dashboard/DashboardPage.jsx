@@ -220,20 +220,27 @@ const DashboardPage = () => {
   const applicationColumns = [
     {
       title: 'Ứng viên',
-      dataIndex: ['users', 'full_name'],
       key: 'candidate',
-      render: (name, record) => name || record.users?.email
+      render: (_, record) => {
+        const candidate = record.candidate
+        if (!candidate) return 'N/A'
+        return candidate.full_name || candidate.email || 'N/A'
+      }
     },
     {
       title: 'Job',
-      dataIndex: ['jobs', 'title'],
-      key: 'job'
+      key: 'job',
+      ellipsis: true,
+      render: (_, record) => {
+        const job = record.job
+        return job?.title || 'N/A'
+      }
     },
     {
       title: 'Ngày ứng tuyển',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN')
+      dataIndex: 'applied_at',
+      key: 'applied_at',
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A'
     }
   ]
 
@@ -241,17 +248,26 @@ const DashboardPage = () => {
     {
       title: 'Tên công ty',
       dataIndex: 'company_name',
-      key: 'name'
+      key: 'name',
+      ellipsis: true
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'verified',
+      dataIndex: 'status',
       key: 'status',
-      render: (verified) => (
-        <Tag color={verified ? 'green' : 'orange'}>
-          {verified ? 'Đã duyệt' : 'Chờ duyệt'}
-        </Tag>
-      )
+      render: (status) => {
+        const statusMap = {
+          'accepted': { color: 'green', text: 'Đã duyệt' },
+          'pending': { color: 'orange', text: 'Chờ duyệt' },
+          'rejected': { color: 'red', text: 'Từ chối' }
+        }
+        const statusInfo = statusMap[status] || { color: 'default', text: status }
+        return (
+          <Tag color={statusInfo.color}>
+            {statusInfo.text}
+          </Tag>
+        )
+      }
     },
     {
       title: 'Ngày đăng ký',
