@@ -10,9 +10,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import Constants from "expo-constants";
 import Icon from "react-native-vector-icons/Ionicons";
-const API_BASE = Constants.expoConfig.extra.API;
+import HomeApiService from "../../../shared/services/api/HomeApiService";
 
 export default function JobDetailScreen({ route }) {
   const { job } = route.params;
@@ -22,8 +21,7 @@ export default function JobDetailScreen({ route }) {
   useEffect(() => {
     const fetchCompany = async () => {
       try {
-        const res = await fetch(`${API_BASE}/employer/getCompanyInfo/${job.employer_id}`);
-        const data = await res.json();
+        const data = await HomeApiService.getCompanyByEmployerId(job.employer_id);
         setCompany(data);
       } catch (err) {
         console.error("Error fetching company info:", err);
@@ -33,7 +31,11 @@ export default function JobDetailScreen({ route }) {
       }
     };
 
-    fetchCompany();
+    if (job?.employer_id) {
+      fetchCompany();
+    } else {
+      setLoading(false);
+    }
   }, [job.employer_id]);
 
   if (loading) {
@@ -45,6 +47,7 @@ export default function JobDetailScreen({ route }) {
   }
 
   const openMap = (address) => {
+    if (!address) return;
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     Linking.openURL(url);
   };
@@ -65,7 +68,9 @@ export default function JobDetailScreen({ route }) {
         )}
 
         <View style={{ flex: 1 }}>
-          <Text style={styles.companyName}>{company?.company_name || "Không rõ công ty"}</Text>
+          <Text style={styles.companyName}>
+            {company?.company_name || "Không rõ công ty"}
+          </Text>
 
           <TouchableOpacity
             onPress={() => openMap(company?.company_address)}
@@ -93,9 +98,7 @@ export default function JobDetailScreen({ route }) {
 
       <View style={styles.section}>
         <Text style={styles.jobTitle}>{job.title}</Text>
-        <Text style={styles.salary}>
-          {job.salary || "Thỏa thuận"}
-        </Text>
+        <Text style={styles.salary}>{job.salary || "Thỏa thuận"}</Text>
 
         <View style={styles.inlineRow}>
           <Icon name="briefcase-outline" size={16} color="#555" />

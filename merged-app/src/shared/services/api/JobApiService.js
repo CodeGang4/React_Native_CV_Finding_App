@@ -1,5 +1,5 @@
 import apiClient from "./ApiClient.js";
-
+import { requestQueue } from "../utils/RequestQueue.js";
 /**
  * Job API Service - Handles job-related API calls
  */
@@ -8,20 +8,26 @@ export class JobApiService {
 
   // Get all jobs
   static async getAllJobs(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getJobs`, { 
-      params,
-      priority: 'normal' // Normal priority cho danh sách jobs
-    });
-    return response.data;
+    return requestQueue.enqueue(async () => {
+      const response = await apiClient.get(`${this.endpoint}/getJobs`, {
+        params,
+      });
+      console.log(
+        "[JobApiService] getAllJobs success:",
+        Array.isArray(response.data) ? response.data.length : 0,
+        "jobs"
+      );
+      return response.data;
+    }, "jobs-list");
   }
 
   // Get jobs by company
   static async getJobsByCompany(companyId, params = {}) {
     const response = await apiClient.get(
       `${this.endpoint}/getJobByCompanyId/${companyId}`,
-      { 
+      {
         params,
-        priority: 'normal'
+        priority: "normal",
       }
     );
     return response.data;
@@ -29,36 +35,50 @@ export class JobApiService {
 
   // Get job by ID
   static async getJobById(jobId) {
-    const response = await apiClient.get(`${this.endpoint}/getJobDetail/${jobId}`, {
-      priority: 'high' // High priority cho job detail
-    });
+    const response = await apiClient.get(
+      `${this.endpoint}/getJobDetail/${jobId}`,
+      {
+        priority: "high", // High priority cho job detail
+      }
+    );
     return response.data;
   }
 
   // Create new job (requires companyId in route)
   static async createJob(jobData, companyId) {
-    const response = await apiClient.post(`${this.endpoint}/addJob/${companyId}`, jobData, {
-      priority: 'high', // High priority cho create job
-      retryable: true   // Cho phép retry
-    });
+    const response = await apiClient.post(
+      `${this.endpoint}/addJob/${companyId}`,
+      jobData,
+      {
+        priority: "high", // High priority cho create job
+        retryable: true, // Cho phép retry
+      }
+    );
     return response.data;
   }
 
   // Update job
   static async updateJob(jobId, jobData) {
-    const response = await apiClient.put(`${this.endpoint}/updateJob/${jobId}`, jobData, {
-      priority: 'high', // High priority cho update
-      retryable: true
-    });
+    const response = await apiClient.put(
+      `${this.endpoint}/updateJob/${jobId}`,
+      jobData,
+      {
+        priority: "high", // High priority cho update
+        retryable: true,
+      }
+    );
     return response.data;
   }
 
   // Delete job
   static async deleteJob(jobId) {
-    const response = await apiClient.delete(`${this.endpoint}/deleteJob/${jobId}`, {
-      priority: 'normal',
-      retryable: false // Không retry delete để tránh double deletion
-    });
+    const response = await apiClient.delete(
+      `${this.endpoint}/deleteJob/${jobId}`,
+      {
+        priority: "normal",
+        retryable: false, // Không retry delete để tránh double deletion
+      }
+    );
     return response.data;
   }
 
@@ -95,44 +115,49 @@ export class JobApiService {
   // Apply to job - Use ApplicationApiService instead
   static async applyToJob(jobId, applicationData) {
     // Redirect to ApplicationApiService for consistency
-    const ApplicationApiService = await import('./ApplicationApiService.js');
+    const ApplicationApiService = await import("./ApplicationApiService.js");
     return ApplicationApiService.default.createApplication({
       job_id: jobId,
-      ...applicationData
+      ...applicationData,
     });
   }
 
   // Hide job for candidate
   static async hideJob(candidateId, jobId) {
-    const response = await apiClient.post(`${this.endpoint}/hideJob/${candidateId}/${jobId}`);
+    const response = await apiClient.post(
+      `${this.endpoint}/hideJob/${candidateId}/${jobId}`
+    );
     return response.data;
   }
 
   // Get hidden jobs for candidate
   static async getHiddenJobs(candidateId) {
-    const response = await apiClient.get(`${this.endpoint}/getHiddenJobs/${candidateId}`);
+    const response = await apiClient.get(
+      `${this.endpoint}/getHiddenJobs/${candidateId}`
+    );
     return response.data;
   }
 
-  // Save job (may use separate save job router)
   static async saveJob(jobId, candidateId) {
-    // This might be handled by SaveJobRouter in /client/saveJobs
-    const response = await apiClient.post(`/client/saveJobs`, {
-      jobId,
-      candidateId,
-    });
+    const response = await apiClient.post(
+      `/client/saveJobs/save/${candidateId}`,
+      { job_id: jobId }
+    );
     return response.data;
   }
 
-  // Unsave job
   static async unsaveJob(jobId, candidateId) {
-    const response = await apiClient.delete(`/client/saveJobs/${jobId}/${candidateId}`);
+    const response = await apiClient.delete(
+      `/client/saveJobs/unsave/${candidateId}`,
+      { data: { job_id: jobId }, }
+    );
     return response.data;
   }
 
-  // Get saved jobs
   static async getSavedJobs(candidateId) {
-    const response = await apiClient.get(`/client/saveJobs/${candidateId}`);
+    const response = await apiClient.get(
+      `/client/saveJobs/getJobs/${candidateId}`
+    );
     return response.data;
   }
 

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-export default function JobCard({ job, onPress, onFavoritePress }) {
+export default function JobCard({ job, onPress, onFavoritePress, isSaved }) {
   return (
     <TouchableOpacity style={styles.card} onPress={() => onPress?.(job)}>
       <View style={styles.headerRow}>
@@ -40,13 +40,15 @@ export default function JobCard({ job, onPress, onFavoritePress }) {
         <View style={styles.salaryContainer}>
           <Text style={styles.salaryText}>{job.salary}</Text>
         </View>
-        {/* <View style={styles.locationContainer}>
-        </View> */}
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={() => onFavoritePress?.(job)}
         >
-          <Feather name="heart" size={20} color="#00b14f" />
+          <Feather
+            name="heart"
+            size={20}
+            color={isSaved ? "#ff4d4d" : "#00b14f"} 
+          />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

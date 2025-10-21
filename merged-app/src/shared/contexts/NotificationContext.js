@@ -84,7 +84,7 @@ export const NotificationProvider = ({ children }) => {
                 console.log('NotificationContext: Polling for new notifications...');
                 fetchNotifications(user.id);
             }
-        }, 30000); // Poll every 30 seconds
+        }, 1800000); // Poll every 30 seconds
     };
 
     // Stop polling

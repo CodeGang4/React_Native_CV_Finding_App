@@ -2,15 +2,14 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "react-native";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 
-import CandidateHomeScreen from "../screens/CandidateHomeScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
 import ProfileStackNavigator from "./ProfileStackNavigator";
+import CandidateStackNavigator from "./CandidateStackNavigator";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNotifications } from "../../shared/contexts/NotificationContext";
-import CandidateStackNavigator from "./CandidateStackNavigator";
-
 
 const Tab = createBottomTabNavigator();
 
@@ -49,21 +48,26 @@ export default function CandidateNavigator() {
         tabBarActiveTintColor: "#00b14f",
         tabBarInactiveTintColor: "gray",
         headerShown: false,
-
-        // tabBarStyle: {
-        //   paddingHorizontal: 10,
-        // },
       })}
     >
       <Tab.Screen
         name="CandidateHome"
         component={CandidateStackNavigator}
-        options={{ title: "Trang chủ" }}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? "CandidateHomeMain";
+          // Ẩn tab bar nếu không ở màn hình chính
+          const display = routeName === "CandidateHomeMain" ? "flex" : "none";
+          return {
+            title: "Trang chủ",
+            tabBarStyle: { display },
+          };
+        }}
       />
+
       <Tab.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ 
+        options={{
           title: "Thông báo",
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
@@ -81,3 +85,4 @@ export default function CandidateNavigator() {
     </Tab.Navigator>
   );
 }
+
