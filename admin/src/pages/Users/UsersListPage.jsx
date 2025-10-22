@@ -15,12 +15,13 @@ import {
   Col
 } from 'antd'
 import { 
-  SearchOutlined, 
-  UserOutlined, 
-  EyeOutlined,
-  TeamOutlined,
-  MailOutlined
-} from '@ant-design/icons'
+  MdSearch, 
+  MdPerson, 
+  MdVisibility,
+  MdPeople,
+  MdEmail,
+  MdBusiness
+} from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getUsers, getUserStats } from '../../services/userService'
 import { useNavigate } from 'react-router-dom'
@@ -73,7 +74,7 @@ const UsersListPage = () => {
       render: (avatarUrl, record) => (
         <Avatar 
           src={avatarUrl} 
-          icon={<UserOutlined />}
+          icon={<MdPerson />}
           size="default"
         >
           {record.full_name?.charAt(0)?.toUpperCase()}
@@ -89,7 +90,7 @@ const UsersListPage = () => {
             {record.username || 'Chưa cập nhật'}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            <MailOutlined style={{ marginRight: 4 }} />
+            <MdEmail style={{ marginRight: 4 }} />
             {record.email}
           </div>
         </div>
@@ -102,7 +103,7 @@ const UsersListPage = () => {
       width: 120,
       render: (role) => (
         <Tag color={role === 'employer' ? 'blue' : 'green'}>
-          {role === 'employer' ? '👔 Nhà tuyển dụng' : '🎯 Ứng viên'}
+          {role === 'employer' ? 'Nhà tuyển dụng' : 'Ứng viên'}
         </Tag>
       )
     },
@@ -131,7 +132,7 @@ const UsersListPage = () => {
             <Statistic
               title="Tổng Users"
               value={userStats?.total || 0}
-              prefix={<UserOutlined />}
+              prefix={<MdPeople style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
@@ -141,7 +142,7 @@ const UsersListPage = () => {
             <Statistic
               title="Ứng viên"
               value={userStats?.candidates || 0}
-              prefix={<UserOutlined />}
+              prefix={<MdPerson style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
@@ -151,7 +152,7 @@ const UsersListPage = () => {
             <Statistic
               title="Nhà tuyển dụng"
               value={userStats?.employers || 0}
-              prefix={<TeamOutlined />}
+              prefix={<MdBusiness style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#722ed1' }}
             />
           </Card>
@@ -174,7 +175,7 @@ const UsersListPage = () => {
             allowClear
             style={{ width: 300 }}
             onSearch={handleSearch}
-            enterButton={<SearchOutlined />}
+            enterButton={<MdSearch />}
           />
           
           <Select
@@ -183,8 +184,8 @@ const UsersListPage = () => {
             allowClear
             onChange={handleRoleFilter}
           >
-            <Option value="candidate">🎯 Ứng viên</Option>
-            <Option value="employer">👔 Nhà tuyển dụng</Option>
+            <Option value="candidate">Ứng viên</Option>
+            <Option value="employer">Nhà tuyển dụng</Option>
           </Select>
         </Space>
         

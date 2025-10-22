@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { Layout, Menu, Typography, Space } from 'antd'
-import {
-  DashboardOutlined,
-  UserOutlined,
-  FileTextOutlined,
-  BuildOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined
-} from '@ant-design/icons'
+import { 
+  MdDashboard, 
+  MdPeople, 
+  MdWork, 
+  MdBusiness,
+  MdMenu,
+  MdMenuOpen 
+} from 'react-icons/md'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const { Header, Sider, Content } = Layout
@@ -21,25 +21,25 @@ const AdminLayout = ({ children }) => {
   const menuItems = [
     {
       key: '/dashboard',
-      icon: <DashboardOutlined />,
+      icon: <MdDashboard style={{ fontSize: '18px' }} />,
       label: 'Dashboard',
       onClick: () => navigate('/dashboard')
     },
     {
       key: '/users',
-      icon: <UserOutlined />,
+      icon: <MdPeople style={{ fontSize: '18px' }} />,
       label: 'Quản Lý Users',
       onClick: () => navigate('/users')
     },
     {
       key: '/companies',
-      icon: <BuildOutlined />,
+      icon: <MdBusiness style={{ fontSize: '18px' }} />,
       label: 'Danh Sách Companies',
       onClick: () => navigate('/companies')
     },
     {
       key: '/jobs',
-      icon: <FileTextOutlined />,
+      icon: <MdWork style={{ fontSize: '18px' }} />,
       label: 'Danh Sách Jobs',
       onClick: () => navigate('/jobs')
     }
@@ -74,7 +74,7 @@ const AdminLayout = ({ children }) => {
             margin: 0,
             fontSize: collapsed ? '16px' : '18px'
           }}>
-            {collapsed ? '🚀' : '🚀 Job Portal Admin'}
+            {collapsed ? 'JP' : 'Job Portal Admin'}
           </Title>
         </div>
         
@@ -129,22 +129,22 @@ const AdminLayout = ({ children }) => {
               transition: 'all 0.2s'
             }}
           >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            {collapsed ? <MdMenuOpen style={{ fontSize: '20px' }} /> : <MdMenu style={{ fontSize: '20px' }} />}
           </div>
           
           <div style={{ flex: 1, textAlign: 'center' }}>
             <Space>
               <span style={{ fontSize: '16px', color: '#666' }}>
-                {location.pathname === '/dashboard' && '📊 Thống kê tổng quan'}
-                {location.pathname === '/users' && '👥 Quản lý người dùng'}
-                {location.pathname === '/companies' && '🏢 Duyệt công ty đăng ký'}
-                {location.pathname === '/jobs' && '💼 Danh sách việc làm'}
+                {location.pathname === '/dashboard' && 'Thống kê tổng quan'}
+                {location.pathname === '/users' && 'Quản lý người dùng'}
+                {location.pathname === '/companies' && 'Duyệt công ty đăng ký'}
+                {location.pathname === '/jobs' && 'Danh sách việc làm'}
               </span>
             </Space>
           </div>
           
           <div style={{ color: '#666', fontSize: '14px' }}>
-            🌟 Welcome Admin!
+            Welcome Admin!
           </div>
         </Header>
         

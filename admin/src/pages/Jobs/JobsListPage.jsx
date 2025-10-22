@@ -16,14 +16,14 @@ import {
   Alert
 } from 'antd'
 import { 
-  SearchOutlined, 
-  EyeOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ExclamationCircleOutlined,
-  FileTextOutlined,
-  DollarOutlined
-} from '@ant-design/icons'
+  MdSearch, 
+  MdVisibility,
+  MdCheckCircle,
+  MdSchedule,
+  MdWarning,
+  MdWork,
+  MdAttachMoney
+} from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getJobs, getJobStats } from '../../services/jobService'
 import { useNavigate } from 'react-router-dom'
@@ -100,9 +100,9 @@ const JobsListPage = () => {
 
   const getStatusTag = (isExpired) => {
     if (isExpired) {
-      return <Tag color="red" icon={<ExclamationCircleOutlined />}>Hết hạn</Tag>
+      return <Tag color="red" icon={<MdWarning />}>Hết hạn</Tag>
     } else {
-      return <Tag color="green" icon={<CheckCircleOutlined />}>Đang tuyển</Tag>
+      return <Tag color="green" icon={<MdCheckCircle />}>Đang tuyển</Tag>
     }
   }
 
@@ -120,7 +120,7 @@ const JobsListPage = () => {
       render: (logo, record) => (
         <Avatar 
           src={logo} 
-          icon={<FileTextOutlined />}
+          icon={<MdWork />}
           size="default"
         >
           {record.employers?.company_name?.charAt(0)?.toUpperCase()}
@@ -136,13 +136,13 @@ const JobsListPage = () => {
             {record.title}
           </div>
           <div style={{ fontSize: '12px', color: '#666', marginBottom: 2 }}>
-            🏢 {record.employers?.company_name}
+            {record.employers?.company_name}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            📍 {record.location}
+            {record.location}
           </div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            � {record.position}
+            {record.position}
           </div>
         </div>
       )
@@ -154,9 +154,9 @@ const JobsListPage = () => {
       width: 120,
       render: (jobType) => {
         const typeMap = {
-          'fulltime': { label: '💼 Full-time', color: 'green' },
-          'parttime': { label: '⏰ Part-time', color: 'orange' },
-          'internship': { label: '🎓 Internship', color: 'purple' }
+          'fulltime': { label: 'Full-time', color: 'green' },
+          'parttime': { label: 'Part-time', color: 'orange' },
+          'internship': { label: 'Internship', color: 'purple' }
         }
         const type = typeMap[jobType] || { label: jobType, color: 'default' }
         return <Tag color={type.color}>{type.label}</Tag>
@@ -168,7 +168,7 @@ const JobsListPage = () => {
       width: 150,
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <DollarOutlined style={{ marginRight: 4, color: '#faad14' }} />
+          <MdAttachMoney style={{ marginRight: 4, color: '#faad14' }} />
           <span style={{ fontSize: '12px' }}>
             {formatSalary(record.salary)}
           </span>
@@ -188,10 +188,10 @@ const JobsListPage = () => {
       render: (_, record) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Tag color="purple">
-            📝 {record.total_applications || 0} lượt
+            {record.total_applications || 0} lượt
           </Tag>
           <Tag color="blue">
-            👥 {record.unique_candidates || 0} người
+            {record.unique_candidates || 0} người
           </Tag>
         </div>
       )
@@ -232,7 +232,7 @@ const JobsListPage = () => {
             <Statistic
               title="Tổng Jobs"
               value={jobStats?.total || 0}
-              prefix={<FileTextOutlined />}
+              prefix={<MdWork style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
@@ -242,7 +242,7 @@ const JobsListPage = () => {
             <Statistic
               title="Đang tuyển"
               value={jobStats?.active || 0}
-              prefix={<CheckCircleOutlined />}
+              prefix={<MdCheckCircle style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
@@ -252,7 +252,7 @@ const JobsListPage = () => {
             <Statistic
               title="Hết hạn"
               value={jobStats?.expired || 0}
-              prefix={<ExclamationCircleOutlined />}
+              prefix={<MdWarning style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
@@ -275,7 +275,7 @@ const JobsListPage = () => {
             allowClear
             style={{ width: 300 }}
             onSearch={handleSearch}
-            enterButton={<SearchOutlined />}
+            enterButton={<MdSearch />}
           />
           
           <Select
@@ -294,9 +294,9 @@ const JobsListPage = () => {
             allowClear
             onChange={handleJobTypeFilter}
           >
-            <Option value="fulltime">💼 Full-time</Option>
-            <Option value="parttime">⏰ Part-time</Option>
-            <Option value="internship">🎓 Internship</Option>
+            <Option value="fulltime">Full-time</Option>
+            <Option value="parttime">Part-time</Option>
+            <Option value="internship">Internship</Option>
           </Select>
         </Space>
         

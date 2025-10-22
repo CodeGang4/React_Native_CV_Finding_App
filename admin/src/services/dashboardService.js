@@ -126,7 +126,8 @@ const getRecentActivity = async () => {
   const [
     { data: recentJobs },
     { data: recentApplications },
-    { data: recentCompanies }
+    { data: recentCompanies },
+    { data: topJobsByViews }
   ] = await Promise.all([
     supabase
       .from('jobs')
@@ -141,26 +142,77 @@ const getRecentActivity = async () => {
     
     supabase
       .from('applications')
-      .select(`
-        id,
-        created_at,
-        jobs(title),
-        users(username, email)
-      `)
-      .order('created_at', { ascending: false })
+      .select('id, applied_at, status, job_id, candidate_id')
+      .order('applied_at', { ascending: false })
       .limit(5),
     
     supabase
       .from('employers')
-      .select('id, company_name, created_at, verified')
+      .select('id, company_name, created_at, status')
       .order('created_at', { ascending: false })
+      .limit(5),
+    
+    // Thêm query lấy top jobs theo views
+    supabase
+      .from('jobs')
+      .select(`
+        id,
+        title,
+        views,
+        created_at,
+        salary,
+        location,
+        employers(company_name)
+      `)
+      .order('views', { ascending: false })
       .limit(5)
   ])
 
+  console.log('Recent Applications raw data:', recentApplications)
+
+  // Get related data separately
+  let processedApplications = []
+  
+  if (recentApplications && recentApplications.length > 0) {
+    const candidateIds = [...new Set(recentApplications.map(a => a.candidate_id).filter(Boolean))]
+    const jobIds = [...new Set(recentApplications.map(a => a.job_id).filter(Boolean))]
+    
+    console.log('Candidate IDs to query:', candidateIds)
+    console.log('Job IDs to query:', jobIds)
+    
+    const [candidatesResult, jobsResult] = await Promise.all([
+      supabase.from('candidates').select('user_id, full_name').in('user_id', candidateIds),
+      supabase.from('jobs').select('id, title').in('id', jobIds)
+    ])
+    
+    console.log('Candidates query result:', candidatesResult)
+    console.log('Jobs query result:', jobsResult)
+    
+    // Create lookup maps
+    const candidatesMap = new Map(
+      (candidatesResult.data || []).map(c => [c.user_id, c])
+    )
+    const jobsMap = new Map(
+      (jobsResult.data || []).map(j => [j.id, j])
+    )
+    
+    // Transform data
+    processedApplications = recentApplications.map(app => ({
+      id: app.id,
+      applied_at: app.applied_at,
+      status: app.status,
+      candidate: candidatesMap.get(app.candidate_id) || null,
+      job: jobsMap.get(app.job_id) || null
+    }))
+  }
+
+  console.log('Processed Applications:', processedApplications)
+
   return {
     recentJobs: recentJobs || [],
-    recentApplications: recentApplications || [],
-    recentCompanies: recentCompanies || []
+    recentApplications: processedApplications,
+    recentCompanies: recentCompanies || [],
+    topJobsByViews: topJobsByViews || []
   }
 }
 
