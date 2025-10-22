@@ -17,10 +17,15 @@ class ApiClient {
     };
 
     // Initialize rate limit handler
+    // this.rateLimitHandler = new RateLimitHandler({
+    //   maxConcurrentRequests: 10, // Giảm số request đồng thời
+    //   requestDelay: 100, // Delay 100ms giữa các request
+    //   retryDelays: [1000, 2000, 4000, 8000, 16000], // Exponential backoff
+    // });
     this.rateLimitHandler = new RateLimitHandler({
-      maxConcurrentRequests: 10, // Giảm số request đồng thời
-      requestDelay: 100, // Delay 100ms giữa các request
-      retryDelays: [1000, 2000, 4000, 8000, 16000], // Exponential backoff
+      maxConcurrentRequests: 5,
+      requestDelay: 200,
+      retryDelays: [],
     });
   }
 

@@ -139,26 +139,55 @@ export class JobApiService {
   }
 
   static async saveJob(jobId, candidateId) {
-    const response = await apiClient.post(
-      `/client/saveJobs/save/${candidateId}`,
-      { job_id: jobId }
-    );
-    return response.data;
+    try {
+      const response = await apiClient.post(
+        `/client/saveJobs/save/${candidateId}`,
+        {
+          job_id: jobId,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Save Job Error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        endpoint: "/client/saveJobs/save",
+      });
+      throw error;
+    }
   }
 
   static async unsaveJob(jobId, candidateId) {
-    const response = await apiClient.delete(
-      `/client/saveJobs/unsave/${candidateId}`,
-      { data: { job_id: jobId }, }
-    );
-    return response.data;
+    try {
+      const response = await apiClient.delete(
+        `/client/saveJobs/unsave/${candidateId}`,
+        {
+          data: { job_id: jobId },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Unsave Job Error:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        endpoint: "/client/saveJobs/unsave",
+      });
+      throw error;
+    }
   }
 
   static async getSavedJobs(candidateId) {
-    const response = await apiClient.get(
-      `/client/saveJobs/getJobs/${candidateId}`
-    );
-    return response.data;
+    try {
+      const response = await apiClient.get(
+        `/client/saveJobs/getJobs/${candidateId}`
+      );
+      return response.data?.savedJobs || response.data || [];
+    } catch (error) {
+      console.error("Get Saved Jobs Error:", error);
+      return [];
+    }
   }
 
   // Increment job views

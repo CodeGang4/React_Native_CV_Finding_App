@@ -14,7 +14,9 @@ export class CandidateApiService {
 
   // Get candidate profile by ID
   static async getCandidateById(candidateId) {
-    const response = await apiClient.get(`${this.endpoint}/getProfile/${candidateId}`);
+    const response = await apiClient.get(
+      `${this.endpoint}/getProfile/${candidateId}`
+    );
     return response.data;
   }
 
@@ -22,10 +24,13 @@ export class CandidateApiService {
   static async searchCandidates(query, filters = {}) {
     const candidates = await this.getAllCandidates();
     if (!query) return candidates;
-    
-    return candidates.filter(candidate => 
-      candidate.full_name?.toLowerCase().includes(query.toLowerCase()) ||
-      candidate.skills?.some(skill => skill.toLowerCase().includes(query.toLowerCase()))
+
+    return candidates.filter(
+      (candidate) =>
+        candidate.full_name?.toLowerCase().includes(query.toLowerCase()) ||
+        candidate.skills?.some((skill) =>
+          skill.toLowerCase().includes(query.toLowerCase())
+        )
     );
   }
 
@@ -131,6 +136,15 @@ export class CandidateApiService {
       `${this.endpoint}/${candidateId}/interview-invitation`,
       invitationData
     );
+    return response.data;
+  }
+
+  // Create job application
+  static async createApplication(candidateId, jobId) {
+    const response = await apiClient.post(`/application/create`, {
+      candidate_id: candidateId,
+      job_id: jobId,
+    });
     return response.data;
   }
 

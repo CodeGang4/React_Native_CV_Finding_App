@@ -1,13 +1,20 @@
-import React from "react";
-import { FlatList, Text } from "react-native";
+import React, { memo } from "react";
+import { FlatList, Text, View } from "react-native";
 import JobCard from "./JobCard";
+
+const MemoizedJobCard = memo(JobCard, (prev, next) => {
+  return (
+    prev.job.id === next.job.id &&
+    prev.isSaved === next.isSaved
+  );
+});
 
 export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJobs = [] }) {
   if (!jobs || jobs.length === 0) {
     return (
-      <Text style={{ textAlign: "center", marginTop: 20 }}>
-        Không có job nào
-      </Text>
+      <View style={{ marginTop: 20 }}>
+        <Text style={{ textAlign: "center" }}>Không có job nào</Text>
+      </View>
     );
   }
 
@@ -16,16 +23,17 @@ export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJ
       data={jobs}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => (
-        <JobCard 
-          job={item} 
-          onPress={onJobPress} 
+        <MemoizedJobCard
+          job={item}
+          onPress={onJobPress}
           onFavoritePress={onFavoritePress}
           isSaved={savedJobs?.includes(item.id)}
         />
       )}
-      contentContainerStyle={{
-        padding: 20,
-      }}
+      contentContainerStyle={{ padding: 20 }}
+      initialNumToRender={6}
+      windowSize={10}
+      removeClippedSubviews
     />
   );
 }

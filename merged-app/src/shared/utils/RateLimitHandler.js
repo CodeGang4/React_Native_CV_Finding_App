@@ -7,8 +7,8 @@ export class RateLimitHandler {
     this.config = {
       maxConcurrentRequests: config.maxConcurrentRequests || 10,
       requestDelay: config.requestDelay || 100,
-      maxRetries: config.maxRetries || 5,
-      retryDelays: config.retryDelays || [1000, 2000, 4000, 8000, 16000],
+      maxRetries: config.maxRetries || 0,
+      retryDelays: config.retryDelays || [],
       priorityWeights: config.priorityWeights || {
         high: 3,
         normal: 2,

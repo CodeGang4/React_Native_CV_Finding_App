@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/Ionicons";
 
 export default function JobCard({ job, onPress, onFavoritePress, isSaved }) {
   return (
@@ -44,10 +44,10 @@ export default function JobCard({ job, onPress, onFavoritePress, isSaved }) {
           style={styles.favoriteButton}
           onPress={() => onFavoritePress?.(job)}
         >
-          <Feather
-            name="heart"
-            size={20}
-            color={isSaved ? "#ff4d4d" : "#00b14f"} 
+          <Icon
+            name={isSaved ? "heart" : "heart-outline"}
+            size={24}
+            color={isSaved ? "#ff4d4f" : "#00b14f"}
           />
         </TouchableOpacity>
       </View>
