@@ -1,9 +1,9 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import ProfileScreen from "../screens/ProfileScreen";
-import ListCV from "../screens/ListCV";
-import CV from "../screens/CV";
+import CVScreen from "../screens/CVScreen";
 import EditProfile from "../screens/EditProfile";
+import CVViewer from "../screens/CVViewer";
 
 const Stack = createStackNavigator();
 
@@ -16,19 +16,28 @@ export default function ProfileStackNavigator() {
         options={{ title: "Hồ sơ cá nhân" }}
       />
       <Stack.Screen
-        name="ListCV"
-        component={ListCV}
-        options={{ title: "Danh sách CV" }}
+        name="CVScreen"
+        component={CVScreen}
+        options={{ 
+          title: "CV của bạn",
+          headerShown: true
+        }}
       />
       <Stack.Screen 
-        name="CV" 
-        component={CV} 
-        options={{ title: "CV của bạn" }} 
+        name="CVViewer" 
+        component={CVViewer} 
+        options={{ 
+          title: "CV của bạn",
+          headerShown: true
+        }} 
       />
       <Stack.Screen 
         name="EditProfile" 
         component={EditProfile} 
-        options={{ title: "Chỉnh sửa hồ sơ" }} 
+        options={{ 
+          title: "Chỉnh sửa hồ sơ",
+          headerShown: true
+        }} 
       />
     </Stack.Navigator>
   );

@@ -53,20 +53,93 @@ export class CandidateApiService {
   }
 
   // Upload CV
-  static async uploadCV(candidateId, cvFile) {
-    const formData = new FormData();
-    formData.append("cv", cvFile);
+  // static async uploadCV(candidateId, cvFile) {
+  //   const formData = new FormData();
+  //   formData.append("cv", cvFile);
 
-    const response = await apiClient.post(
-      `${this.endpoint}/uploadCV/${candidateId}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+  //   const response = await apiClient.post(
+  //     `${this.endpoint}/uploadCV/${candidateId}`,
+  //     formData,
+  //     {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     }
+  //   );
+  //   return response.data;
+  // }
+
+  static async uploadCV(candidateId, cvFile) {
+    try {
+      const formData = new FormData();
+
+      formData.append("cv", {
+        uri: cvFile.uri,
+        type: cvFile.type || "application/octet-stream",
+        name:
+          cvFile.name ||
+          `cv_${candidateId}_${Date.now()}.${this.getFileExtension(cvFile.uri)}`,
+      });
+
+      console.log("Uploading CV...");
+
+      const response = await apiClient.post(
+        `${this.endpoint}/uploadCV/${candidateId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Upload raw response:", response);
+
+      // Xử lý response data - có thể là string URL hoặc object
+      let resultUrl;
+
+      if (typeof response.data === "string") {
+        // Nếu response là string URL trực tiếp
+        resultUrl = response.data;
+      } else if (response.data?.url) {
+        // Nếu response là object có property url
+        resultUrl = response.data.url;
+      } else if (response.data?.data?.url) {
+        // Nếu response nested
+        resultUrl = response.data.data.url;
+      } else {
+        console.warn("Unexpected response format:", response.data);
+        // Thử lấy bất kỳ string nào từ response
+        resultUrl = JSON.stringify(response.data);
       }
-    );
-    return response.data;
+
+      console.log("Processed URL:", resultUrl);
+
+      // Decode URL nếu cần
+      if (resultUrl && typeof resultUrl === "string") {
+        // Fix encoding issues - decode URL components
+        const decodedUrl = decodeURIComponent(resultUrl);
+        console.log("Decoded URL:", decodedUrl);
+
+        return { url: decodedUrl };
+      }
+
+      throw new Error("No valid URL in response");
+    } catch (error) {
+      console.error("Upload CV service error:", error);
+
+      if (error.message?.includes("Network Error")) {
+        throw new Error("NETWORK_ERROR");
+      } else {
+        throw new Error("UPLOAD_FAILED: " + error.message);
+      }
+    }
+  }
+
+  // Helper function để lấy extension
+  static getFileExtension(uri) {
+    const filename = uri.split("/").pop();
+    return filename.split(".").pop().toLowerCase();
   }
 
   // Upload portfolio

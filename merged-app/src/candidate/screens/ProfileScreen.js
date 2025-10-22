@@ -96,11 +96,10 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      {/* Danh mục cài đặt */}
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() =>
-          navigation.navigate("ListCV", { cvUrl: profile?.cv_url })
+          navigation.navigate("CVScreen", { cvUrl: profile?.cv_url })
         }
       >
         <MaterialIcons name="description" size={24} color="#666" />

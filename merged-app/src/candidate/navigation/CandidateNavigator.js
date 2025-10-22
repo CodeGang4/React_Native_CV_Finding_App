@@ -55,7 +55,7 @@ export default function CandidateNavigator() {
         component={CandidateStackNavigator}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? "CandidateHomeMain";
-          // Ẩn tab bar nếu không ở màn hình chính
+
           const display = routeName === "CandidateHomeMain" ? "flex" : "none";
           return {
             title: "Trang chủ",
@@ -72,17 +72,28 @@ export default function CandidateNavigator() {
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
+      
       <Tab.Screen
         name="InterviewPractice"
         component={InterviewPracticeScreen}
         options={{ title: "Luyện phỏng vấn" }}
       />
+      
       <Tab.Screen
         name="ProfileStack"
         component={ProfileStackNavigator}
-        options={{ title: "Hồ sơ" }}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'Profile';
+          
+          const hideBottomTabRoutes = ['CVScreen', 'CVViewer', 'EditProfile'];
+          const display = hideBottomTabRoutes.includes(routeName) ? 'none' : 'flex';
+          
+          return {
+            title: "Hồ sơ",
+            tabBarStyle: { display },
+          };
+        }}
       />
     </Tab.Navigator>
   );
 }
-
