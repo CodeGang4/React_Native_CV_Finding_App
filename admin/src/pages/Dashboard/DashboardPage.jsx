@@ -25,13 +25,17 @@ import {
 } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats, getAnalyticsData } from '../../services/dashboardService'
-import { Line } from 'react-chartjs-2'
+import { Line, Doughnut, Bar, Radar } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Filler,
   Title,
   Tooltip,
   Legend
@@ -42,6 +46,10 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Filler,
   Title,
   Tooltip,
   Legend
@@ -90,6 +98,7 @@ const DashboardPage = () => {
   // Chart configuration
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top'
@@ -109,6 +118,7 @@ const DashboardPage = () => {
     }
   }
 
+  // 1. Area Chart - Xu hướng hoạt động
   const chartData = {
     labels: analytics?.jobs?.map(item => item.displayDate) || [],
     datasets: [
@@ -116,24 +126,193 @@ const DashboardPage = () => {
         label: 'Jobs mới',
         data: analytics?.jobs?.map(item => item.count) || [],
         borderColor: 'rgb(24, 144, 255)',
-        backgroundColor: 'rgba(24, 144, 255, 0.1)',
-        tension: 0.1
+        backgroundColor: 'rgba(24, 144, 255, 0.3)',
+        fill: true,
+        tension: 0.4
       },
       {
         label: 'Users mới',
         data: analytics?.users?.map(item => item.count) || [],
         borderColor: 'rgb(82, 196, 26)',
-        backgroundColor: 'rgba(82, 196, 26, 0.1)',
-        tension: 0.1
+        backgroundColor: 'rgba(82, 196, 26, 0.3)',
+        fill: true,
+        tension: 0.4
       },
       {
         label: 'Ứng tuyển',
         data: analytics?.applications?.map(item => item.count) || [],
         borderColor: 'rgb(250, 173, 20)',
-        backgroundColor: 'rgba(250, 173, 20, 0.1)',
-        tension: 0.1
+        backgroundColor: 'rgba(250, 173, 20, 0.3)',
+        fill: true,
+        tension: 0.4
       }
     ]
+  }
+
+  // 2. Doughnut Chart - Phân bố Users
+  const userDoughnutData = {
+    labels: ['Nhà tuyển dụng', 'Ứng viên'],
+    datasets: [{
+      data: [stats?.users?.employers || 0, stats?.users?.candidates || 0],
+      backgroundColor: [
+        'rgba(114, 46, 209, 0.8)',
+        'rgba(24, 144, 255, 0.8)'
+      ],
+      borderColor: ['#722ed1', '#1890ff'],
+      borderWidth: 2,
+      hoverOffset: 10
+    }]
+  }
+
+  const userDoughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          font: { size: 12 }
+        }
+      },
+      title: {
+        display: true,
+        text: 'Phân bố Users',
+        font: { size: 16, weight: 'bold' },
+        padding: { bottom: 20 }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const total = context.dataset.data.reduce((a, b) => a + b, 0)
+            const percentage = ((context.parsed / total) * 100).toFixed(1)
+            return `${context.label}: ${context.parsed} (${percentage}%)`
+          }
+        }
+      }
+    },
+    cutout: '60%'
+  }
+
+  // 3. Radar Chart - Tổng quan hệ thống
+  const radarData = {
+    labels: ['Users', 'Jobs', 'Applications', 'Companies', 'Hoạt động'],
+    datasets: [{
+      label: 'Tổng quan hệ thống',
+      data: [
+        stats?.users?.total || 0,
+        stats?.jobs?.total || 0,
+        stats?.applications?.total || 0,
+        stats?.companies?.total || 0,
+        (stats?.users?.newThisMonth || 0) + (stats?.jobs?.total || 0)
+      ],
+      backgroundColor: 'rgba(24, 144, 255, 0.2)',
+      borderColor: 'rgb(24, 144, 255)',
+      borderWidth: 2,
+      pointBackgroundColor: 'rgb(24, 144, 255)',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: 'rgb(24, 144, 255)'
+    }]
+  }
+
+  const radarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { size: 12 }
+        }
+      },
+      title: {
+        display: true,
+        text: 'Tổng quan Hệ thống',
+        font: { size: 16, weight: 'bold' },
+        padding: { bottom: 20 }
+      }
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 10
+        }
+      }
+    }
+  }
+
+  // 4. Stacked Bar Chart - So sánh trạng thái
+  const stackedBarData = {
+    labels: ['Jobs', 'Applications', 'Companies'],
+    datasets: [
+      {
+        label: 'Đã duyệt / Đang tuyển',
+        data: [
+          stats?.jobs?.accepted || 0,
+          stats?.applications?.accepted || 0,
+          stats?.companies?.accepted || 0
+        ],
+        backgroundColor: 'rgba(82, 196, 26, 0.8)',
+        borderColor: '#52c41a',
+        borderWidth: 1
+      },
+      {
+        label: 'Chờ xử lý',
+        data: [
+          0,
+          stats?.applications?.pending || 0,
+          stats?.companies?.pending || 0
+        ],
+        backgroundColor: 'rgba(250, 173, 20, 0.8)',
+        borderColor: '#faad14',
+        borderWidth: 1
+      },
+      {
+        label: 'Hết hạn / Từ chối',
+        data: [
+          stats?.jobs?.expired || 0,
+          stats?.applications?.rejected || 0,
+          stats?.companies?.rejected || 0
+        ],
+        backgroundColor: 'rgba(255, 77, 79, 0.8)',
+        borderColor: '#ff4d4f',
+        borderWidth: 1
+      }
+    ]
+  }
+
+  const stackedBarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          font: { size: 12 }
+        }
+      },
+      title: {
+        display: true,
+        text: 'So sánh Trạng thái',
+        font: { size: 16, weight: 'bold' },
+        padding: { bottom: 20 }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: {
+          stepSize: 5
+        }
+      }
+    }
   }
 
   // Recent activity table columns
@@ -403,7 +582,7 @@ const DashboardPage = () => {
             title={
               <Space>
                 <MdTrendingUp style={{ fontSize: '20px' }} />
-                Biểu đồ hoạt động
+                Biểu đồ hoạt động theo thời gian
               </Space>
             }
             loading={analyticsLoading}
@@ -420,8 +599,35 @@ const DashboardPage = () => {
             }
           >
             {analytics && (
-              <Line options={chartOptions} data={chartData} height={80} />
+              <div style={{ height: '300px', position: 'relative' }}>
+                <Line options={chartOptions} data={chartData} />
+              </div>
             )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Additional Charts Row - 3 biểu đồ đẹp */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={8}>
+          <Card bodyStyle={{ padding: '20px' }}>
+            <div style={{ height: '320px', position: 'relative' }}>
+              <Doughnut data={userDoughnutData} options={userDoughnutOptions} />
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card bodyStyle={{ padding: '20px' }}>
+            <div style={{ height: '320px', position: 'relative' }}>
+              <Radar data={radarData} options={radarOptions} />
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card bodyStyle={{ padding: '20px' }}>
+            <div style={{ height: '320px', position: 'relative' }}>
+              <Bar data={stackedBarData} options={stackedBarOptions} />
+            </div>
           </Card>
         </Col>
       </Row>
@@ -457,7 +663,7 @@ const DashboardPage = () => {
 
       {/* Recent Activity Tables */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={8}>
+        <Col xs={24} xl={8}>
           <Card 
             title={
               <Space>
@@ -466,6 +672,7 @@ const DashboardPage = () => {
               </Space>
             }
             size="small"
+            bodyStyle={{ padding: '12px' }}
           >
             <Table
               columns={jobColumns}
@@ -473,12 +680,12 @@ const DashboardPage = () => {
               pagination={false}
               rowKey="id"
               size="small"
-              scroll={{ x: 300 }}
+              scroll={{ x: 400 }}
             />
           </Card>
         </Col>
         
-        <Col xs={24} lg={8}>
+        <Col xs={24} xl={8}>
           <Card 
             title={
               <Space>
@@ -487,6 +694,7 @@ const DashboardPage = () => {
               </Space>
             }
             size="small"
+            bodyStyle={{ padding: '12px' }}
           >
             <Table
               columns={applicationColumns}
@@ -494,12 +702,12 @@ const DashboardPage = () => {
               pagination={false}
               rowKey="id"
               size="small"
-              scroll={{ x: 300 }}
+              scroll={{ x: 400 }}
             />
           </Card>
         </Col>
         
-        <Col xs={24} lg={8}>
+        <Col xs={24} xl={8}>
           <Card 
             title={
               <Space>
@@ -511,6 +719,7 @@ const DashboardPage = () => {
               </Space>
             } 
             size="small"
+            bodyStyle={{ padding: '12px' }}
           >
             <Table
               columns={companyColumns}
@@ -518,7 +727,7 @@ const DashboardPage = () => {
               pagination={false}
               rowKey="id"
               size="small"
-              scroll={{ x: 300 }}
+              scroll={{ x: 400 }}
             />
           </Card>
         </Col>
