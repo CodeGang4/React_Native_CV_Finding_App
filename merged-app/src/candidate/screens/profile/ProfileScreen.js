@@ -12,7 +12,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
 import Constants from "expo-constants";
-import { useAuth } from "../../shared/contexts/AuthContext";
+import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 
 export default function ProfileScreen() {

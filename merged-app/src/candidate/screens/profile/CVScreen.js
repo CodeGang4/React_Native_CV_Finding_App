@@ -13,10 +13,10 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { useAuth } from "../../shared/contexts/AuthContext";
+import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import CandidateApiService from "../../shared/services/api/CandidateApiService";
+import CandidateApiService from "../../../shared/services/api/CandidateApiService";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -321,17 +321,6 @@ export default function CVScreen() {
           </View>
         ) : (
           <View style={styles.cvContainer}>
-            <Text style={styles.cvTitle}>CV của bạn</Text>
-            <Text style={styles.fileTypeText}>
-              Loại file:{" "}
-              {cv.type === "image"
-                ? "Hình ảnh"
-                : cv.type === "pdf"
-                  ? "PDF"
-                  : cv.type === "word"
-                    ? "Word"
-                    : "Tài liệu"}
-            </Text>
 
             <TouchableOpacity style={styles.cvPreview} onPress={handleViewCV}>
               {renderCVPreview()}

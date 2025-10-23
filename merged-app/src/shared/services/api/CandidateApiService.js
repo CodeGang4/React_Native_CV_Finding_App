@@ -36,11 +36,23 @@ export class CandidateApiService {
 
   // Upload avatar - Use portfolio upload for now
   static async uploadAvatar(candidateId, avatarUri) {
-    return this.uploadPortfolio(candidateId, {
+    const formData = new FormData();
+    formData.append("portfolio", {
       uri: avatarUri,
       name: "avatar.jpg",
       type: "image/jpeg",
     });
+
+    const response = await apiClient.post(
+      `${this.endpoint}/uploadPortfolio/${candidateId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
   }
 
   // Update candidate profile
@@ -48,6 +60,23 @@ export class CandidateApiService {
     const response = await apiClient.post(
       `${this.endpoint}/updateProfile/${candidateId}`,
       profileData
+    );
+    return response.data;
+  }
+
+  // Upload portfolio
+  static async uploadPortfolio(candidateId, portfolioFile) {
+    const formData = new FormData();
+    formData.append("portfolio", portfolioFile);
+
+    const response = await apiClient.post(
+      `${this.endpoint}/uploadPortfolio/${candidateId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   }
@@ -140,23 +169,6 @@ export class CandidateApiService {
   static getFileExtension(uri) {
     const filename = uri.split("/").pop();
     return filename.split(".").pop().toLowerCase();
-  }
-
-  // Upload portfolio
-  static async uploadPortfolio(candidateId, portfolioFile) {
-    const formData = new FormData();
-    formData.append("portfolio", portfolioFile);
-
-    const response = await apiClient.post(
-      `${this.endpoint}/uploadPortfolio/${candidateId}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return response.data;
   }
 
   // Get candidate CV

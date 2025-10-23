@@ -1,9 +1,9 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import ProfileScreen from "../screens/ProfileScreen";
-import CVScreen from "../screens/CVScreen";
-import EditProfile from "../screens/EditProfile";
-import CVViewer from "../screens/CVViewer";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import CVScreen from "../screens/profile/CVScreen";
+import EditProfile from "../screens/profile/EditProfile";
+import CVViewer from "../screens/profile/CVViewer";
 
 const Stack = createStackNavigator();
 

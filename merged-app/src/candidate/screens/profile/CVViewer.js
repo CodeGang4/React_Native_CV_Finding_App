@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { 
   View, 
   StatusBar, 
@@ -11,6 +11,7 @@ import {
   Image,
   ScrollView,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { useRoute, useFocusEffect } from "@react-navigation/native"; 
 import * as Sharing from 'expo-sharing';
@@ -21,14 +22,20 @@ import { WebView } from 'react-native-webview';
 export default function CVViewer() {
   const route = useRoute();
   const { url } = route.params;
-  const [loading, setLoading] = React.useState(true);
-  const [webViewError, setWebViewError] = React.useState(false);
-  const [imageError, setImageError] = React.useState(false);
-  const [key, setKey] = React.useState(0);
+  
+  const { width: screenW, height: screenH } = useWindowDimensions(); 
+  const webViewRef = useRef(null);
+  const hasLoadedRef = useRef(false);
+
+  const [loading, setLoading] = useState(true);
+  const [webViewError, setWebViewError] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageDisplaySize, setImageDisplaySize] = useState({ width: screenW, height: screenH }); 
 
   const getFileType = (url) => {
     if (!url) return 'unknown';
-    const ext = url.split('.').pop().toLowerCase();
+    const cleanUrl = url.split('?')[0];
+    const ext = cleanUrl.split('.').pop().toLowerCase();
     
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) {
       return 'image';
@@ -43,29 +50,79 @@ export default function CVViewer() {
 
   const fileType = getFileType(url);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log("CVViewer focused - Resetting state");
-      
-      setLoading(true);
-      setWebViewError(false);
-      setImageError(false);
-      setKey(prev => prev + 1);
+  const calculateImageSize = useCallback((imgWidth, imgHeight) => {
+    const containerW = screenW;
+    const containerH = screenH;
 
+    const aspectRatio = imgWidth / imgHeight;
+    let displayW = containerW;
+    let displayH = containerW / aspectRatio;
+
+    if (displayH > containerH) {
+      displayH = containerH;
+      displayW = containerH * aspectRatio;
+    }
+
+    setImageDisplaySize({ 
+        width: Math.min(displayW, containerW), 
+        height: Math.min(displayH, containerH) 
+    });
+    setLoading(false);
+  }, [screenW, screenH]);
+
+  useEffect(() => {
+    console.log("CVViewer URL changed:", url);
+    
+    hasLoadedRef.current = false;
+    setLoading(true);
+    setWebViewError(false);
+    setImageError(false);
+    
+    if (fileType === 'image') {
+      Image.getSize(
+        url, 
+        (width, height) => {
+          calculateImageSize(width, height);
+          hasLoadedRef.current = true;
+        }, 
+        (error) => {
+          console.error("Failed to get image size:", error);
+          setLoading(false);
+          setImageError(true);
+          hasLoadedRef.current = true;
+        }
+      );
+    } else {
+      const timer = setTimeout(() => {
+        setLoading(false);
+        hasLoadedRef.current = true;
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [url]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasLoadedRef.current) {
+        console.log("Focus effect - initial load");
+        return;
+      }
+      
+      console.log("Focus effect - already loaded, no reset");
+      
       return () => {
-        console.log("CVViewer unfocused");
+        console.log("Screen unfocused");
       };
-    }, [url])
+    }, [])
   );
 
   const handleOpenInExternalApp = async () => {
     try {
-      setLoading(true);
-
       if (Platform.OS === 'web') {
         await Linking.openURL(url);
       } else if (Platform.OS === 'ios' && await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(url);
+        await WebBrowser.openBrowserAsync(url);
       } else {
         const canOpen = await Linking.canOpenURL(url);
         if (canOpen) {
@@ -76,9 +133,7 @@ export default function CVViewer() {
       }
     } catch (error) {
       console.error("Lỗi khi mở file:", error);
-      Alert.alert("Lỗi", "Không thể mở file bằng ứng dụng khác.");
-    } finally {
-      setLoading(false);
+      Alert.alert("Lỗi", "Không thể mở file bằng ứng dụng khác. Vui lòng kiểm tra lại URL.");
     }
   };
 
@@ -94,10 +149,10 @@ export default function CVViewer() {
       <TouchableOpacity
         style={styles.retryButton}
         onPress={() => {
+          hasLoadedRef.current = false;
           setWebViewError(false); 
           setImageError(false);
           setLoading(true);
-          setKey(prev => prev + 1);
         }}
       >
         <Text style={styles.retryButtonText}>Thử lại</Text>
@@ -119,7 +174,8 @@ export default function CVViewer() {
     return (
       <View style={{ flex: 1 }}>
         <WebView
-          key={`webview-${key}`}
+          ref={webViewRef}
+          key={`webview-${url}`} 
           source={{ uri: viewerUrl }}
           style={{ flex: 1, backgroundColor: '#fff' }}
           onLoadStart={() => {
@@ -128,17 +184,20 @@ export default function CVViewer() {
             setWebViewError(false);
           }}
           onLoadEnd={() => {
-            console.log("WebView load ended");
+            console.log("WebView load ended successfully");
             setLoading(false);
+            hasLoadedRef.current = true;
           }}
           onLoad={() => {
-            console.log("WebView loaded successfully");
+            console.log("WebView loaded");
+            hasLoadedRef.current = true;
           }}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
             console.error('WebView error:', nativeEvent);
             setLoading(false);
             setWebViewError(true);
+            hasLoadedRef.current = true;
           }}
           startInLoadingState={true}
           renderLoading={() => (
@@ -148,23 +207,21 @@ export default function CVViewer() {
             </View>
           )}
         />
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#00b14f" />
-            <Text style={styles.loadingText}>{loadingText}</Text>
-          </View>
-        )}
       </View>
     );
   };
 
   const renderPDFViewer = () => {
     const googleDocsUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}`;
+    
+    console.log("Rendering PDF viewer with URL:", googleDocsUrl);
     return renderWebViewer(googleDocsUrl, 'Đang tải PDF...', 'PDF');
   };
 
   const renderOfficeViewer = () => {
     const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+    
+    console.log("Rendering Office viewer with URL:", officeViewerUrl);
     return renderWebViewer(officeViewerUrl, 'Đang tải tài liệu...', 'tài liệu Office');
   };
 
@@ -173,50 +230,50 @@ export default function CVViewer() {
       return renderErrorState("ảnh");
     }
 
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00b14f" />
+          <Text style={styles.loadingText}>Đang tải ảnh...</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.imageContainer}>
         <ScrollView 
-          maximumZoomScale={3} 
+          maximumZoomScale={5}
           minimumZoomScale={1} 
           contentContainerStyle={styles.scrollContainer}
+          centerContent={true}
         >
-          <Image
-            key={`image-${key}`}
-            source={{ uri: url }}
-            style={styles.image}
-            resizeMode="contain"
-            onLoadStart={() => {
-              console.log("Image load started");
-              setLoading(true);
-              setImageError(false);
-            }}
-            onLoadEnd={() => {
-              console.log("Image load ended");
-              setLoading(false);
-            }}
-            onLoad={() => {
-              console.log("Image loaded successfully");
-            }}
-            onError={(error) => {
-              console.error("Image load error:", error.nativeEvent);
-              setLoading(false);
-              setImageError(true);
-            }}
-          />
-        </ScrollView>
-        
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#00b14f" />
-            <Text style={styles.loadingText}>Đang tải ảnh...</Text>
+          <View style={styles.imageWrapper}>
+            <Image
+              source={{ uri: url }}
+              style={{ 
+                width: imageDisplaySize.width, 
+                height: imageDisplaySize.height 
+              }}
+              resizeMode="contain"
+              onLoad={() => {
+                console.log("Image loaded successfully");
+                hasLoadedRef.current = true;
+              }}
+              onError={() => {
+                console.error("Image load failed");
+                setImageError(true);
+                setLoading(false);
+                hasLoadedRef.current = true;
+              }}
+            />
           </View>
-        )}
+        </ScrollView>
       </View>
     );
   };
 
   const renderContent = () => {
-    console.log(`Rendering ${fileType} with key: ${key}`);
+    console.log(`Rendering ${fileType}, loading: ${loading}`);
 
     switch (fileType) {
       case 'image':
@@ -247,16 +304,9 @@ export default function CVViewer() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.openButton]}
                 onPress={handleOpenInExternalApp}
-                disabled={loading}
               >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <MaterialIcons name="open-in-new" size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>Mở bằng app khác</Text>
-                  </>
-                )}
+                <MaterialIcons name="open-in-new" size={20} color="#fff" />
+                <Text style={styles.actionButtonText}>Mở bằng app khác</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -280,16 +330,17 @@ const styles = StyleSheet.create({
   imageContainer: {
     flex: 1,
     backgroundColor: '#000',
-    position: 'relative',
+  },
+  imageWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
+    backgroundColor: '#000',
   },
   documentContainer: {
     flex: 1,
@@ -336,26 +387,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  },
-  loadingText: {
-    color: '#fff',
-    marginTop: 12,
-    fontSize: 16,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 12,
+    fontSize: 16,
   },
   errorOverlay: {
     flex: 1,
