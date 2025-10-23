@@ -54,7 +54,7 @@ export default function LoginScreen({ navigation }) {
       >
         <View>
           <Image
-            source={require("../../../../assets/topcv_image.png")}
+            source={require("../../../../assets/logo_app.png")}
             style={styles.logo}
           />
           <Text style={styles.title}>Chào mừng bạn đến với JobBridge</Text>

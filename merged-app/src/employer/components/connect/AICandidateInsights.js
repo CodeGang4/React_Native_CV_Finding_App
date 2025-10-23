@@ -562,7 +562,7 @@ const AICandidateInsights = ({
           <TouchableOpacity onPress={onClose}>
             <MaterialIcons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>🤖 Gợi ý ứng viên AI</Text>
+          <Text style={styles.title}>Gợi ý ứng viên AI</Text>
           <View style={styles.headerActions}>
             {/* <TouchableOpacity
               style={styles.cacheButton}
