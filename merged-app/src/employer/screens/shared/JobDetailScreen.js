@@ -24,6 +24,7 @@ export default function JobDetailScreen({
   const [activeTab, setActiveTab] = useState("overview");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   // Auto switch to overview if user can't view candidates but is on applicants tab
   React.useEffect(() => {
@@ -120,7 +121,10 @@ export default function JobDetailScreen({
             loading={candidatesLoading}
             refreshing={candidatesRefreshing}
             error={candidatesError}
-            onOpenInterview={() => setShowInterviewModal(true)}
+            onOpenInterview={(candidate) => {
+              setSelectedCandidate(candidate);
+              setShowInterviewModal(true);
+            }}
             onPressCandidate={(cand) => {
               if (onCandidatePress) {
                 onCandidatePress(cand);
@@ -144,12 +148,11 @@ export default function JobDetailScreen({
       {canViewCandidates && (
         <InterviewNotificationModal
           visible={showInterviewModal}
-          onClose={() => setShowInterviewModal(false)}
-          onSend={() => {
+          onClose={() => {
             setShowInterviewModal(false);
-            Alert.alert("Thành công", "Đã gửi thông báo phỏng vấn!");
+            setSelectedCandidate(null);
           }}
-          applicants={interviewCandidates}
+          candidate={selectedCandidate}
         />
       )}
     </View>

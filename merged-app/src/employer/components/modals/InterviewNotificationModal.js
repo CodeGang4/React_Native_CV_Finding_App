@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,101 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import EmailApiService from "../../../shared/services/api/EmailApiService";
+import { supabase } from "../../../../supabase/config";
 
-const InterviewNotificationModal = ({ visible, onClose, applicantName }) => {
+const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
+  const { user } = useAuth();
   const [selectedTemplate, setSelectedTemplate] = useState("formal");
   const [customMessage, setCustomMessage] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewTime, setInterviewTime] = useState("");
   const [interviewLocation, setInterviewLocation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fetchingEmail, setFetchingEmail] = useState(false);
+  const [candidateEmail, setCandidateEmail] = useState("");
+
+  // Extract candidate info
+  const applicantName = candidate?.name || candidate?.full_name || "Ứng viên";
+  
+  // Extract user ID from various possible fields
+  // Based on the data structure, candidate.id is the user_id
+  const candidateUserId = 
+    candidate?.id ||           // From applications data (this is user_id)
+    candidate?.user_id ||      // From candidates table
+    candidate?.candidate_id;   // Fallback
+
+  // Fetch email from users table when candidate changes
+  useEffect(() => {
+    const fetchEmail = async () => {
+      if (!visible || !candidateUserId) {
+        setCandidateEmail("");
+        return;
+      }
+
+      // Check if email already exists in candidate object (and not "N/A")
+      const existingEmail = candidate?.email;
+      if (existingEmail && existingEmail !== "N/A" && existingEmail.includes("@")) {
+        console.log("[InterviewModal] Using email from candidate object:", existingEmail);
+        setCandidateEmail(existingEmail);
+        return;
+      }
+
+      // Fetch from users table using candidate ID
+      setFetchingEmail(true);
+      try {
+        console.log("[InterviewModal] Fetching email for user_id:", candidateUserId);
+        console.log("[InterviewModal] Candidate object:", {
+          id: candidate?.id,
+          user_id: candidate?.user_id,
+          candidate_id: candidate?.candidate_id,
+          email: candidate?.email,
+        });
+        
+        const { data, error } = await supabase
+          .from("users")
+          .select("email")
+          .eq("id", candidateUserId)
+          .single();
+
+        if (error) {
+          console.error("[InterviewModal] Fetch email error:", error);
+          throw error;
+        }
+
+        if (data?.email) {
+          console.log("[InterviewModal] Email fetched successfully:", data.email);
+          setCandidateEmail(data.email);
+        } else {
+          console.warn("[InterviewModal] No email found for user");
+          setCandidateEmail("");
+        }
+      } catch (error) {
+        console.error("[InterviewModal] Failed to fetch email:", error);
+        setCandidateEmail("");
+      } finally {
+        setFetchingEmail(false);
+      }
+    };
+
+    fetchEmail();
+  }, [visible, candidate, candidateUserId]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setInterviewDate("");
+      setInterviewTime("");
+      setInterviewLocation("");
+      setCustomMessage("");
+      setSelectedTemplate("formal");
+      setCandidateEmail("");
+    }
+  }, [visible]);
 
   const templates = {
     formal: {
@@ -76,25 +162,81 @@ TCC & Partners`,
     },
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    // Validation
     if (!interviewDate || !interviewTime) {
       Alert.alert("Thông báo", "Vui lòng nhập đầy đủ thời gian phỏng vấn");
       return;
     }
 
-    Alert.alert("Thành công!", "Đã gửi thông báo phỏng vấn đến ứng viên", [
-      {
-        text: "OK",
-        onPress: () => {
-          onClose();
-          setInterviewDate("");
-          setInterviewTime("");
-          setInterviewLocation("");
-          setCustomMessage("");
-          setSelectedTemplate("formal");
-        },
-      },
-    ]);
+    if (!candidateEmail) {
+      Alert.alert(
+        "Lỗi",
+        "Không tìm thấy email của ứng viên. Vui lòng thử lại sau."
+      );
+      return;
+    }
+
+    if (!user || !user.id) {
+      Alert.alert("Lỗi", "Không tìm thấy thông tin công ty");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Prepare email data
+      const emailData = {
+        email: candidateEmail, // Email fetched from users table
+        email_type: selectedTemplate, // 'formal', 'friendly', or 'online'
+        email_date_time: `${interviewDate} - ${interviewTime}`,
+        email_location: interviewLocation || "Phỏng vấn trực tuyến",
+        email_duration: "60 phút", // Default duration
+      };
+
+      console.log("[InterviewNotificationModal] Sending email:", {
+        ...emailData,
+        recipient: applicantName,
+      });
+
+      // Call API
+      const response = await EmailApiService.sendInterviewInvitation(
+        user.id,
+        emailData
+      );
+
+      console.log("[InterviewNotificationModal] Email sent:", response);
+
+      // Success
+      Alert.alert(
+        "Thành công!",
+        `Đã gửi thông báo phỏng vấn đến ${applicantName}`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              onClose();
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("[InterviewNotificationModal] Send email error:", error);
+
+      // Error handling
+      let errorMessage = "Không thể gửi email. Vui lòng thử lại sau.";
+
+      if (error.response) {
+        // Backend returned error
+        errorMessage = error.response.data?.message || errorMessage;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Lỗi", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderTemplate = () => {
@@ -128,12 +270,18 @@ TCC & Partners`,
     >
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelButton}>Hủy</Text>
+          <TouchableOpacity onPress={onClose} disabled={loading}>
+            <Text style={[styles.cancelButton, loading && { opacity: 0.5 }]}>
+              Hủy
+            </Text>
           </TouchableOpacity>
           <Text style={styles.title}>Gửi thông báo phỏng vấn</Text>
-          <TouchableOpacity onPress={handleSend}>
-            <Text style={styles.sendButton}>Gửi</Text>
+          <TouchableOpacity onPress={handleSend} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#00b14f" />
+            ) : (
+              <Text style={styles.sendButton}>Gửi</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -142,7 +290,21 @@ TCC & Partners`,
             <Text style={styles.sectionTitle}>Người nhận</Text>
             <View style={styles.recipientContainer}>
               <MaterialIcons name="person" size={20} color="#666" />
-              <Text style={styles.recipientName}>{applicantName}</Text>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={styles.recipientName}>{applicantName}</Text>
+                {fetchingEmail ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                    <ActivityIndicator size="small" color="#999" />
+                    <Text style={styles.emailText}> Đang tải email...</Text>
+                  </View>
+                ) : candidateEmail ? (
+                  <Text style={styles.emailText}>{candidateEmail}</Text>
+                ) : (
+                  <Text style={[styles.emailText, { color: "#F44336" }]}>
+                    ⚠️ Không tìm thấy email
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
 
@@ -317,8 +479,12 @@ const styles = StyleSheet.create({
   recipientName: {
     fontSize: 16,
     color: "#333",
-    marginLeft: 8,
     fontWeight: "500",
+  },
+  emailText: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
   },
   inputGroup: {
     marginBottom: 16,

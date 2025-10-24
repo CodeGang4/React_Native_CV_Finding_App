@@ -17,6 +17,7 @@ import { useHomeData } from "../../../../shared/services/HomeDataManager";
 import { useAuth } from "../../../../shared/contexts/AuthContext";
 import HomeApiService from "../../../../shared/services/api/HomeApiService";
 import JobDetailScreen from "../../shared/JobDetailScreen";
+import CandidateDetailNavigationScreen from "../../shared/CandidateDetailNavigationScreen";
 
 const bestJobs = [
   {
@@ -208,6 +209,8 @@ export default function BestJobsPage({ onBack }) {
   const [showIndustryModal, setShowIndustryModal] = useState(false);
   const [showJobDetail, setShowJobDetail] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [showCandidateDetail, setShowCandidateDetail] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   const [searchText, setSearchText] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("Khu vực");
@@ -230,6 +233,17 @@ export default function BestJobsPage({ onBack }) {
   const handleJobDetailBack = () => {
     setShowJobDetail(false);
     setSelectedJob(null);
+  };
+
+  const handleCandidatePress = (candidate) => {
+    console.log("[BestJobsPage] Candidate pressed:", candidate.id);
+    setSelectedCandidate(candidate);
+    setShowCandidateDetail(true);
+  };
+
+  const handleCandidateDetailBack = () => {
+    setShowCandidateDetail(false);
+    setSelectedCandidate(null);
   };
 
   const resetAllFilters = () => {
@@ -284,6 +298,16 @@ export default function BestJobsPage({ onBack }) {
     }
   };
 
+  // Show candidate detail screen if candidate is selected
+  if (showCandidateDetail && selectedCandidate) {
+    return (
+      <CandidateDetailNavigationScreen
+        candidate={selectedCandidate}
+        onBack={handleCandidateDetailBack}
+      />
+    );
+  }
+
   // Show job detail screen if job is selected
   if (showJobDetail && selectedJob) {
     const canEdit = isJobOwner(selectedJob);
@@ -292,6 +316,7 @@ export default function BestJobsPage({ onBack }) {
       <JobDetailScreen
         job={selectedJob}
         onBack={handleJobDetailBack}
+        onCandidatePress={handleCandidatePress}
         onEdit={canEdit ? handleJobEdit : null}
         onDelete={canEdit ? handleJobDelete : null}
         canViewCandidates={canEdit}

@@ -243,7 +243,7 @@ export default function ConnectScreen({ navigation }) {
             setShowInvite(false);
             setInviteCandidate(null);
           }}
-          applicantName={inviteCandidate?.name || "Ứng viên"}
+          candidate={inviteCandidate}
         />
 
         {/* AI Settings Modal */}

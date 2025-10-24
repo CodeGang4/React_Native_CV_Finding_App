@@ -325,7 +325,7 @@ export default function CandidateDetailScreen({ route, navigation }) {
       <InterviewNotificationModal
         visible={showInvite}
         onClose={() => setShowInvite(false)}
-        applicantName={name}
+        candidate={candidate}
       />
     </View>
   );
