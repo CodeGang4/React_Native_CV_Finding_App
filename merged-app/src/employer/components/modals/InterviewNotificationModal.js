@@ -28,13 +28,13 @@ const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
 
   // Extract candidate info
   const applicantName = candidate?.name || candidate?.full_name || "Ứng viên";
-  
+
   // Extract user ID from various possible fields
   // Based on the data structure, candidate.id is the user_id
-  const candidateUserId = 
-    candidate?.id ||           // From applications data (this is user_id)
-    candidate?.user_id ||      // From candidates table
-    candidate?.candidate_id;   // Fallback
+  const candidateUserId =
+    candidate?.id || // From applications data (this is user_id)
+    candidate?.user_id || // From candidates table
+    candidate?.candidate_id; // Fallback
 
   // Fetch email from users table when candidate changes
   useEffect(() => {
@@ -46,8 +46,15 @@ const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
 
       // Check if email already exists in candidate object (and not "N/A")
       const existingEmail = candidate?.email;
-      if (existingEmail && existingEmail !== "N/A" && existingEmail.includes("@")) {
-        console.log("[InterviewModal] Using email from candidate object:", existingEmail);
+      if (
+        existingEmail &&
+        existingEmail !== "N/A" &&
+        existingEmail.includes("@")
+      ) {
+        console.log(
+          "[InterviewModal] Using email from candidate object:",
+          existingEmail
+        );
         setCandidateEmail(existingEmail);
         return;
       }
@@ -55,14 +62,17 @@ const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
       // Fetch from users table using candidate ID
       setFetchingEmail(true);
       try {
-        console.log("[InterviewModal] Fetching email for user_id:", candidateUserId);
+        console.log(
+          "[InterviewModal] Fetching email for user_id:",
+          candidateUserId
+        );
         console.log("[InterviewModal] Candidate object:", {
           id: candidate?.id,
           user_id: candidate?.user_id,
           candidate_id: candidate?.candidate_id,
           email: candidate?.email,
         });
-        
+
         const { data, error } = await supabase
           .from("users")
           .select("email")
@@ -75,7 +85,10 @@ const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
         }
 
         if (data?.email) {
-          console.log("[InterviewModal] Email fetched successfully:", data.email);
+          console.log(
+            "[InterviewModal] Email fetched successfully:",
+            data.email
+          );
           setCandidateEmail(data.email);
         } else {
           console.warn("[InterviewModal] No email found for user");
@@ -293,7 +306,13 @@ TCC & Partners`,
               <View style={{ flex: 1, marginLeft: 8 }}>
                 <Text style={styles.recipientName}>{applicantName}</Text>
                 {fetchingEmail ? (
-                  <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 4,
+                    }}
+                  >
                     <ActivityIndicator size="small" color="#999" />
                     <Text style={styles.emailText}> Đang tải email...</Text>
                   </View>
