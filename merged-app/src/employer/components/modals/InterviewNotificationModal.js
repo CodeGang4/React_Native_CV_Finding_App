@@ -30,10 +30,11 @@ const InterviewNotificationModal = ({ visible, onClose, candidate }) => {
   const applicantName = candidate?.name || candidate?.full_name || "Ứng viên";
 
   // Extract user ID from various possible fields
-  // Based on the data structure, candidate.id is the user_id
+  // Priority: userId (from candidates table) > id (from applications) > user_id
   const candidateUserId =
-    candidate?.id || // From applications data (this is user_id)
-    candidate?.user_id || // From candidates table
+    candidate?.userId || // From Candidate entity (candidates.user_id)
+    candidate?.user_id || // Direct from backend
+    candidate?.id || // From applications data
     candidate?.candidate_id; // Fallback
 
   // Fetch email from users table when candidate changes

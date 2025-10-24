@@ -4,6 +4,7 @@
 export class Candidate {
   constructor(data = {}) {
     this.id = data.id || null;
+    this.userId = data.userId || data.user_id || null; // Add userId field
     this.name = data.name || "";
     this.email = data.email || "";
     this.phone = data.phone || "";
