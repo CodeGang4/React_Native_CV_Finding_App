@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       );
       setProfile(res.data);
     } catch (error) {
-      console.error("❌ Lỗi fetch profile:", error);
+      console.error("Lỗi fetch profile:", error);
       Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
     } finally {
       setLoading(false);

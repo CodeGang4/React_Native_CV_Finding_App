@@ -381,9 +381,9 @@ const styles = StyleSheet.create({
 
   editIconContainer: {
     position: 'absolute',
-    left: '50%',
+    left: '45%',
     marginLeft: 45,
-    top: 95,
+    top: 90,
     width: 40,
     height: 40,
     borderRadius: 20,
