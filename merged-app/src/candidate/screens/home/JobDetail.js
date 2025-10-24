@@ -22,7 +22,8 @@ export default function JobDetailScreen({ route }) {
   const { job } = route.params;
   const { user } = useAuth();
   const { savedJobs, toggleSaveJob, fetchSavedJobs } = useSavedJobs();
-  const { applications, getApplicationsByCandidate, applyToJob } = useApplications();
+  const { applications, getApplicationsByCandidate, applyToJob } =
+    useApplications();
 
   const insets = useSafeAreaInsets();
   const [company, setCompany] = useState(null);
@@ -35,14 +36,16 @@ export default function JobDetailScreen({ route }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const companyData = await HomeApiService.getCompanyByEmployerId(job.employer_id);
+        const companyData = await HomeApiService.getCompanyByEmployerId(
+          job.employer_id
+        );
         setCompany(companyData);
-        
+
         await fetchSavedJobs();
-        
+
         if (user?.id) {
           const userApplications = await getApplicationsByCandidate(user.id);
-          const applied = userApplications.some(app => app.job_id === job.id);
+          const applied = userApplications.some((app) => app.job_id === job.id);
           setHasApplied(applied);
         }
       } catch (error) {
@@ -61,13 +64,18 @@ export default function JobDetailScreen({ route }) {
 
   const openMap = (address) => {
     if (!address) return;
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      address
+    )}`;
     Linking.openURL(url);
   };
 
   const handleApplyPress = async () => {
     if (!user?.id) {
-      Alert.alert("Thông báo", "Vui lòng đăng nhập để ứng tuyển công việc này.");
+      Alert.alert(
+        "Thông báo",
+        "Vui lòng đăng nhập để ứng tuyển công việc này."
+      );
       return;
     }
 
@@ -188,7 +196,10 @@ export default function JobDetailScreen({ route }) {
       <View
         style={[
           styles.bottomBar,
-          { height: bottomBarHeight, paddingBottom: Math.max(insets.bottom, 16) },
+          {
+            height: bottomBarHeight,
+            paddingBottom: Math.max(insets.bottom, 16),
+          },
         ]}
       >
         <TouchableOpacity
@@ -203,20 +214,16 @@ export default function JobDetailScreen({ route }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.applyButton,
-            hasApplied && styles.applyButtonDisabled
-          ]}
+          style={[styles.applyButton, hasApplied && styles.applyButtonDisabled]}
           onPress={handleApplyPress}
           disabled={applying || hasApplied}
         >
           {applying ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={[
-              styles.applyText,
-              hasApplied && styles.applyTextDisabled
-            ]}>
+            <Text
+              style={[styles.applyText, hasApplied && styles.applyTextDisabled]}
+            >
               {hasApplied ? "Đã ứng tuyển" : "Ứng tuyển ngay"}
             </Text>
           )}
@@ -259,7 +266,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: { padding: 16, borderBottomWidth: 1, borderColor: "#eee" },
-  jobTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 8, color: "#111" },
+  jobTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#111",
+  },
   salary: {
     fontSize: 16,
     color: "#00b14f",
@@ -333,10 +345,10 @@ const styles = StyleSheet.create({
   applyButtonDisabled: {
     backgroundColor: "#cccccc",
   },
-  applyText: { 
-    color: "#fff", 
-    fontSize: 16, 
-    fontWeight: "bold" 
+  applyText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   applyTextDisabled: {
     color: "#888888",

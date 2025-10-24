@@ -9,3 +9,4 @@ export { default as CandidateApiService } from "./CandidateApiService.js";
 export { default as CompanyApiService } from "./CompanyApiService.js";
 export { default as InterviewApiService } from "./InterviewApiService.js";
 export { default as NotificationApiService } from "./NotificationApiService.js";
+export { default as EmailApiService } from "./EmailApiService.js";
