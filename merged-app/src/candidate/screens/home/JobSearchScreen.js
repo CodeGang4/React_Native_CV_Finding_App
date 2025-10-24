@@ -8,11 +8,13 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import JobListSection from "../../components/JobListSection";
 import processCV from "../../components/ScanCV";
 
 export default function JobSearchScreen() {
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useState("");
   const [searchTrigger, setSearchTrigger] = useState(0);
