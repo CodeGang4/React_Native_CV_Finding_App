@@ -9,7 +9,6 @@ import {
   ScrollView,
   StatusBar,
   Modal,
-  Animated,
   Image,
 } from "react-native";
 import { useAuth } from "../../shared/contexts/AuthContext";
@@ -38,8 +37,7 @@ export default function InterviewPracticeScreen() {
   const [recording, setRecording] = useState(null);
   const [recordings, setRecordings] = useState({});
   const [isRecording, setIsRecording] = useState(false);
-  const [currentRecordingQuestion, setCurrentRecordingQuestion] =
-    useState(null);
+  const [currentRecordingQuestion, setCurrentRecordingQuestion] = useState(null);
   const [playingRecordings, setPlayingRecordings] = useState({});
 
   const soundRefs = useRef({});
@@ -457,6 +455,14 @@ export default function InterviewPracticeScreen() {
     ]);
   };
 
+  const levelItems = [
+    { label: "Intern", value: "intern" },
+    { label: "Fresher", value: "fresher" },
+    { label: "Junior", value: "junior" },
+    { label: "Middle", value: "middle" },
+    { label: "Senior", value: "senior" },
+  ];
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -512,19 +518,31 @@ export default function InterviewPracticeScreen() {
         <Text style={styles.value}>{industry}</Text>
 
         <Text style={styles.label}>Chọn cấp độ:</Text>
-        <View style={styles.pickerContainer}>
+        
+        {/* Picker Select với style đã fix */}
+        <View style={styles.pickerWrapper}>
           <RNPickerSelect
-            onValueChange={(value) => setLevel(value)}
+            onValueChange={(value) => {
+              console.log('Picker value changed:', value);
+              setLevel(value);
+            }}
             value={level}
-            placeholder={{ label: "Chọn cấp độ", value: null }}
-            items={[
-              { label: "Intern", value: "intern" },
-              { label: "Fresher", value: "fresher" },
-              { label: "Junior", value: "junior" },
-              { label: "Middle", value: "middle" },
-              { label: "Senior", value: "senior" },
-            ]}
+            placeholder={{
+              label: "Chọn cấp độ...",
+              value: null,
+              color: '#999',
+            }}
+            items={levelItems}
             style={pickerSelectStyles}
+            useNativeAndroidPickerStyle={false}
+            Icon={() => {
+              return <Icon name="chevron-down" size={20} color="#666" style={styles.pickerIcon} />;
+            }}
+            touchableWrapperProps={{
+              activeOpacity: 0.7,
+            }}
+            onOpen={() => console.log('Picker opened')}
+            onClose={() => console.log('Picker closed')}
           />
         </View>
 
@@ -825,15 +843,24 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
   },
-  label: { fontSize: 14, color: "#666", marginTop: 10 },
-  value: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 10 },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    backgroundColor: "#fff",
+  label: { 
+    fontSize: 14, 
+    color: "#666", 
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  value: { 
+    fontSize: 16, 
+    fontWeight: "600", 
+    color: "#333", 
+    marginBottom: 15 
+  },
+  pickerWrapper: {
     marginBottom: 15,
+  },
+  pickerIcon: {
+    marginTop: 12,
+    marginRight: 8,
   },
   tabContainer: {
     flexDirection: "row",
@@ -874,8 +901,14 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     elevation: 3,
   },
-  disabledButton: { backgroundColor: "#ccc" },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  disabledButton: { 
+    backgroundColor: "#ccc" 
+  },
+  buttonText: { 
+    color: "#fff", 
+    fontWeight: "700", 
+    fontSize: 16 
+  },
   emptyState: {
     alignItems: "center",
     marginTop: 40,
@@ -887,7 +920,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
-  questionsContainer: { marginTop: 20 },
+  questionsContainer: { 
+    marginTop: 20 
+  },
   subHeader: {
     fontSize: 18,
     fontWeight: "600",
@@ -1061,7 +1096,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 20,
   },
-  submitText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  submitText: { 
+    color: "#fff", 
+    fontSize: 17, 
+    fontWeight: "700" 
+  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -1085,7 +1124,6 @@ const styles = StyleSheet.create({
     borderRadius: 200,
     overflow: "hidden",
   },
-
   overlayContent: {
     position: "absolute",
     bottom: 100,
@@ -1098,6 +1136,33 @@ const styles = StyleSheet.create({
 });
 
 const pickerSelectStyles = StyleSheet.create({
-  inputIOS: { fontSize: 16, color: "#333", padding: 10 },
-  inputAndroid: { fontSize: 16, color: "#333", padding: 10 },
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 15,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    color: 'black',
+    backgroundColor: '#fff',
+    paddingRight: 40,
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    color: 'black',
+    backgroundColor: '#fff',
+    paddingRight: 40,
+  },
+  placeholder: {
+    color: '#999',
+  },
+  iconContainer: {
+    top: 12,
+    right: 12,
+  },
 });
