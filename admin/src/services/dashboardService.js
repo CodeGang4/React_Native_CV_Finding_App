@@ -168,8 +168,6 @@ const getRecentActivity = async () => {
       .limit(5)
   ])
 
-  console.log('Recent Applications raw data:', recentApplications)
-
   // Get related data separately
   let processedApplications = []
   
@@ -177,16 +175,10 @@ const getRecentActivity = async () => {
     const candidateIds = [...new Set(recentApplications.map(a => a.candidate_id).filter(Boolean))]
     const jobIds = [...new Set(recentApplications.map(a => a.job_id).filter(Boolean))]
     
-    console.log('Candidate IDs to query:', candidateIds)
-    console.log('Job IDs to query:', jobIds)
-    
     const [candidatesResult, jobsResult] = await Promise.all([
       supabase.from('candidates').select('user_id, full_name').in('user_id', candidateIds),
       supabase.from('jobs').select('id, title').in('id', jobIds)
     ])
-    
-    console.log('Candidates query result:', candidatesResult)
-    console.log('Jobs query result:', jobsResult)
     
     // Create lookup maps
     const candidatesMap = new Map(
@@ -205,8 +197,6 @@ const getRecentActivity = async () => {
       job: jobsMap.get(app.job_id) || null
     }))
   }
-
-  console.log('Processed Applications:', processedApplications)
 
   return {
     recentJobs: recentJobs || [],

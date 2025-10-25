@@ -28,7 +28,6 @@ import {
 } from 'react-icons/md'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCompanies, reviewCompany, getCompanyStats } from '../../services/companyService'
-import { useNavigate } from 'react-router-dom'
 
 const { Title } = Typography
 const { Option } = Select
@@ -50,7 +49,6 @@ const CompaniesListPage = () => {
   
   const [adminNote, setAdminNote] = useState('')
   
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   // Fetch companies data
@@ -272,7 +270,7 @@ const CompaniesListPage = () => {
   return (
     <div>
       <Title level={2}>
-        Duyệt công ty đăng ký
+        Danh Sách Companies
         {pendingCount > 0 && (
           <Badge count={pendingCount} style={{ marginLeft: 8 }} />
         )}

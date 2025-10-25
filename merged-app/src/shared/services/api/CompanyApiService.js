@@ -8,31 +8,43 @@ export class CompanyApiService {
 
   // Get all companies
   static async getCompanies(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getAllCompany`, { params });
+    const response = await apiClient.get(`${this.endpoint}/getAllCompany`, {
+      params,
+    });
     return response.data;
   }
 
   // Get verified companies
   static async getVerifiedCompanies(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getVerifiedCompany`, { params });
+    const response = await apiClient.get(
+      `${this.endpoint}/getVerifiedCompany`,
+      { params }
+    );
     return response.data;
   }
 
   // Get top companies
   static async getTopCompanies(params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getTopCompanies`, { params });
+    const response = await apiClient.get(`${this.endpoint}/getTopCompanies`, {
+      params,
+    });
     return response.data;
   }
 
   // Get companies by status
   static async getCompanyByStatus(status, params = {}) {
-    const response = await apiClient.get(`${this.endpoint}/getCompanyWithStatus/${status}`, { params });
+    const response = await apiClient.get(
+      `${this.endpoint}/getCompanyWithStatus/${status}`,
+      { params }
+    );
     return response.data;
   }
 
   // Get company by ID
   static async getCompanyById(companyId) {
-    const response = await apiClient.get(`${this.endpoint}/getCompanyInfo/${companyId}`);
+    const response = await apiClient.get(
+      `${this.endpoint}/getCompanyInfo/${companyId}`
+    );
     return response.data;
   }
 
@@ -74,7 +86,7 @@ export class CompanyApiService {
 
   // Get company jobs - Use JobApiService instead
   static async getCompanyJobs(companyId, params = {}) {
-    const JobApiService = await import('./JobApiService.js');
+    const JobApiService = await import("./JobApiService.js");
     return JobApiService.default.getJobsByCompany(companyId, params);
   }
 
@@ -97,19 +109,36 @@ export class CompanyApiService {
 
   // Get company analytics/statistics
   static async getCompanyStats(companyId) {
-    const response = await apiClient.get(`${this.endpoint}/analytics/${companyId}`);
+    const response = await apiClient.get(
+      `${this.endpoint}/analytics/${companyId}`
+    );
     return response.data;
   }
 
   // Search companies - Not implemented in backend yet
+  // static async searchCompanies(query, filters = {}) {
+  //   // Fallback to getAllCompany with filtering on frontend
+  //   const companies = await this.getCompanies();
+  //   if (!query) return companies;
+
+  //   return companies.filter(company =>
+  //     company.name?.toLowerCase().includes(query.toLowerCase()) ||
+  //     company.category?.toLowerCase().includes(query.toLowerCase())
+  //   );
+  // }
+
   static async searchCompanies(query, filters = {}) {
-    // Fallback to getAllCompany with filtering on frontend
-    const companies = await this.getCompanies();
+    const companies = await this.getVerifiedCompanies();
+
     if (!query) return companies;
-    
-    return companies.filter(company => 
-      company.name?.toLowerCase().includes(query.toLowerCase()) ||
-      company.category?.toLowerCase().includes(query.toLowerCase())
+
+    const lowerQuery = query.toLowerCase();
+
+    return companies.filter(
+      (company) =>
+        company.company_name?.toLowerCase().includes(lowerQuery) ||
+        company.industry?.toLowerCase().includes(lowerQuery) ||
+        company.company_address?.toLowerCase().includes(lowerQuery)
     );
   }
 

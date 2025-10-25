@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { 
   Table, 
-  Button, 
   Tag, 
   Space, 
   Input, 
@@ -17,14 +16,12 @@ import {
 import { 
   MdSearch, 
   MdPerson, 
-  MdVisibility,
   MdPeople,
   MdEmail,
   MdBusiness
 } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getUsers, getUserStats } from '../../services/userService'
-import { useNavigate } from 'react-router-dom'
 
 const { Title } = Typography
 const { Option } = Select
@@ -36,8 +33,6 @@ const UsersListPage = () => {
     search: '',
     role: ''
   })
-  
-  const navigate = useNavigate()
 
   // Fetch users data
   const { data: usersData, isLoading } = useQuery({
@@ -199,7 +194,7 @@ const UsersListPage = () => {
             pageSize: filters.limit,
             total: usersData?.count || 0,
             showSizeChanger: true,
-            showQuickJumper: true,
+            showQuickJumper: false,
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} của ${total} users`,
             onChange: handlePageChange,

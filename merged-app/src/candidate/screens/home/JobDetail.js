@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -12,65 +12,35 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/Ionicons";
-import HomeApiService from "../../../shared/services/api/HomeApiService";
-// import CandidateApiService from "../../../shared/services/api/CandidateApiService";
 import { useAuth } from "../../../shared/contexts/AuthContext";
-import useSavedJobs from "../../../shared/hooks/useSavedJobs";
-import useApplications from "../../../shared/hooks/useApplications";
+import useJobDetail from "../../../shared/hooks/useJobDetail";
 
 export default function JobDetailScreen({ route }) {
-  const { job } = route.params;
+  const { job, company: routeCompany } = route.params;
   const { user } = useAuth();
-  const { savedJobs, toggleSaveJob, fetchSavedJobs } = useSavedJobs();
-  const { applications, getApplicationsByCandidate, applyToJob } =
-    useApplications();
-
   const insets = useSafeAreaInsets();
-  const [company, setCompany] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [applying, setApplying] = useState(false);
-  const [hasApplied, setHasApplied] = useState(false);
 
-  const isSaved = savedJobs?.includes(job.id);
+  const {
+    company,
+    loading,
+    applying,
+    hasApplied,
+    isSaved,
+    handleToggleSave,
+    handleApply,
+    refresh,
+  } = useJobDetail(job, user?.id);
+  const displayCompany = routeCompany || company;
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const companyData = await HomeApiService.getCompanyByEmployerId(
-          job.employer_id
-        );
-        setCompany(companyData);
-
-        await fetchSavedJobs();
-
-        if (user?.id) {
-          const userApplications = await getApplicationsByCandidate(user.id);
-          const applied = userApplications.some((app) => app.job_id === job.id);
-          setHasApplied(applied);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy thông tin:", error);
-        setCompany({
-          company_name: "Không rõ công ty",
-          company_logo: null,
-          company_address: "Không rõ địa chỉ",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [job?.employer_id, job.id, user?.id]);
+  const bottomBarHeight = 60 + Math.max(insets.bottom, 16);
 
   const openMap = (address) => {
     if (!address) return;
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      address
-    )}`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     Linking.openURL(url);
   };
 
-  const handleApplyPress = async () => {
+  const onApplyPress = async () => {
     if (!user?.id) {
       Alert.alert(
         "Thông báo",
@@ -79,21 +49,14 @@ export default function JobDetailScreen({ route }) {
       return;
     }
 
-    if (hasApplied) {
-      Alert.alert("Thông báo", "Bạn đã ứng tuyển công việc này rồi!");
-      return;
-    }
-
     try {
-      setApplying(true);
-      await applyToJob(user.id, job.id);
-      setHasApplied(true);
+      await handleApply();
       Alert.alert("Thành công", "Bạn đã ứng tuyển công việc này!");
     } catch (error) {
-      console.error("Error applying job:", error);
-      Alert.alert("Lỗi", "Không thể ứng tuyển. Vui lòng thử lại sau.");
-    } finally {
-      setApplying(false);
+      Alert.alert(
+        "Lỗi",
+        error.message || "Không thể ứng tuyển. Vui lòng thử lại sau."
+      );
     }
   };
 
@@ -105,8 +68,6 @@ export default function JobDetailScreen({ route }) {
     );
   }
 
-  const bottomBarHeight = 60 + Math.max(insets.bottom, 16);
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -115,9 +76,9 @@ export default function JobDetailScreen({ route }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.companyContainer}>
-          {company?.company_logo ? (
+          {displayCompany?.company_logo ? (
             <Image
-              source={{ uri: company.company_logo }}
+              source={{ uri: displayCompany.company_logo }}
               style={styles.companyLogo}
               resizeMode="contain"
             />
@@ -128,15 +89,17 @@ export default function JobDetailScreen({ route }) {
           )}
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.companyName}>{company?.company_name}</Text>
+            <Text style={styles.companyName}>
+              {displayCompany?.company_name}
+            </Text>
 
             <TouchableOpacity
-              onPress={() => openMap(company?.company_address)}
+              onPress={() => openMap(displayCompany?.company_address)}
               style={styles.inlineRow}
             >
-              <Icon name="location-outline" size={16} color="#00b14f" />
+              <Icon name="location-outline" size={25} color="#00b14f" />
               <Text style={styles.companyAddress}>
-                {company?.company_address || "Không rõ địa chỉ"}
+                {displayCompany?.company_address || "Không rõ địa chỉ"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -202,10 +165,7 @@ export default function JobDetailScreen({ route }) {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={() => toggleSaveJob(job.id)}
-        >
+        <TouchableOpacity style={styles.saveButton} onPress={handleToggleSave}>
           <Icon
             name={isSaved ? "heart" : "heart-outline"}
             size={24}
@@ -215,7 +175,7 @@ export default function JobDetailScreen({ route }) {
 
         <TouchableOpacity
           style={[styles.applyButton, hasApplied && styles.applyButtonDisabled]}
-          onPress={handleApplyPress}
+          onPress={onApplyPress}
           disabled={applying || hasApplied}
         >
           {applying ? (
@@ -342,15 +302,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  applyButtonDisabled: {
-    backgroundColor: "#cccccc",
-  },
-  applyText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  applyTextDisabled: {
-    color: "#888888",
-  },
+  applyButtonDisabled: { backgroundColor: "#cccccc" },
+  applyText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  applyTextDisabled: { color: "#888888" },
 });

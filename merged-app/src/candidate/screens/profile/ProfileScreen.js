@@ -10,31 +10,29 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import axios from "axios";
-import Constants from "expo-constants";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import CandidateApiService from "../../../shared/services/api/CandidateApiService";
+import { openGmail } from "../../../shared/utils/useOpenGmail";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, userRole, logout, switchRole } = useAuth();
+  const userEmail = user?.email;
+  console.log("User Email in ProfileScreen:", userEmail);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const API_BASE_URL = Constants.expoConfig?.extra?.API;
 
   const fetchProfile = async () => {
     if (!user?.id) return;
     setLoading(true);
 
     try {
-      const res = await axios.get(
-        `${API_BASE_URL}/client/candidates/getProfile/${user.id}`
-      );
-      setProfile(res.data);
+      const data = await CandidateApiService.getCandidateById(user.id);
+      setProfile(data);
     } catch (error) {
       console.error("Lỗi fetch profile:", error);
-      Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
+      Alert.alert("Lỗi", "Không thể lấy thông tin hồ sơ ứng viên.");
     } finally {
       setLoading(false);
     }
@@ -77,7 +75,6 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header thông tin */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           {profile?.portfolio ? (
@@ -95,7 +92,6 @@ export default function ProfileScreen() {
           {userRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng"}
         </Text>
       </View>
-
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() =>
@@ -132,7 +128,39 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Chỉnh sửa thông tin</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
+      <View style={styles.gridContainer}>
+        <TouchableOpacity
+          style={styles.gridItem}
+          onPress={() => navigation.navigate("AppliedJobs")}
+        >
+          <MaterialIcons name="work" size={36} color="#00b14f" />
+          <Text style={styles.gridLabel}>Việc làm đã ứng tuyển</Text>
+        </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.gridItem}
+          onPress={() => navigation.navigate("SaveJobs")}
+        >
+          <MaterialIcons name="bookmark" size={36} color="#ffb400" />
+          <Text style={styles.gridLabel}>Việc làm đã lưu</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.gridItem}
+           onPress={() => navigation.navigate("Notifications")}
+        >
+          <MaterialIcons name="notifications" size={36} color="#ff4444" />
+          <Text style={styles.gridLabel}>Thông báo</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.gridItem}
+          onPress={() => openGmail(userEmail)}
+        >
+          <MaterialIcons name="event" size={36} color="#007bff" />
+          <Text style={styles.gridLabel}>Lịch hẹn</Text>
+        </TouchableOpacity>
+      </View>
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("Security")}
@@ -141,16 +169,14 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Bảo mật</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("Notifications")}
       >
         <MaterialIcons name="notifications" size={24} color="#666" />
         <Text style={styles.menuText}>Thông báo</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
-      </TouchableOpacity>
-
+      </TouchableOpacity> */}
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("HelpCenter")}
@@ -159,7 +185,6 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Trung tâm trợ giúp</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("Feedback")}
@@ -168,7 +193,6 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Gửi phản hồi</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("AboutUs")}
@@ -177,8 +201,14 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Về chúng tôi</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-
-      {/* Đăng xuất */}
+      <TouchableOpacity style={styles.menuItem} onPress={handleRoleSwitch}>
+        <MaterialIcons name="swap-horiz" size={24} color="#666" />
+        <Text style={styles.menuText}>
+          Chuyển sang{" "}
+          {userRole === "candidate" ? "Nhà tuyển dụng" : "Người tìm việc"}
+        </Text>
+        <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+      </TouchableOpacity>
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <MaterialIcons name="exit-to-app" size={24} color="#fff" />
         <Text style={styles.logoutText}>Đăng xuất</Text>
@@ -235,5 +265,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 10,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginHorizontal: 20,
+    marginVertical: 15,
+  },
+
+  gridItem: {
+    width: "48%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    alignItems: "center",
+    marginBottom: 15,
+    position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  gridLabel: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+  },
+
+  badge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#ff4444",
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

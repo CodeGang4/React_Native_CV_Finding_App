@@ -2,715 +2,292 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
+  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
+  Image,
   ScrollView,
-  TextInput,
-  StatusBar,
-  Modal,
+  Dimensions,
 } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../../shared/contexts/AuthContext";
-import RNPickerSelect from "react-native-picker-select";
-import Icon from "react-native-vector-icons/Ionicons";
-
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import CandidateApiService from "../../../shared/services/api/CandidateApiService";
-import { QuestionApiService } from "../../../shared/services/api/QuestionApiService";
 
-const PRIMARY_COLOR = "#00b14f";
-const HEADER_HEIGHT = 56;
+const { width: screenWidth } = Dimensions.get("window");
 
-export default function InterviewPracticeScreen() {
+export default function CVScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
+  const [cv, setCv] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [industry, setIndustry] = useState("");
-  const [level, setLevel] = useState("");
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [scores, setScores] = useState({});
-  const [activeTab, setActiveTab] = useState("bank"); // 'bank' or 'generate'
-  const [aiThinking, setAiThinking] = useState(false);
-  const [gradingQuestions, setGradingQuestions] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const getFileType = (url) => {
+    if (!url) return "unknown";
+    const ext = url.split(".").pop().toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
+    if (ext === "pdf") return "pdf";
+    if (["doc", "docx"].includes(ext)) return "word";
+    return "document";
+  };
+
+  const getFileExtension = (uri) => uri.split(".").pop().toLowerCase();
+
+  const fetchCV = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const candidateData = await CandidateApiService.getCandidateById(user.id);
+      if (candidateData?.cv_url) {
+        setCv({
+          id: user.id.toString(),
+          url: candidateData.cv_url,
+          name: "CV của tôi",
+          type: getFileType(candidateData.cv_url),
+        });
+      } else {
+        setCv(null);
+      }
+    } catch (error) {
+      console.error("Error fetching CV:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      // ... (Giữ nguyên logic fetchProfile)
-      try {
-        const resData = await CandidateApiService.getCandidateById(user.id);
-
-        const prefs = resData.job_preferences || [];
-        const detectedIndustry =
-          Array.isArray(prefs) && prefs.length > 0
-            ? prefs[0].trim()
-            : "General";
-
-        setIndustry(detectedIndustry);
-      } catch (err) {
-        console.error("Lỗi khi lấy profile:", err.response?.data || err);
-        Alert.alert("Lỗi", "Không thể lấy thông tin hồ sơ người dùng.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
+    fetchCV();
   }, [user]);
 
-  const fetchQuestionsFromBank = async () => {
-    if (!industry || !level) {
-      Alert.alert("Thông báo", "Vui lòng chọn cấp độ trước khi lấy câu hỏi.");
-      return;
-    }
-
-    setAiThinking(true);
+  const uploadFile = async (asset) => {
     try {
-      let fetchedQuestions =
-        await QuestionApiService.getQuestionsByIndustryAndLevel(
-          level,
-          industry
-        );
+      setUploading(true);
+      const file = {
+        uri: asset.uri,
+        type: asset.mimeType || "application/octet-stream",
+        name:
+          asset.name ||
+          `cv_${user.id}_${Date.now()}.${getFileExtension(asset.uri)}`,
+      };
 
-      if (Array.isArray(fetchedQuestions) && fetchedQuestions.length > 0) {
-        setQuestions(fetchedQuestions);
-        Alert.alert(
-          "Thành công",
-          `Đã tìm thấy ${fetchedQuestions.length} câu hỏi phù hợp!`
-        );
-      } else {
-        Alert.alert(
-          "Thông báo",
-          "Không có câu hỏi nào trong ngân hàng phù hợp với tiêu chí của bạn."
-        );
-        setQuestions([]);
-      }
-    } catch (err) {
-      console.error("Lỗi khi lấy câu hỏi:", err.response?.data || err);
-      const errorMessage =
-        err.response?.data?.message || "Lỗi kết nối hoặc API không phản hồi.";
-      Alert.alert("Lỗi", `Không thể lấy câu hỏi: ${errorMessage}`);
+      const result = await CandidateApiService.uploadCV(user.id, file);
+      if (!result?.url) throw new Error("No URL returned from server");
+
+      setCv({
+        id: user.id.toString(),
+        url: result.url,
+        name: "CV của tôi",
+        type: getFileType(result.url),
+      });
+
+      Alert.alert("Thành công", "Tải lên CV thành công!");
+    } catch (error) {
+      console.error("Upload failed:", error);
+      Alert.alert("Lỗi", "Không thể tải lên CV. Vui lòng thử lại.");
     } finally {
-      setAiThinking(false);
+      setUploading(false);
     }
   };
 
-  const generateNewQuestions = async () => {
-    if (!industry || !level) {
-      Alert.alert(
-        "Thông báo",
-        "Vui lòng chọn cấp độ trước khi tạo câu hỏi mới."
-      );
-      return;
-    }
+  const handleUploadImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
 
-    setAiThinking(true);
-    try {
-      const generatedQuestions = await QuestionApiService.generateQuestion(
-        industry,
-        level
-      );
-
-      if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
-        setQuestions(generatedQuestions);
-        Alert.alert("Thành công", "AI đã tạo câu hỏi mới thành công!");
-      } else {
-        Alert.alert(
-          "Thông báo",
-          "Không thể tạo câu hỏi mới. Vui lòng thử lại."
-        );
-      }
-    } catch (err) {
-      console.error("Lỗi khi tạo câu hỏi:", err.response?.data || err);
-      const errorMessage =
-        err.response?.data?.message || "Lỗi kết nối hoặc API không phản hồi.";
-      Alert.alert("Lỗi", `Không thể tạo câu hỏi mới: ${errorMessage}`);
-    } finally {
-      setAiThinking(false);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      await uploadFile(result.assets[0]);
     }
   };
 
-  const handleAnswerChange = (id, text) => {
-    setAnswers((prev) => ({ ...prev, [id]: text }));
-  };
-
-  const gradeSingleQuestion = async (questionId) => {
-    const answerText = answers[questionId];
-
-    if (!answerText || answerText.trim() === "") {
-      Alert.alert(
-        "Thông báo",
-        "Vui lòng nhập câu trả lời trước khi chấm điểm."
-      );
-      return;
-    }
-
-    setGradingQuestions((prev) => ({ ...prev, [questionId]: true }));
-
-    try {
-      const gradeResult = await QuestionApiService.gradeAnswer(
-        user.id,
-        questionId,
-        answerText
-      );
-
-      console.log("Kết quả chấm điểm từ API:", gradeResult);
-
-      // Lưu kết quả chấm điểm
-      setScores((prev) => ({
-        ...prev,
-        [questionId]: gradeResult,
-      }));
-
-      // Hiển thị kết quả (chú ý: đã thay đổi cú pháp lấy score/feedback để linh hoạt hơn)
-      const scoreValue = gradeResult.score || gradeResult.grade || "N/A";
-      const feedbackText = gradeResult.feedback || gradeResult.comment || "Không có phản hồi";
-
-      Alert.alert(
-        "Kết quả chấm điểm",
-        `Điểm số: ${scoreValue}/10\n\nPhản hồi: ${feedbackText}`
-      );
-    } catch (err) {
-      console.error("Lỗi khi chấm điểm:", err.response?.data || err);
-      const errorMessage =
-        err.response?.data?.error || "Lỗi kết nối khi chấm điểm.";
-      Alert.alert("Lỗi", `Không thể chấm điểm: ${errorMessage}`);
-    } finally {
-      setGradingQuestions((prev) => ({ ...prev, [questionId]: false }));
+  const handleUploadFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: [
+        "image/*",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ],
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      await uploadFile(result.assets[0]);
     }
   };
 
-  const gradeAllQuestions = async () => {
-    const unansweredQuestions = questions.filter(
-      (q) => !answers[q.id] || answers[q.id].trim() === ""
-    );
-
-    if (unansweredQuestions.length > 0) {
-      Alert.alert(
-        "Thông báo",
-        `Bạn còn ${unansweredQuestions.length} câu hỏi chưa trả lời. Vui lòng trả lời tất cả câu hỏi trước khi chấm điểm.`
-      );
-      return;
-    }
-
-    setAiThinking(true);
-
-    try {
-      const gradingResults = {};
-
-      for (const question of questions) {
-        const gradeResult = await QuestionApiService.gradeAnswer(
-          user.id,
-          question.id,
-          answers[question.id]
-        );
-        gradingResults[question.id] = gradeResult;
-      }
-
-      setScores(gradingResults);
-      Alert.alert(
-        "Thành công",
-        "Đã chấm điểm tất cả câu hỏi! Hãy kiểm tra kết quả cho từng câu."
-      );
-    } catch (err) {
-      console.error(
-        "Lỗi khi chấm điểm tất cả câu hỏi:",
-        err.response?.data || err
-      );
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi chấm điểm. Vui lòng thử lại.");
-    } finally {
-      setAiThinking(false);
-    }
-  };
-
-  const handleReset = () => {
-    Alert.alert("Xác nhận", "Bạn có chắc muốn làm lại từ đầu?", [
-      { text: "Huỷ", style: "cancel" },
-      {
-        text: "Đồng ý",
-        onPress: () => {
-          setLevel("");
-          setQuestions([]);
-          setAnswers({});
-          setScores({});
-          setActiveTab("bank");
-        },
-      },
+  const handleShowUploadOptions = () => {
+    Alert.alert("Chọn loại file", "Bạn muốn tải lên loại file nào?", [
+      { text: "Từ thư viện ảnh", onPress: handleUploadImage },
+      { text: "Chọn file (PDF, DOCX...)", onPress: handleUploadFile },
+      { text: "Hủy", style: "cancel" },
     ]);
+  };
+
+  const handleViewCV = () => {
+    if (cv?.url) navigation.navigate("CVViewer", { url: cv.url });
+  };
+
+  const renderCVPreview = () => {
+    if (!cv) return null;
+    switch (cv.type) {
+      case "image":
+        return (
+          <Image
+            source={{ uri: cv.url }}
+            style={styles.previewImage}
+            resizeMode="contain"
+            onError={() => setImageError(true)}
+          />
+        );
+      case "pdf":
+        return <MaterialIcons name="picture-as-pdf" size={64} color="#e74c3c" />;
+      case "word":
+        return <MaterialIcons name="description" size={64} color="#2b579a" />;
+      default:
+        return (
+          <MaterialIcons name="insert-drive-file" size={64} color="#7f8c8d" />
+        );
+    }
   };
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
-        <Text style={{ marginTop: 10, color: "#555" }}>
-          Đang tải thông tin hồ sơ...
-        </Text>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#00b14f" />
+        <Text style={styles.loadingText}>Đang tải thông tin CV...</Text>
       </View>
     );
   }
 
+  const bottomPadding = Math.max(insets.bottom, 16);
+
   return (
-    <View style={styles.fullContainer}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* FIXED APP BAR / HEADER */}
-      <View style={[styles.appBar, { paddingTop: insets.top }]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.header}>Luyện phỏng vấn cùng AI</Text>
-          <TouchableOpacity onPress={handleReset} style={styles.resetButton}>
-            <Icon name="reload" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* MAIN CONTENT SCROLLVIEW */}
+    <View style={styles.container}>
       <ScrollView
-        style={[styles.container, { marginTop: insets.top + HEADER_HEIGHT }]}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} // Đảm bảo scroll đến cuối
-        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: cv ? 100 : 20 },
+        ]}
       >
-        {/* AI Thinking Modal */}
-        <Modal visible={aiThinking} transparent={true} animationType="fade">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <ActivityIndicator size="large" color={PRIMARY_COLOR} />
-              <Text style={styles.modalText}>AI đang suy nghĩ...</Text>
-              <Text style={styles.modalSubText}>Vui lòng chờ trong giây lát</Text>
-            </View>
-          </View>
-        </Modal>
-
-        <Text style={styles.label}>Ngành nghề (từ hồ sơ):</Text>
-        <Text style={styles.value}>{industry}</Text>
-
-        <Text style={styles.label}>Chọn cấp độ:</Text>
-        <View style={styles.pickerContainer}>
-          <RNPickerSelect
-            onValueChange={(value) => setLevel(value)}
-            value={level}
-            placeholder={{ label: "Chọn cấp độ", value: null }}
-            items={[
-              { label: "Intern", value: "intern" },
-              { label: "Fresher", value: "fresher" },
-              { label: "Junior", value: "junior" },
-              { label: "Middle", value: "middle" },
-              { label: "Senior", value: "senior" },
-            ]}
-            style={pickerSelectStyles}
-          />
-        </View>
-
-        {/* Tab Selection */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "bank" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("bank")}
-          >
-            <Icon
-              name="library-outline"
-              size={20}
-              color={activeTab === "bank" ? "#fff" : PRIMARY_COLOR}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "bank" && styles.activeTabText,
-              ]}
-            >
-              Câu hỏi trong ngân hàng
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "generate" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("generate")}
-          >
-            <Icon
-              name="sparkles-outline"
-              size={20}
-              color={activeTab === "generate" ? "#fff" : PRIMARY_COLOR}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "generate" && styles.activeTabText,
-              ]}
-            >
-              Tạo câu hỏi mới
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Action Button based on Active Tab */}
-        <TouchableOpacity
-          style={[styles.button, (!level || aiThinking) && styles.disabledButton]}
-          onPress={
-            activeTab === "bank" ? fetchQuestionsFromBank : generateNewQuestions
-          }
-          disabled={!level || aiThinking}
-        >
-          {aiThinking ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Icon
-              name={activeTab === "bank" ? "search-outline" : "sparkles-outline"}
-              size={20}
-              color="#fff"
-            />
-          )}
-          <Text style={styles.buttonText}>
-            {aiThinking
-              ? "AI đang xử lý..."
-              : activeTab === "bank"
-              ? "Lấy câu hỏi từ ngân hàng"
-              : "AI tạo câu hỏi mới"}
-          </Text>
-        </TouchableOpacity>
-
-        {questions.length === 0 && !aiThinking && (
+        {!cv ? (
           <View style={styles.emptyState}>
-            <Icon name="chatbubbles-outline" size={50} color={PRIMARY_COLOR} />
-            <Text style={styles.emptyText}>
-              {activeTab === "bank"
-                ? "Chọn cấp độ và lấy câu hỏi từ ngân hàng để bắt đầu!"
-                : "Chọn cấp độ và để AI tạo câu hỏi phỏng vấn mới cho bạn!"}
+            <MaterialIcons name="description" size={64} color="#ccc" />
+            <Text style={styles.emptyStateText}>Chưa có CV nào</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Tải lên CV đầu tiên của bạn để bắt đầu ứng tuyển
             </Text>
-          </View>
-        )}
-
-        {questions.length > 0 && (
-          <View style={styles.questionsContainer}>
-            <Text style={styles.subHeader}>
-              {questions.length} câu hỏi{" "}
-              {activeTab === "bank" ? "từ ngân hàng" : "được AI tạo"}
-            </Text>
-
-            {questions.map((q, idx) => (
-              <View key={q.id || idx} style={styles.questionCard}>
-                <View style={styles.questionHeader}>
-                  <View style={styles.aiRow}>
-                    <Icon
-                      name="help-circle-outline"
-                      size={22}
-                      color={PRIMARY_COLOR}
-                    />
-                    <Text style={styles.questionText}>
-                      {idx + 1}. {q.question_text || q.question}
-                    </Text>
-                  </View>
-
-                  {/* Score Display */}
-                  {scores[q.id] && (
-                    <View style={styles.scoreBadge}>
-                      <Text style={styles.scoreText}>
-                        Điểm: {scores[q.id].score || "N/A"}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                <TextInput
-                  placeholder="Nhập câu trả lời của bạn..."
-                  placeholderTextColor="#999"
-                  value={answers[q.id] || ""}
-                  onChangeText={(text) => handleAnswerChange(q.id, text)}
-                  style={styles.answerInput}
-                  multiline
-                  numberOfLines={4}
-                />
-
-                <TouchableOpacity
-                  style={[
-                    styles.gradeButton,
-                    (!answers[q.id] || answers[q.id].trim() === "") &&
-                      styles.disabledGradeButton,
-                  ]}
-                  onPress={() => gradeSingleQuestion(q.id)}
-                  disabled={
-                    !answers[q.id] ||
-                    answers[q.id].trim() === "" ||
-                    gradingQuestions[q.id]
-                  }
-                >
-                  {gradingQuestions[q.id] ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Icon name="school-outline" size={16} color="#fff" />
-                  )}
-                  <Text style={styles.gradeButtonText}>
-                    {gradingQuestions[q.id] ? "Đang chấm..." : "Chấm điểm"}
-                  </Text>
-                </TouchableOpacity>
-
-                {scores[q.id]?.feedback && (
-                  <View style={styles.feedbackContainer}>
-                    <Text style={styles.feedbackTitle}>Phản hồi từ AI:</Text>
-                    <Text style={styles.feedbackText}>
-                      {scores[q.id].feedback}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ))}
-
             <TouchableOpacity
-              style={styles.submitButton}
-              onPress={gradeAllQuestions}
+              style={styles.uploadButton}
+              onPress={handleShowUploadOptions}
+              disabled={uploading}
             >
-              <Icon name="trophy-outline" size={20} color="#fff" />
-              <Text style={styles.submitText}>Chấm điểm tất cả</Text>
+              {uploading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <MaterialIcons name="cloud-upload" size={22} color="#fff" />
+                  <Text style={styles.uploadButtonText}>Tải lên CV</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.cvContainer}>
+            <TouchableOpacity style={styles.cvPreview} onPress={handleViewCV}>
+              {renderCVPreview()}
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      {cv && (
+        <View style={[styles.bottomActions, { paddingBottom: bottomPadding }]}>
+          <TouchableOpacity
+            style={styles.updateButton}
+            onPress={handleShowUploadOptions}
+          >
+            <MaterialIcons name="edit" size={20} color="#007bff" />
+            <Text style={styles.updateButtonText}>Cập nhật CV</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fullContainer: {
-    flex: 1,
-    backgroundColor: "#f6f8fa",
-  },
-  // --- APP BAR STYLES ---
-  appBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: PRIMARY_COLOR,
-    zIndex: 10,
-    paddingHorizontal: 20,
-    // Chiều cao cố định của nội dung header (không tính safe area top)
-    height: HEADER_HEIGHT, 
-  },
-  headerRow: {
+  container: { flex: 1, backgroundColor: "#fff" },
+  scrollView: { flex: 1 },
+  contentContainer: { flexGrow: 1, padding: 16 },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { marginTop: 12, color: "#666" },
+  emptyState: { alignItems: "center", paddingVertical: 60 },
+  emptyStateText: { fontSize: 18, fontWeight: "600", color: "#444" },
+  emptyStateSubtext: { fontSize: 14, color: "#777", marginVertical: 8 },
+  uploadButton: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    height: '100%', // Chiếm toàn bộ chiều cao của appBar
-  },
-  header: {
-    fontSize: 18, // Thu nhỏ font cho phù hợp với app bar
-    fontWeight: "700",
-    color: "#fff", // Đổi màu chữ thành trắng
-  },
-  resetButton: {
-    padding: 5, // Tăng padding để dễ chạm hơn
-  },
-  // --- MAIN CONTENT STYLES ---
-  container: {
-    flex: 1,
+    backgroundColor: "#00b14f",
+    borderRadius: 8,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    // marginTop đã được tính bằng insets.top + HEADER_HEIGHT ở trên
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    marginTop: 16,
   },
-  // ... (Giữ nguyên các styles còn lại)
-  label: { fontSize: 14, color: "#666", marginTop: 10 },
-  value: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 10 },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#ddd",
+  uploadButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  cvContainer: { alignItems: "center" },
+  cvTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 12,
+  },
+  cvPreview: {
+    width: screenWidth - 32,
+    height: (screenWidth - 32) * 1.4,
     borderRadius: 10,
-    paddingHorizontal: 10,
-    backgroundColor: "#fff",
-    marginBottom: 15,
-  },
-  tabContainer: {
-    flexDirection: "row",
-    marginVertical: 15,
-    borderWidth: 1,
-    borderColor: PRIMARY_COLOR,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#f4f4f4",
     justifyContent: "center",
-    gap: 8,
+    alignItems: "center",
+  },
+  previewImage: { width: "100%", height: "100%" },
+  bottomActions: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
     padding: 12,
-    backgroundColor: "#fff",
-  },
-  activeTabButton: {
-    backgroundColor: PRIMARY_COLOR,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: PRIMARY_COLOR,
-  },
-  activeTabText: {
-    color: "#fff",
-  },
-  button: {
-    backgroundColor: PRIMARY_COLOR,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 15,
-    borderRadius: 12,
-    marginVertical: 10,
-    elevation: 3,
-  },
-  disabledButton: { backgroundColor: "#ccc" },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  emptyState: {
-    alignItems: "center",
-    marginTop: 40,
-    opacity: 0.8,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: "#555",
-    textAlign: "center",
-    marginTop: 10,
-  },
-  questionsContainer: { marginTop: 20 },
-  subHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#222",
-    marginVertical: 10,
-  },
-  questionCard: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 12,
-    marginVertical: 8,
-    elevation: 2,
-  },
-  questionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  aiRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    flex: 1,
-  },
-  questionText: {
-    fontSize: 16,
-    color: "#222",
-    fontWeight: "600",
-    flex: 1,
-  },
-  scoreBadge: {
-    backgroundColor: PRIMARY_COLOR,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginLeft: 10,
-  },
-  scoreText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  answerInput: {
-    borderWidth: 1,
+    borderTopWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: "#f9f9f9",
-    textAlignVertical: "top",
-    minHeight: 100,
-    fontSize: 15,
-    marginBottom: 10,
+    gap: 10,
   },
-  gradeButton: {
-    backgroundColor: "#ff6b35",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  disabledGradeButton: {
-    backgroundColor: "#ccc",
-  },
-  gradeButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  feedbackContainer: {
-    backgroundColor: "#f0f7ff",
-    padding: 10,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: PRIMARY_COLOR,
-  },
-  feedbackTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: PRIMARY_COLOR,
-    marginBottom: 5,
-  },
-  feedbackText: {
-    fontSize: 13,
-    color: "#333",
-    lineHeight: 18,
-  },
-  submitButton: {
-    backgroundColor: PRIMARY_COLOR,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-    padding: 15,
-    borderRadius: 12,
-    marginVertical: 20,
-  },
-  submitText: { color: "#fff", fontSize: 17, fontWeight: "700" },
-  modalContainer: {
+  updateButton: {
     flex: 1,
+    borderColor: "#007bff",
+    borderWidth: 1,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 14,
   },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    elevation: 5,
-  },
-  modalText: {
-    fontSize: 16,
+  updateButtonText: {
+    color: "#007bff",
+    fontSize: 15,
     fontWeight: "600",
-    color: "#333",
-    marginTop: 15,
+    marginLeft: 6,
   },
-  modalSubText: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
-  },
-});
-
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: { fontSize: 16, color: "#333", padding: 10 },
-  inputAndroid: { fontSize: 16, color: "#333", padding: 10 },
 });
