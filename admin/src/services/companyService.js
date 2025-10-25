@@ -19,7 +19,7 @@ export const getCompanies = async (filters = {}) => {
       created_at,
       updated_at,
       users(email, username)
-    `)
+    `, { count: 'exact' })
     .order('created_at', { ascending: false })
 
   // Filter theo status (pending/accepted/rejected)
@@ -74,8 +74,6 @@ export const getPendingCompanies = async () => {
 export const reviewCompany = async (companyId, isApproved, adminNote = '') => {
   const newStatus = isApproved ? 'accepted' : 'rejected'
   
-  console.log('🔄 Updating company status:', { companyId, newStatus })
-  
   // CHỈ update status, KHÔNG động đến isverified
   const { data, error } = await supabase
     .from('employers')
@@ -86,10 +84,7 @@ export const reviewCompany = async (companyId, isApproved, adminNote = '') => {
     .eq('id', companyId)
     .select()
 
-  console.log('📊 Update result:', { data, error })
-
   if (error) {
-    console.error('❌ Update error:', error)
     throw error
   }
   

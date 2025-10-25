@@ -42,7 +42,6 @@ export const getJobs = async (filters = {}) => {
     const { data, error, count } = await query
 
     if (error) {
-      console.error('Error fetching jobs:', error)
       throw error
     }
 
@@ -59,10 +58,8 @@ export const getJobs = async (filters = {}) => {
       }
     })
 
-    console.log('Fetched jobs with applications:', processedData)
     return { data: processedData, error: null, count }
   } catch (error) {
-    console.error('Error in getJobs:', error)
     return { data: [], error, count: 0 }
   }
 }

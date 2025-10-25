@@ -26,7 +26,6 @@ import {
 } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import { getJobs, getJobStats } from '../../services/jobService'
-import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/vi'
@@ -45,17 +44,11 @@ const JobsListPage = () => {
     status: '',
     job_type: ''
   })
-  
-  const navigate = useNavigate()
 
   // Fetch jobs data
   const { data: jobsData, isLoading, error: jobsError } = useQuery({
     queryKey: ['jobs', filters],
-    queryFn: async () => {
-      const result = await getJobs(filters)
-      console.log('Jobs data:', result)
-      return result
-    },
+    queryFn: () => getJobs(filters),
     keepPreviousData: true
   })
 
@@ -65,18 +58,6 @@ const JobsListPage = () => {
     queryFn: getJobStats,
     refetchInterval: 60000
   })
-
-  // Log errors
-  React.useEffect(() => {
-    if (jobsError) {
-      console.error('Jobs error:', jobsError)
-    }
-    if (jobsData?.error) {
-      console.error('Jobs data error:', jobsData.error)
-    }
-  }, [jobsError, jobsData])
-
-
 
   const handleSearch = (value) => {
     setFilters(prev => ({ ...prev, search: value, page: 1 }))
