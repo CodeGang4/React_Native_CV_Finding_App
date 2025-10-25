@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 
 // Lấy danh sách users (ứng viên + nhà tuyển dụng)
 export const getUsers = async (filters = {}) => {
+  // Request exact count from Supabase so callers (UI) can get total for pagination
   let query = supabase
     .from('users')
     .select(`
@@ -12,7 +13,7 @@ export const getUsers = async (filters = {}) => {
       created_at,
       updated_at,
       username
-    `)
+    `, { count: 'exact' })
     .order('created_at', { ascending: false })
 
   // Apply filters

@@ -272,7 +272,7 @@ const CompaniesListPage = () => {
   return (
     <div>
       <Title level={2}>
-        Duyệt công ty đăng ký
+        Danh Sách Companies
         {pendingCount > 0 && (
           <Badge count={pendingCount} style={{ marginLeft: 8 }} />
         )}

@@ -459,7 +459,7 @@ const DashboardPage = () => {
   return (
     <div>
       <AntTitle level={2}>
-        Thống kê tổng quan
+        Thống Kê Tổng Quan
       </AntTitle>
       
       {/* Main Statistics Cards */}
@@ -639,7 +639,7 @@ const DashboardPage = () => {
             title={
               <Space>
                 <MdVisibility style={{ fontSize: '20px', color: '#1890ff' }} />
-                <span>Top 5 Jobs Nổi Bật Theo Lượt Xem</span>
+                <span>Top 5 Jobs Nổi Bật</span>
               </Space>
             }
             extra={

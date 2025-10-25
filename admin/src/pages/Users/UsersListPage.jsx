@@ -199,7 +199,7 @@ const UsersListPage = () => {
             pageSize: filters.limit,
             total: usersData?.count || 0,
             showSizeChanger: true,
-            showQuickJumper: true,
+            showQuickJumper: false,
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} của ${total} users`,
             onChange: handlePageChange,

@@ -310,7 +310,7 @@ const JobsListPage = () => {
             pageSize: filters.limit,
             total: jobsData?.count || 0,
             showSizeChanger: true,
-            showQuickJumper: true,
+            showQuickJumper: false,
             showTotal: (total, range) => 
               `${range[0]}-${range[1]} của ${total} jobs`,
             onChange: handlePageChange,
