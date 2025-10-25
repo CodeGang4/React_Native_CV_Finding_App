@@ -5,6 +5,7 @@ import { useNotifications } from "../../shared/contexts/NotificationContext";
 import { useJobActions } from "../../shared/hooks/useJobActions";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import NotificationDebug from "../../shared/components/NotificationDebug";
+import RateLimitMonitor from "../../components/debug/RateLimitMonitor";
 import { useState } from 'react';
 
 export default function NotificationsScreen() {
@@ -271,6 +272,9 @@ export default function NotificationsScreen() {
             />
           )
         )}
+        
+        {/* Rate Limit Monitor - Only visible in development */}
+        <RateLimitMonitor enabled={__DEV__} />
       </View>
     </SafeAreaView>
   );

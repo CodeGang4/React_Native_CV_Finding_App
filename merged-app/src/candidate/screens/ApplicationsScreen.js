@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import RateLimitMonitor from '../../components/debug/RateLimitMonitor';
 
 export default function ApplicationsScreen() {
     const [activeTab, setActiveTab] = useState('all');
@@ -133,6 +134,9 @@ export default function ApplicationsScreen() {
                     ))
                 )}
             </ScrollView>
+            
+            {/* Rate Limit Monitor - Only visible in development */}
+            <RateLimitMonitor enabled={__DEV__} />
         </View>
     );
 }

@@ -4,7 +4,7 @@ import ProfileScreen from "../screens/profile/ProfileScreen";
 import CVScreen from "../screens/profile/CVScreen";
 import EditProfile from "../screens/profile/EditProfile";
 import CVViewer from "../screens/profile/CVViewer";
-
+import UpgradeAccount from "../screens/profile/UpgradeAccount";
 const Stack = createStackNavigator();
 
 export default function ProfileStackNavigator() {
@@ -28,6 +28,14 @@ export default function ProfileStackNavigator() {
         component={CVViewer} 
         options={{ 
           title: "CV của bạn",
+          headerShown: true
+        }} 
+      />
+      <Stack.Screen 
+        name="UpgradeAccount" 
+        component={UpgradeAccount} 
+        options={{ 
+          title: "Nâng cấp tài khoản",
           headerShown: true
         }} 
       />

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import JobListSection from "../../components/JobListSection";
+import RateLimitMonitor from "../../../components/debug/RateLimitMonitor";
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -33,6 +34,9 @@ export default function CandidateHomeScreen({ navigation }) {
       </View>
 
       <JobListSection navigation={navigation} />
+      
+      {/* Rate Limit Monitor - Only visible in development */}
+      <RateLimitMonitor enabled={__DEV__} />
     </View>
   );
 }

@@ -116,6 +116,14 @@ export default function ProfileScreen() {
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("UpgradeAccount")}>
+        <MaterialIcons name="swap-horiz" size={24} color="#666" />
+        <Text style={styles.menuText}>
+          Nâng cấp tài khoản
+        </Text>
+        <MaterialIcons name="chevron-right" size={24} color="#ccc" />
+      </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("EditProfile")}
