@@ -9,7 +9,7 @@ const MemoizedJobCard = memo(JobCard, (prev, next) => {
   );
 });
 
-export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJobs = [] }) {
+export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJobs = [] ,scrollEnabled = true,}) {
   if (!jobs || jobs.length === 0) {
     return (
       <View style={{ marginTop: 20 }}>
@@ -34,6 +34,7 @@ export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJ
       initialNumToRender={6}
       windowSize={10}
       removeClippedSubviews
+      scrollEnabled={scrollEnabled}
     />
   );
 }

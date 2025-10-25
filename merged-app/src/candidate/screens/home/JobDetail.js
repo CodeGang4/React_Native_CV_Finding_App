@@ -16,7 +16,7 @@ import { useAuth } from "../../../shared/contexts/AuthContext";
 import useJobDetail from "../../../shared/hooks/useJobDetail";
 
 export default function JobDetailScreen({ route }) {
-  const { job } = route.params;
+  const { job, company: routeCompany } = route.params;
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -30,6 +30,7 @@ export default function JobDetailScreen({ route }) {
     handleApply,
     refresh,
   } = useJobDetail(job, user?.id);
+  const displayCompany = routeCompany || company;
 
   const bottomBarHeight = 60 + Math.max(insets.bottom, 16);
 
@@ -41,7 +42,10 @@ export default function JobDetailScreen({ route }) {
 
   const onApplyPress = async () => {
     if (!user?.id) {
-      Alert.alert("Thông báo", "Vui lòng đăng nhập để ứng tuyển công việc này.");
+      Alert.alert(
+        "Thông báo",
+        "Vui lòng đăng nhập để ứng tuyển công việc này."
+      );
       return;
     }
 
@@ -49,7 +53,10 @@ export default function JobDetailScreen({ route }) {
       await handleApply();
       Alert.alert("Thành công", "Bạn đã ứng tuyển công việc này!");
     } catch (error) {
-      Alert.alert("Lỗi", error.message || "Không thể ứng tuyển. Vui lòng thử lại sau.");
+      Alert.alert(
+        "Lỗi",
+        error.message || "Không thể ứng tuyển. Vui lòng thử lại sau."
+      );
     }
   };
 
@@ -69,9 +76,9 @@ export default function JobDetailScreen({ route }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.companyContainer}>
-          {company?.company_logo ? (
+          {displayCompany?.company_logo ? (
             <Image
-              source={{ uri: company.company_logo }}
+              source={{ uri: displayCompany.company_logo }}
               style={styles.companyLogo}
               resizeMode="contain"
             />
@@ -80,15 +87,19 @@ export default function JobDetailScreen({ route }) {
               <Text style={{ color: "#888" }}>No Logo</Text>
             </View>
           )}
+
           <View style={{ flex: 1 }}>
-            <Text style={styles.companyName}>{company?.company_name}</Text>
+            <Text style={styles.companyName}>
+              {displayCompany?.company_name}
+            </Text>
+
             <TouchableOpacity
-              onPress={() => openMap(company?.company_address)}
+              onPress={() => openMap(displayCompany?.company_address)}
               style={styles.inlineRow}
             >
-              <Icon name="location-outline" size={16} color="#00b14f" />
+              <Icon name="location-outline" size={25} color="#00b14f" />
               <Text style={styles.companyAddress}>
-                {company?.company_address || "Không rõ địa chỉ"}
+                {displayCompany?.company_address || "Không rõ địa chỉ"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -154,10 +165,7 @@ export default function JobDetailScreen({ route }) {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleToggleSave}
-        >
+        <TouchableOpacity style={styles.saveButton} onPress={handleToggleSave}>
           <Icon
             name={isSaved ? "heart" : "heart-outline"}
             size={24}
@@ -218,12 +226,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: { padding: 16, borderBottomWidth: 1, borderColor: "#eee" },
-  jobTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 8, color: "#111" },
-  salary: { fontSize: 16, color: "#00b14f", marginBottom: 6, fontWeight: "600" },
+  jobTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#111",
+  },
+  salary: {
+    fontSize: 16,
+    color: "#00b14f",
+    marginBottom: 6,
+    fontWeight: "600",
+  },
   position: { fontSize: 15, color: "#444", marginLeft: 6 },
   education: { fontSize: 15, color: "#444", marginLeft: 6 },
   quantity: { fontSize: 15, color: "#444", marginLeft: 6 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#222", marginBottom: 8 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#222",
+    marginBottom: 8,
+  },
   text: { fontSize: 15, color: "#333", lineHeight: 22 },
   appliedBadge: {
     flexDirection: "row",
@@ -235,7 +258,12 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: 8,
   },
-  appliedText: { fontSize: 14, color: "#00b14f", fontWeight: "500", marginLeft: 4 },
+  appliedText: {
+    fontSize: 14,
+    color: "#00b14f",
+    fontWeight: "500",
+    marginLeft: 4,
+  },
   bottomBar: {
     flexDirection: "row",
     alignItems: "flex-start",

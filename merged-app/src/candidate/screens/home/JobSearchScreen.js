@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,21 +8,36 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useIsFocused, useNavigation } from "@react-navigation/native";
+import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import JobListSection from "../../components/JobListSection";
 import processCV from "../../components/ScanCV";
 
 export default function JobSearchScreen() {
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState("");
+  const route = useRoute();
+  const isFocused = useIsFocused();
+
+  const initialQuery = route.params?.searchQuery || "";
+
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [location, setLocation] = useState("");
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [loadingAI, setLoadingAI] = useState(false);
 
   const { analyzeAndUpdateCV } = processCV();
 
+  useEffect(() => {
+    if (isFocused && initialQuery) {
+      setSearchTrigger((prev) => prev + 1);
+    }
+  }, [initialQuery, isFocused]);
+
   const handleSearch = () => {
+    if (!searchQuery.trim() && !location.trim()) {
+      Alert.alert("Vui lòng nhập từ khoá hoặc địa điểm để tìm kiếm.");
+      return;
+    }
     setSearchTrigger((prev) => prev + 1);
   };
 
@@ -32,10 +47,7 @@ export default function JobSearchScreen() {
       const aiResult = await analyzeAndUpdateCV();
 
       if (!aiResult) {
-        Alert.alert(
-          "Không thể gợi ý công việc",
-          "AI chưa phân tích được CV của bạn."
-        );
+        Alert.alert("Không thể gợi ý công việc", "AI chưa phân tích được CV của bạn.");
         return;
       }
 
@@ -113,6 +125,7 @@ export default function JobSearchScreen() {
         searchQuery={searchQuery}
         location={location}
         searchTrigger={searchTrigger}
+        navigation={navigation}
       />
     </View>
   );
@@ -137,7 +150,6 @@ const styles = StyleSheet.create({
     height: 45,
   },
   input: { flex: 1, marginLeft: 10, fontSize: 16 },
-
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -160,6 +172,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6, 
+    gap: 6,
   },
 });

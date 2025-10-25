@@ -27,15 +27,23 @@ export default function useJobs() {
           const company = await HomeApiService.getCompanyByEmployerId(id);
           companyMap[id] = company;
         } catch {
-          companyMap[id] = { company_name: "Không rõ công ty", company_logo: null };
+          companyMap[id] = {
+            company_name: "Không rõ công ty",
+            company_logo: null,
+          };
         }
       }
 
-      const jobsWithCompany = validJobs.map((job) => ({
-        ...job,
-        company_name: companyMap[job.employer_id]?.company_name || "Không rõ công ty",
-        company_logo: companyMap[job.employer_id]?.company_logo || null,
-      }));
+      const jobsWithCompany = validJobs.map((job) => {
+        const company = companyMap[job.employer_id] || {};
+        return {
+          ...job,
+          company_name:
+            company.company_name || company.name || "Không rõ công ty",
+          company_logo: company.company_logo || company.logo || null,
+          company_address: job.location ||company.company_address || "Không rõ địa chỉ",
+        };
+      });
 
       setJobs(jobsWithCompany);
     } catch (error) {

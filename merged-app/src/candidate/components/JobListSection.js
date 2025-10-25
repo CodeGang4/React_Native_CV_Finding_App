@@ -12,6 +12,10 @@ export default function JobListSection({
   searchQuery = "",
   location = "",
   searchTrigger = 0,
+  jobs: externalJobs = null,
+  savedJobs: externalSavedJobs = null,
+  refreshSavedJobs = null,
+  scrollEnabled = true,
 }) {
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -20,7 +24,10 @@ export default function JobListSection({
   const filteredJobs = useJobFilter(jobs, searchQuery, location, searchTrigger);
   const { refreshing, handleRefresh } = useRefresh([loadJobs, fetchSavedJobs]);
 
-  if (loading) {
+  const finalJobs = externalJobs || filteredJobs;
+  const finalSavedJobs = externalSavedJobs || savedJobs;
+
+  if (loading && !externalJobs) {
     return (
       <ActivityIndicator
         size="large"
@@ -33,13 +40,23 @@ export default function JobListSection({
   return (
     <View style={{ flex: 1 }}>
       <JobList
-        jobs={filteredJobs}
-        onJobPress={(job) => navigation.navigate("JobDetail", { job })}
+        jobs={finalJobs}
+        onJobPress={(job) => {
+          navigation.navigate("JobDetail", {
+            job,
+            company: {
+              company_name: job.company_name,
+              company_logo: job.company_logo,
+              company_address: job.company_address,
+            },
+          });
+        }}
         onFavoritePress={(job) => toggleSaveJob(job.id)}
-        savedJobs={savedJobs}
+        savedJobs={finalSavedJobs}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
+        scrollEnabled={scrollEnabled}
       />
     </View>
   );

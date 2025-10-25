@@ -9,7 +9,7 @@ export default function CandidateHomeScreen({ navigation }) {
 
   const quickAccessButtons = [
     { label: "Việc làm", icon: "work", color: "#00b14f", route: "JobSearchScreen" },
-    { label: "Công ty", icon: "business", color: "#007bff", route: "Companies" },
+    { label: "Công ty", icon: "business", color: "#007bff", route: "CompanyScreen" },
     { label: "CV", icon: "description", color: "#ffb400", route: "CVScreen" },
     { label: "Podcast", icon: "radio", color: "#ff4444", route: "Podcast" },
   ];

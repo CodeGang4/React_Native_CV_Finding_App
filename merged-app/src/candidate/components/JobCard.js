@@ -11,7 +11,7 @@ export default function JobCard({ job, onPress, onFavoritePress, isSaved }) {
             <Image
               source={{ uri: job.company_logo }}
               style={styles.logo}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           ) : (
             <View style={styles.placeholderLogo}>
