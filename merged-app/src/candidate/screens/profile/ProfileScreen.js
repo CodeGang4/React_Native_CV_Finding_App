@@ -1,4 +1,3 @@
-// app/screens/candidate/ProfileScreen.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -14,14 +13,16 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import CandidateApiService from "../../../shared/services/api/CandidateApiService";
+import { openGmail } from "../../../shared/utils/useOpenGmail";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, userRole, logout, switchRole } = useAuth();
+  const userEmail = user?.email;
+  console.log("User Email in ProfileScreen:", userEmail);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Hàm gọi API qua service
   const fetchProfile = async () => {
     if (!user?.id) return;
     setLoading(true);
@@ -109,7 +110,6 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Chỉnh sửa thông tin</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-      // Thêm sau nút "Chỉnh sửa thông tin" trong ScrollView
       <View style={styles.gridContainer}>
         <TouchableOpacity
           style={styles.gridItem}
@@ -137,7 +137,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={styles.gridItem}
-          onPress={() => navigation.navigate("Appointments")}
+          onPress={() => openGmail(userEmail)}
         >
           <MaterialIcons name="event" size={36} color="#007bff" />
           <Text style={styles.gridLabel}>Lịch hẹn</Text>
@@ -151,14 +151,14 @@ export default function ProfileScreen() {
         <Text style={styles.menuText}>Bảo mật</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
       </TouchableOpacity>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("Notifications")}
       >
         <MaterialIcons name="notifications" size={24} color="#666" />
         <Text style={styles.menuText}>Thông báo</Text>
         <MaterialIcons name="chevron-right" size={24} color="#ccc" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate("HelpCenter")}

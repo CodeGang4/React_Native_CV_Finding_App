@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -8,15 +8,14 @@ import {
 } from "../services/utils/saveJob.js";
 
 /**
- * Custom hook quản lý danh sách công việc đã lưu (saved jobs)
- * Dùng được cho nhiều màn hình (Home, Search, Detail, v.v)
+ Custom hook quản lý danh sách công việc đã lưu (saved jobs)
  */
 export default function useSavedJobs() {
   const { user } = useAuth();
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchSavedJobs = async () => {
+  const fetchSavedJobs = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
@@ -27,38 +26,41 @@ export default function useSavedJobs() {
       setSavedJobs(ids);
       console.log("Saved jobs loaded:", ids);
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách saved jobs:", error);
+      console.error("Error fetching saved jobs:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const toggleSaveJob = async (job) => {
-    if (!user?.id) {
-      Alert.alert("Lỗi", "Vui lòng đăng nhập để lưu công việc.");
-      return;
-    }
-
-    const isSaved = savedJobs.includes(job.id);
-    try {
-      if (isSaved) {
-        await handleUnsaveJob(job.id, user.id);
-        setSavedJobs((prev) => prev.filter((id) => id !== job.id));
-        console.log(`Unsave job ${job.id}`);
-      } else {
-        await handleSaveJob(job.id, user.id);
-        setSavedJobs((prev) => [...prev, job.id]);
-        console.log(`Saved job ${job.id}`);
+  const toggleSaveJob = useCallback(
+    async (jobId) => {
+      if (!user?.id) {
+        Alert.alert("Lỗi", "Vui lòng đăng nhập để lưu công việc.");
+        return;
       }
-    } catch (error) {
-      console.error("toggleSaveJob error:", error);
-      Alert.alert("Lỗi", "Không thể cập nhật trạng thái lưu công việc.");
-    }
-  };
+
+      const isSaved = savedJobs.includes(jobId);
+      try {
+        if (isSaved) {
+          await handleUnsaveJob(jobId, user.id);
+          setSavedJobs((prev) => prev.filter((id) => id !== jobId));
+          console.log(`Unsave job ${jobId}`);
+        } else {
+          await handleSaveJob(jobId, user.id);
+          setSavedJobs((prev) => [...prev, jobId]);
+          console.log(`Saved job ${jobId}`);
+        }
+      } catch (error) {
+        console.error("toggleSaveJob error:", error);
+        Alert.alert("Lỗi", "Không thể cập nhật trạng thái lưu công việc.");
+      }
+    },
+    [savedJobs, user?.id]
+  );
 
   useEffect(() => {
     fetchSavedJobs();
-  }, [user?.id]);
+  }, [fetchSavedJobs]);
 
   return { savedJobs, toggleSaveJob, fetchSavedJobs, loading };
 }

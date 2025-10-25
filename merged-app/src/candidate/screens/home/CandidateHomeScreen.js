@@ -1,11 +1,18 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import JobListSection from "../../components/JobListSection";
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
+
+  const quickAccessButtons = [
+    { label: "Việc làm", icon: "work", color: "#00b14f", route: "JobSearchScreen" },
+    { label: "Công ty", icon: "business", color: "#007bff", route: "Companies" },
+    { label: "CV", icon: "description", color: "#ffb400", route: "CVScreen" },
+    { label: "Podcast", icon: "radio", color: "#ff4444", route: "Podcast" },
+  ];
 
   return (
     <View style={styles.container}>
@@ -25,11 +32,19 @@ export default function CandidateHomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.greetingContainer}>
-        <Text style={styles.greeting}>
-          Xin chào, {user?.username || "Bạn"}!
-        </Text>
-        <Text style={styles.subtitle}>Sẵn sàng tìm công việc mơ ước?</Text>
+      <View style={styles.iconRowContainer}>
+        {quickAccessButtons.map((btn) => (
+          <TouchableOpacity
+            key={btn.label}
+            style={styles.iconButton}
+            onPress={() => navigation.navigate(btn.route)}
+          >
+            <View style={[styles.circle, { backgroundColor: btn.color }]}>
+              <MaterialIcons name={btn.icon} size={28} color="#fff" />
+            </View>
+            <Text style={styles.iconLabel}>{btn.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <JobListSection navigation={navigation} />
@@ -58,16 +73,28 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   searchPlaceholder: { fontSize: 16, color: "#888" },
-  greetingContainer: {
-    backgroundColor: "#00b14f",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+
+  iconRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#fff",
+    paddingVertical: 20,
+    marginBottom: 10,
   },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginTop: 10,
+  iconButton: {
+    alignItems: "center",
   },
-  subtitle: { fontSize: 16, color: "#fff", opacity: 0.9 },
+  circle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  iconLabel: {
+    color: "black",
+    fontSize: 14,
+    textAlign: "center",
+  },
 });

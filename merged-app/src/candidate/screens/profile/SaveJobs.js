@@ -1,4 +1,3 @@
-// app/screens/candidate/SaveJobs.js
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import JobListSection from "../../components/JobListSection";

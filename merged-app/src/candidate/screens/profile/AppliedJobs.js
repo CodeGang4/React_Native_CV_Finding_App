@@ -1,73 +1,9 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  Image,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-} from "react-native";
-import { useIsFocused } from "@react-navigation/native";
-import { useAuth } from "../../../shared/contexts/AuthContext";
-import ApplicationApiService from "../../../shared/services/api/ApplicationApiService";
-import HomeApiService from "../../../shared/services/api/HomeApiService";
+import React from "react";
+import { View, FlatList, Text, Image, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
+import useAppliedJobs from "../../../shared/hooks/useAppliedJobs";
 
 export default function AppliedJobs() {
-  const { user } = useAuth();
-  const isFocused = useIsFocused();
-
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false); 
-
-  const fetchAppliedJobs = async (force = false) => {
-    if (!user?.id) return;
-
-    if (hasLoaded && !force) return;
-
-    setLoading(true);
-    try {
-      const applications = await ApplicationApiService.getApplicationByCandidate(user.id);
-      const allJobs = await HomeApiService.getJobs();
-
-      const jobsWithDetails = await Promise.all(
-        applications.map(async (app) => {
-          const jobDetail = allJobs.find((job) => job.id === app.job_id) || {};
-          const company = await HomeApiService.getCompanyByEmployerId(app.employer_id);
-          return {
-            id: app.id,
-            title: jobDetail.title || "N/A",
-            salary: jobDetail.salary || "N/A",
-            location: jobDetail.location || "N/A",
-            companyName: company?.company_name || "N/A",
-            companyLogo: company?.company_logo || null,
-            status: app.status,
-          };
-        })
-      );
-
-      setJobs(jobsWithDetails);
-      setHasLoaded(true);
-    } catch (error) {
-      console.error("Error fetching applied jobs:", error);
-      Alert.alert("Lỗi", "Không thể lấy danh sách việc làm đã ứng tuyển.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isFocused) fetchAppliedJobs(false);
-  }, [isFocused]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchAppliedJobs(true);
-  };
+  const { jobs, loading, refreshing, handleRefresh } = useAppliedJobs();
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -86,10 +22,7 @@ export default function AppliedJobs() {
       <View style={styles.footer}>
         <Text style={styles.salary}>{item.salary}</Text>
         <Text
-          style={[
-            styles.status,
-            item.status === "pending" ? styles.pending : styles.other,
-          ]}
+          style={[styles.status, item.status === "pending" ? styles.pending : styles.other]}
         >
           {item.status.toUpperCase()}
         </Text>
@@ -126,7 +59,6 @@ export default function AppliedJobs() {
     />
   );
 }
-
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
