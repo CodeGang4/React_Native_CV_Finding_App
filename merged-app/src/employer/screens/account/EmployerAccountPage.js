@@ -21,8 +21,10 @@ import {
   registerCallbacks,
   unregisterCallbacks,
 } from "../../../shared/services/utils/callbackRegistry";
+import { useNavigation } from "@react-navigation/native";
 
 const EmployerAccountPage = () => {
+  const navigation = useNavigation();
   const { user } = useAuth();
   const {
     companyInfo,
@@ -361,12 +363,7 @@ const EmployerAccountPage = () => {
           <CompanyProfileCard
             companyInfo={displayCompanyInfo}
             loading={loading}
-            onUpgrade={() =>
-              Alert.alert(
-                "Nâng cấp",
-                "Tính năng nâng cấp tài khoản đang phát triển"
-              )
-            }
+            onUpgrade={() => navigation.navigate("UpgradeAccount")}
             onLogoUpdate={handleLogoUpdate}
           />
         </Animated.View>
