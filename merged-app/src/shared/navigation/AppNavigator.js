@@ -8,6 +8,7 @@ import SignupScreen from "../screens/auth/SignupScreen";
 import RoleSelectionScreen from "../screens/auth/RoleSelectionScreen";
 import CandidateNavigator from "../../candidate/navigation/CandidateNavigator";
 import EmployerTabNavigator from "../../employer/navigation/EmployerTabNavigator";
+import linking from "../services/DeepLinkService";
 
 const Stack = createStackNavigator();
 
@@ -19,7 +20,19 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer 
+      linking={linking}
+      fallback={<LoadingScreen />}
+      onReady={() => {
+        console.log('✅ Navigation ready with deep linking');
+      }}
+      onStateChange={(state) => {
+        // Log navigation state changes for debugging
+        if (__DEV__) {
+          console.log('📍 Navigation state changed');
+        }
+      }}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           // Auth screens

@@ -20,6 +20,7 @@ export default function SearchFiltersBar({
   onOpenAi,
   onOpenAIInsights,
   onOpenAISettings,
+  hasAccess = false,
   containerStyle,
 }) {
   return (
@@ -83,13 +84,29 @@ export default function SearchFiltersBar({
       <View style={styles.aiRow}>
         <View style={styles.aiButtonsContainer}>
           <TouchableOpacity
-            style={styles.aiInsightsButton}
+            style={[
+              styles.aiInsightsButton,
+              !hasAccess && styles.aiInsightsButtonLocked
+            ]}
             onPress={onOpenAIInsights}
           >
-            <MaterialIcons name="psychology" size={18} color="#4CAF50" />
-            <Text style={styles.aiInsightsButtonText}>
-              AI phân tích ứng viên nổi bật
+            <MaterialIcons 
+              name={hasAccess ? "psychology" : "lock"} 
+              size={18} 
+              color={hasAccess ? "#4CAF50" : "#FFA726"} 
+            />
+            <Text style={[
+              styles.aiInsightsButtonText,
+              !hasAccess && styles.aiInsightsButtonTextLocked
+            ]}>
+              {hasAccess 
+                ? "AI phân tích ứng viên nổi bật" 
+                : "AI phân tích ứng viên (Premium)"
+              }
             </Text>
+            {!hasAccess && (
+              <MaterialIcons name="workspace-premium" size={14} color="#FFD700" />
+            )}
           </TouchableOpacity>
 
           {/* <TouchableOpacity
@@ -171,12 +188,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#4CAF50",
+    gap: 6,
+  },
+  aiInsightsButtonLocked: {
+    backgroundColor: "#FFF3E0",
+    borderColor: "#FFA726",
   },
   aiInsightsButtonText: {
     color: "#4CAF50",
     fontWeight: "700",
-    marginLeft: 6,
     fontSize: 12,
+    flex: 1,
+  },
+  aiInsightsButtonTextLocked: {
+    color: "#FFA726",
   },
   aiSettingsButton: {
     width: 36,

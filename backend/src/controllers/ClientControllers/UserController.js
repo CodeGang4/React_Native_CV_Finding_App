@@ -14,12 +14,7 @@ class UserController {
                 return res.status(400).json({ error: error.message });
             }
 
-            // Redis log
-            try {
-                await redis.setEx(`log:getUserProfile:${userId}:${Date.now()}`, 60 * 60 * 24, JSON.stringify({ action: 'getUserProfile', userId, time: new Date().toISOString() }));
-            } catch (err) {
-                console.error('Redis log error (getUserProfile):', err);
-            }
+            
             res.status(200).json({ user: data });
         } catch (err) {
             res.status(500).json({ error: 'Server error' });

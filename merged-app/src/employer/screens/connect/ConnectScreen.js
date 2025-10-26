@@ -16,11 +16,15 @@ import CandidatePreviewSheet from "../../components/connect/CandidatePreviewShee
 import AiSuggestionsModal from "../../components/connect/AiSuggestionsModal";
 import AICandidateInsights from "../../components/connect/AICandidateInsights";
 import { AISettingsModal } from "../../../shared/components/AISettingsModal";
+import EmployerPremiumGate from "../../../shared/components/EmployerPremiumGate";
+import { useEmployerPremiumAccess } from "../../../shared/hooks/useEmployerPremiumAccess";
 import { colors } from "../../../shared/styles/colors";
 import ConnectCandidateService from "../../../shared/services/business/ConnectCandidateService";
 import AIService from "../../../shared/services/business/AIService";
 
 export default function ConnectScreen({ navigation }) {
+  const { hasAccess } = useEmployerPremiumAccess();
+  
   const [q, setQ] = useState("");
   const [level, setLevel] = useState("all"); // all | junior | mid | senior
   const [skills, setSkills] = useState([]); // selected skill tags
@@ -137,9 +141,28 @@ export default function ConnectScreen({ navigation }) {
           allSkills={allSkills}
           selectedSkills={skills}
           onToggleSkill={toggleSkill}
-          onOpenAi={() => setShowAi(true)}
-          onOpenAIInsights={() => setShowAIInsights(true)}
-          onOpenAISettings={() => setShowAISettings(true)}
+          onOpenAi={() => {
+            if (hasAccess) {
+              setShowAi(true);
+            } else {
+              navigation.navigate('EmployerUpgradeAccount');
+            }
+          }}
+          onOpenAIInsights={() => {
+            if (hasAccess) {
+              setShowAIInsights(true);
+            } else {
+              navigation.navigate('EmployerUpgradeAccount');
+            }
+          }}
+          onOpenAISettings={() => {
+            if (hasAccess) {
+              setShowAISettings(true);
+            } else {
+              navigation.navigate('EmployerUpgradeAccount');
+            }
+          }}
+          hasAccess={hasAccess}
           containerStyle={{ marginTop: -110 }}
         />
 
@@ -207,35 +230,53 @@ export default function ConnectScreen({ navigation }) {
           onSelectCandidate={(c) => setSelected(c)}
         />
 
-        {/* AI Suggestions Modal */}
-        <AiSuggestionsModal
-          visible={showAi}
-          candidates={aiTop}
-          onClose={() => setShowAi(false)}
-          onSelectCandidate={(c) => {
-            setSelected(c);
-            setShowAi(false);
-          }}
-        />
+        {/* AI Suggestions Modal - Premium Only */}
+        {hasAccess ? (
+          <AiSuggestionsModal
+            visible={showAi}
+            candidates={aiTop}
+            onClose={() => setShowAi(false)}
+            onSelectCandidate={(c) => {
+              setSelected(c);
+              setShowAi(false);
+            }}
+          />
+        ) : (
+          showAi && (
+            <EmployerPremiumGate 
+              feature="gợi ý ứng viên AI" 
+              showUpgradeButton={true} 
+            />
+          )
+        )}
 
-        {/* Enhanced AI Candidate Insights */}
-        <AICandidateInsights
-          visible={showAIInsights}
-          candidates={filtered}
-          onClose={() => setShowAIInsights(false)}
-          onSelectCandidate={(candidate) => {
-            setSelected(candidate);
-            setShowAIInsights(false);
-          }}
-          searchCriteria={{
-            requiredSkills: skills,
-            preferredSkills: [],
-            level: level,
-            query: q,
-            jobTitle: "",
-            industry: "",
-          }}
-        />
+        {/* Enhanced AI Candidate Insights - Premium Only */}
+        {hasAccess ? (
+          <AICandidateInsights
+            visible={showAIInsights}
+            candidates={filtered}
+            onClose={() => setShowAIInsights(false)}
+            onSelectCandidate={(candidate) => {
+              setSelected(candidate);
+              setShowAIInsights(false);
+            }}
+            searchCriteria={{
+              requiredSkills: skills,
+              preferredSkills: [],
+              level: level,
+              query: q,
+              jobTitle: "",
+              industry: "",
+            }}
+          />
+        ) : (
+          showAIInsights && (
+            <EmployerPremiumGate 
+              feature="phân tích ứng viên AI" 
+              showUpgradeButton={true} 
+            />
+          )
+        )}
 
         <InterviewNotificationModal
           visible={showInvite}
@@ -246,15 +287,24 @@ export default function ConnectScreen({ navigation }) {
           candidate={inviteCandidate}
         />
 
-        {/* AI Settings Modal */}
-        <AISettingsModal
-          visible={showAISettings}
-          onClose={() => setShowAISettings(false)}
-          onSave={() => {
-            // Reload AI services sau khi cấu hình
-            console.log("🔄 AI settings saved, reloading services...");
-          }}
-        />
+        {/* AI Settings Modal - Premium Only */}
+        {hasAccess ? (
+          <AISettingsModal
+            visible={showAISettings}
+            onClose={() => setShowAISettings(false)}
+            onSave={() => {
+              // Reload AI services sau khi cấu hình
+              console.log("🔄 AI settings saved, reloading services...");
+            }}
+          />
+        ) : (
+          showAISettings && (
+            <EmployerPremiumGate 
+              feature="cài đặt AI" 
+              showUpgradeButton={true} 
+            />
+          )
+        )}
       </View>
     </SafeAreaView>
   );

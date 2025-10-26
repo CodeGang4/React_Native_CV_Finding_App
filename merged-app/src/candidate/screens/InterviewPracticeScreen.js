@@ -12,17 +12,24 @@ import {
   Image,
 } from "react-native";
 import { useAuth } from "../../shared/contexts/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Audio } from "expo-av";
 
 import CandidateApiService from "../../shared/services/api/CandidateApiService";
+import UserApiService from "../../shared/services/api/UserApiService";
 import { QuestionApiService } from "../../shared/services/api/QuestionApiService";
 
 const PRIMARY_COLOR = "#00b14f";
 
 export default function InterviewPracticeScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
+
+  // Check if user has premium access
+  const [hasAccess, setHasAccess] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [industry, setIndustry] = useState("");
@@ -41,6 +48,52 @@ export default function InterviewPracticeScreen() {
   const [playingRecordings, setPlayingRecordings] = useState({});
 
   const soundRefs = useRef({});
+
+  useEffect(() => {
+    checkPremiumAccess();
+  }, []);
+
+  const checkPremiumAccess = async () => {
+    try {
+      setCheckingAccess(true);
+      
+      // Check user level from profile
+      const profile = await UserApiService.getUserById(user.id);
+      console.log('👤 User profile level:', profile.user?.level);
+      
+      if (profile.user?.level === 'premium') {
+        setHasAccess(true);
+        // Fetch industry info directly here instead of calling fetchProfile
+        await loadIndustryInfo();
+      } else {
+        setHasAccess(false);
+      }
+    } catch (error) {
+      console.error('❌ Error checking premium access:', error);
+      setHasAccess(false);
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
+
+  const loadIndustryInfo = async () => {
+    try {
+      const resData = await CandidateApiService.getCandidateById(user.id);
+
+      const prefs = resData.job_preferences || [];
+      const detectedIndustry =
+        Array.isArray(prefs) && prefs.length > 0
+          ? prefs[0].trim()
+          : "General";
+
+      setIndustry(detectedIndustry);
+    } catch (err) {
+      console.error("Lỗi khi lấy profile:", err.response?.data || err);
+      Alert.alert("Lỗi", "Không thể lấy thông tin hồ sơ người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -233,25 +286,37 @@ export default function InterviewPracticeScreen() {
         name: `recording_${questionId}_${Date.now()}.m4a`,
       };
 
+      console.log(`📤 Uploading audio for question ${questionId}...`);
       await QuestionApiService.uploadAudio(user.id, questionId, audioFile);
 
+      console.log(`🎤 Transcribing audio for question ${questionId}...`);
       const transcribeResult = await QuestionApiService.transcribeAudio(
         user.id,
         questionId
       );
 
-      if (transcribeResult.answer) {
+      console.log(`✅ Transcription result:`, transcribeResult);
+
+      if (transcribeResult && transcribeResult.answer) {
         setAnswers((prev) => ({
           ...prev,
           [questionId]: transcribeResult.answer,
         }));
         return transcribeResult.answer;
       } else {
-        throw new Error("Không thể chuyển đổi âm thanh thành văn bản.");
+        throw new Error("Không thể chuyển đổi âm thanh thành văn bản. Vui lòng thử lại.");
       }
     } catch (err) {
-      console.error("Lỗi khi chuyển đổi âm thanh:", err.response?.data || err);
-      throw err;
+      console.error("❌ Lỗi khi chuyển đổi âm thanh:", err);
+      
+      // More specific error messages
+      if (err.message.includes('Empty response')) {
+        throw new Error("Server không phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      } else if (err.message.includes('answer field')) {
+        throw new Error("Server trả về dữ liệu không hợp lệ. Vui lòng thử lại.");
+      } else {
+        throw new Error(err.message || "Lỗi không xác định khi chuyển đổi âm thanh.");
+      }
     }
   };
 
@@ -343,26 +408,47 @@ export default function InterviewPracticeScreen() {
 
       if (audioUri && (!answerText || answerText.trim() === "")) {
         setAiThinking(true);
+        console.log(`🎤 Transcribing audio before grading for question ${questionId}...`);
         transcribedText = await uploadAndTranscribeAudio(questionId);
+        console.log(`✅ Transcribed text:`, transcribedText);
       }
 
+      console.log(`📝 Grading question ${questionId} with answer:`, transcribedText);
       gradeResult = await QuestionApiService.gradeAnswer(
         user.id,
         questionId,
         transcribedText
       );
 
-      console.log("Grade result:", gradeResult);
+      console.log("✅ Grade result:", gradeResult);
+
+      if (!gradeResult) {
+        throw new Error("Server không trả về kết quả chấm điểm. Vui lòng thử lại.");
+      }
 
       setScores((prev) => ({
         ...prev,
         [questionId]: gradeResult,
       }));
+      
+      Alert.alert("Thành công", "Đã chấm điểm xong!");
     } catch (err) {
-      console.error("Lỗi khi chấm điểm:", err.response?.data || err);
-      const errorMessage =
-        err.response?.data?.message || "Lỗi kết nối khi chấm điểm.";
-      Alert.alert("Lỗi", `Không thể chấm điểm: ${errorMessage}`);
+      console.error("❌ Lỗi khi chấm điểm:", err);
+      
+      // More specific error messages
+      let errorMessage = "Không thể chấm điểm. Vui lòng thử lại.";
+      
+      if (err.message.includes('Empty response') || err.message.includes('không trả về')) {
+        errorMessage = "Server không phản hồi. Vui lòng kiểm tra kết nối mạng.";
+      } else if (err.message.includes('Server không phản hồi')) {
+        errorMessage = err.message;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      Alert.alert("Lỗi", errorMessage);
     } finally {
       setGradingQuestions((prev) => ({ ...prev, [questionId]: false }));
       setAiThinking(false);
@@ -470,6 +556,61 @@ export default function InterviewPracticeScreen() {
         <Text style={{ marginTop: 10, color: "#555" }}>
           Đang tải thông tin hồ sơ...
         </Text>
+      </View>
+    );
+  }
+
+  // Show loading while checking access
+  if (checkingAccess) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+        <Text style={styles.loadingText}>Đang kiểm tra quyền truy cập...</Text>
+      </View>
+    );
+  }
+
+  // Show premium required screen
+  if (!hasAccess) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <View style={styles.premiumCard}>
+          <Icon name="lock-closed" size={60} color="#ff6b35" />
+          <Text style={styles.premiumTitle}>Tính năng Premium</Text>
+          <Text style={styles.premiumDescription}>
+            Luyện phỏng vấn cùng AI là tính năng dành cho thành viên Premium.
+          </Text>
+          <View style={styles.premiumFeatures}>
+            <View style={styles.featureItem}>
+              <Icon name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+              <Text style={styles.featureText}>Câu hỏi phỏng vấn theo ngành</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Icon name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+              <Text style={styles.featureText}>AI chấm điểm tự động</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Icon name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+              <Text style={styles.featureText}>Ghi âm và phân tích</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Icon name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
+              <Text style={styles.featureText}>Phản hồi chi tiết</Text>
+            </View>
+          </View>
+          <TouchableOpacity 
+            style={styles.upgradeButton}
+            onPress={() => {
+              // Navigate to upgrade account screen
+              navigation.navigate('CandidateHome', { 
+                screen: 'UpgradeAccount' 
+              });
+            }}
+          >
+            <Icon name="diamond" size={20} color="#fff" />
+            <Text style={styles.upgradeButtonText}>Nâng cấp Premium</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -1105,6 +1246,80 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#666",
+  },
+  premiumCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    maxWidth: 350,
+    width: "100%",
+  },
+  premiumTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#333",
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  premiumDescription: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 25,
+  },
+  premiumFeatures: {
+    width: "100%",
+    marginBottom: 30,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 12,
+  },
+  featureText: {
+    fontSize: 15,
+    color: "#444",
+    flex: 1,
+  },
+  upgradeButton: {
+    backgroundColor: "#ff6b35",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    width: "100%",
+    shadowColor: "#ff6b35",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  upgradeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
   modalBackground: {
     flex: 1,

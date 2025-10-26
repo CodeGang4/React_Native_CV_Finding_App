@@ -2,3 +2,6 @@ node_modules/
 .env
 assets
 serviceAccountKey.json
+PAYMENT_API_DOCUMENTATION.md
+PAYMENT_BACKEND_README.md
+PAYMENT_SETUP.md

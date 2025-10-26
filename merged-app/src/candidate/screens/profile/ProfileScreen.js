@@ -13,6 +13,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import CandidateApiService from "../../../shared/services/api/CandidateApiService";
+import UserApiService from "../../../shared/services/api/UserApiService";
 import { openGmail } from "../../../shared/utils/useOpenGmail";
 
 export default function ProfileScreen() {
@@ -22,6 +23,23 @@ export default function ProfileScreen() {
   console.log("User Email in ProfileScreen:", userEmail);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [level,setLevel] = useState("");
+
+
+  useEffect( () => {
+     fetchUserLevel();
+  }, []);
+
+  const fetchUserLevel = async () => {
+    const profile = await UserApiService.getUserById(user.id);
+    console.log(' User profile level:', profile.user?.level);
+
+    if (profile.user?.level === 'premium') {
+      setLevel('premium');
+    } else {
+      setLevel('normal');
+    }
+  }
 
   const fetchProfile = async () => {
     if (!user?.id) return;
@@ -90,6 +108,9 @@ export default function ProfileScreen() {
         <Text style={styles.name}>{profile?.full_name || user?.email}</Text>
         <Text style={styles.role}>
           {userRole === "candidate" ? "Người tìm việc" : "Nhà tuyển dụng"}
+        </Text>
+        <Text style={styles.level}>
+          {level === "premium" ? "Tài khoản nâng cao" : "Tài khoản thường"}
         </Text>
       </View>
       <TouchableOpacity
@@ -314,4 +335,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+  level:{
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor:"#e9760bff",
+    color:"#fff",
+    borderRadius:12,
+    marginTop:5,
+    fontSize:16,
+    fontWeight:"600"
+  }
 });

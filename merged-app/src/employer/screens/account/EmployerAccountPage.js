@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
 import {
   View,
   StyleSheet,
@@ -17,13 +18,30 @@ import EditCompanyModal from "../../components/account/EditCompanyModal";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useCompanyInfo } from "../../../shared/hooks/useCompanyInfo";
 import { useEmployerJobs } from "../../../shared/hooks/useEmployerJobs";
+import { UserApiService } from "../../../shared/services/api/UserApiService";
 import {
   registerCallbacks,
   unregisterCallbacks,
 } from "../../../shared/services/utils/callbackRegistry";
 
 const EmployerAccountPage = () => {
+  const navigation = useNavigation();
   const { user } = useAuth();
+  const [level, setLevel] = useState("normal");
+  useEffect(() => {
+    fetchUserLevel();
+  }, []);
+
+  const fetchUserLevel = async () => {
+    const profile = await UserApiService.getUserById(user.id);
+    console.log(' User profile level:', profile.user?.level);
+
+    if (profile.user?.level === 'premium') {
+      setLevel('premium');
+    } else {
+      setLevel('normal');
+    }
+  }
   const {
     companyInfo,
     loading,
@@ -361,13 +379,9 @@ const EmployerAccountPage = () => {
           <CompanyProfileCard
             companyInfo={displayCompanyInfo}
             loading={loading}
-            onUpgrade={() =>
-              Alert.alert(
-                "Nâng cấp",
-                "Tính năng nâng cấp tài khoản đang phát triển"
-              )
-            }
+            onUpgrade={() => navigation.navigate('EmployerUpgradeAccount')}
             onLogoUpdate={handleLogoUpdate}
+            level={level}
           />
         </Animated.View>
 

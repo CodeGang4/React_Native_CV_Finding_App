@@ -31,8 +31,10 @@ class ApiClient {
   setAuthToken(token) {
     if (token) {
       this.defaultHeaders["Authorization"] = `Bearer ${token}`;
+      console.log('✅ [ApiClient] Auth token set:', token.substring(0, 20) + '...');
     } else {
       delete this.defaultHeaders["Authorization"];
+      console.log('❌ [ApiClient] Auth token cleared');
     }
   }
 
@@ -65,17 +67,32 @@ class ApiClient {
       ? config.url
       : `${this.baseURL}${config.url}`;
 
+    // Debug log for default headers
+    if (config.url.includes('/payment/')) {
+      console.log('🔧 [ApiClient] Before merge - defaultHeaders:', this.defaultHeaders);
+      console.log('🔧 [ApiClient] Before merge - config.headers:', config.headers);
+    }
+
     // Merge headers
     const headers = {
       ...this.defaultHeaders,
       ...config.headers,
     };
 
-    // Build request config
+    // Debug log for authentication
+    if (config.url.includes('/payment/')) {
+      console.log('🔐 [ApiClient] Payment request headers:', {
+        hasAuth: !!headers.Authorization,
+        authPreview: headers.Authorization ? headers.Authorization.substring(0, 30) + '...' : 'MISSING',
+        url: config.url
+      });
+    }
+
+    // Build request config - IMPORTANT: spread config first, then override headers
     let requestConfig = {
+      ...config,                  // Spread config properties first
       method: config.method || "GET",
-      headers,
-      ...config,
+      headers,                    // Then set merged headers (overrides config.headers)
     };
 
     // Apply request interceptors
@@ -111,6 +128,20 @@ class ApiClient {
       requestConfig.body = JSON.stringify(requestConfig.data);
     } else if (requestConfig.data) {
       requestConfig.body = requestConfig.data;
+    }
+
+    // Debug log before fetch
+    if (config.url.includes('/payment/')) {
+      console.log('🚀 [ApiClient] About to fetch:', {
+        url: requestConfig.url,
+        method: requestConfig.method,
+        hasBody: !!requestConfig.body,
+        bodyType: typeof requestConfig.body,
+        bodyPreview: requestConfig.body ? 
+          (typeof requestConfig.body === 'string' ? requestConfig.body.substring(0, 100) : JSON.stringify(requestConfig.body).substring(0, 100)) 
+          : 'NONE',
+        headers: requestConfig.headers,
+      });
     }
 
     try {
@@ -178,11 +209,33 @@ class ApiClient {
 
   async parseResponseData(response) {
     const contentType = response.headers.get("content-type");
+    
+    // Check if response has content
+    const contentLength = response.headers.get("content-length");
+    if (contentLength === "0") {
+      return null;
+    }
+
+    // Clone response to check if body is empty
+    const clonedResponse = response.clone();
+    const text = await clonedResponse.text();
+    
+    // If body is empty, return null instead of trying to parse
+    if (!text || text.trim() === "") {
+      console.warn('[ApiClient] Empty response body received');
+      return null;
+    }
 
     if (contentType && contentType.includes("application/json")) {
-      return await response.json();
+      try {
+        return await response.json();
+      } catch (error) {
+        console.error('[ApiClient] JSON parse error:', error.message);
+        console.error('[ApiClient] Response text:', text);
+        throw new Error(`Invalid JSON response: ${error.message}`);
+      }
     } else if (contentType && contentType.includes("text/")) {
-      return await response.text();
+      return text;
     } else {
       return await response.blob();
     }

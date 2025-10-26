@@ -39,36 +39,71 @@ export class QuestionApiService {
         answer: answerText
     };
 
-    const response = await apiClient.post(
-        `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
-        body
-    );
-    
-    return Array.isArray(response.data) ? response.data[0] : response.data;
+    try {
+      const response = await apiClient.post(
+          `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
+          body
+      );
+      
+      if (!response.data) {
+        throw new Error('Server returned empty response for grading');
+      }
+      
+      return Array.isArray(response.data) ? response.data[0] : response.data;
+    } catch (error) {
+      console.error('❌ [QuestionApiService] Error grading answer:', error);
+      throw error;
+    }
   }
 
   static async uploadAudio(userId, questionId, audioFile) {
     const formData = new FormData();
     formData.append('audio', audioFile);
 
-    const response = await apiClient.post(
-      `${this.clientEndpoint}/uploadAudio/${userId}/${questionId}`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    try {
+      const response = await apiClient.post(
+        `${this.clientEndpoint}/uploadAudio/${userId}/${questionId}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      if (!response.data) {
+        console.warn('⚠️ [QuestionApiService] Empty response from uploadAudio');
+        return { success: true, message: 'Audio uploaded successfully' };
       }
-    );
-    return response.data;
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ [QuestionApiService] Error uploading audio:', error);
+      throw error;
+    }
   }
 
   static async transcribeAudio(userId, questionId) {
-    const response = await apiClient.post(
-      `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
-    );
-    
-    return Array.isArray(response.data) ? response.data[0] : response.data;
+    try {
+      const response = await apiClient.post(
+        `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
+      );
+      
+      if (!response.data) {
+        throw new Error('Server returned empty response for transcription');
+      }
+      
+      const data = Array.isArray(response.data) ? response.data[0] : response.data;
+      
+      if (!data.answer) {
+        throw new Error('Transcription response missing answer field');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('❌ [QuestionApiService] Error transcribing audio:', error);
+      throw error;
+    }
   }
 
 

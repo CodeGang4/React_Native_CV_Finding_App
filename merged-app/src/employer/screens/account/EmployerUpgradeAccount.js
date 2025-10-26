@@ -14,39 +14,40 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PaymentApiService from '../../../shared/services/api/PaymentApiService';
 
-export default function UpgradeAccount({ navigation }) {
+export default function EmployerUpgradeAccount({ navigation }) {
     const [loading, setLoading] = useState(false);
     
     const plan = {
-        name: 'Premium',
-        price: 4900, // $49.00 in cents
+        name: 'Employer Premium',
+        price: 9900, // $99.00 in cents
         currency: 'usd',
-        period: '1 năm',
-        displayPrice: '49.00 USD',
+        period: '1 tháng',
+        displayPrice: '99.00 USD',
     };
 
     const handleUpgrade = async () => {
         // Use native payment screen for better UX
-        navigation.navigate('NativePayment');
+        navigation.navigate('EmployerNativePayment');
     };
 
     const handleViewPaymentHistory = () => {
-        navigation.navigate('PaymentHistory');
+        navigation.navigate('EmployerPaymentHistory');
     };
     
     const features = [
-        "Phân tích mức độ cạnh tranh so với ứng viên khác không giới hạn",
-        "Ưu tiên đẩy Top hiển thị với NTD 1 lần/ngày",
-        "Truy cập kho CV, Cover Letter cao cấp",
-        "Tạo và quản lý tối đa 12 CV và Cover Letter",
-        "Gói quà tặng học tập từ đối tác Gitiho",
-        "Chat trực tiếp với nhà tuyển dụng",
-        "Thực hành luyện tập phỏng vấn với AI"
+        "Đăng tin tuyển dụng không giới hạn",
+        "Ưu tiên hiển thị tin tuyển dụng",
+        "Truy cập database ứng viên cao cấp",
+        "Phân tích thống kê chi tiết ứng viên",
+        "Chat trực tiếp với ứng viên",
+        "AI gợi ý ứng viên phù hợp",
+        "Quản lý nhiều vị trí tuyển dụng",
+        "Báo cáo hiệu suất tuyển dụng"
     ];
 
     return (
         <LinearGradient
-            colors={['#00563B', '#1a4d3e', '#2a4756', '#3a3d5c']}
+            colors={['#1E3A8A', '#3B82F6', '#06B6D4', '#10B981']}
             style={styles.container}
         >
             <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -68,14 +69,14 @@ export default function UpgradeAccount({ navigation }) {
                     {/* Title Section */}
                     <View style={styles.titleSection}>
                         <Text style={styles.title}>Nâng cấp tài khoản</Text>
-                        <Text style={styles.subtitle}>Mở khóa quyền lợi ứng viên Premium</Text>
+                        <Text style={styles.subtitle}>Mở khóa công cụ tuyển dụng chuyên nghiệp</Text>
                     </View>
 
-                    {/* Premium Plan Card */}
+                    {/* Employer Premium Plan Card */}
                     <View style={styles.planCard}>
-                        {/* Diamond Icon */}
-                        <View style={styles.diamondContainer}>
-                            <Text style={styles.diamondEmoji}>💎</Text>
+                        {/* Crown Icon */}
+                        <View style={styles.crownContainer}>
+                            <Text style={styles.crownEmoji}>👑</Text>
                         </View>
 
                         {/* Plan Name */}
@@ -92,7 +93,7 @@ export default function UpgradeAccount({ navigation }) {
                             {features.map((feature, index) => (
                                 <View key={index} style={styles.featureItem}>
                                     <View style={styles.checkIconContainer}>
-                                        <Ionicons name="checkmark-circle" size={24} color="#00b14f" />
+                                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
                                     </View>
                                     <Text style={styles.featureText}>{feature}</Text>
                                 </View>
@@ -107,7 +108,7 @@ export default function UpgradeAccount({ navigation }) {
                         disabled={loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="#00b14f" size="small" />
+                            <ActivityIndicator color="#1E3A8A" size="small" />
                         ) : (
                             <Text style={styles.upgradeButtonText}>Nâng cấp ngay</Text>
                         )}
@@ -171,21 +172,21 @@ const styles = StyleSheet.create({
     },
     planCard: {
         marginHorizontal: 16,
-        backgroundColor: 'rgba(30, 50, 50, 0.8)',
+        backgroundColor: 'rgba(30, 50, 80, 0.8)',
         borderRadius: 20,
         padding: 24,
         borderWidth: 1,
-        borderColor: 'rgba(0, 177, 79, 0.3)',
+        borderColor: 'rgba(16, 185, 129, 0.3)',
     },
-    diamondContainer: {
+    crownContainer: {
         alignItems: 'center',
         marginBottom: 16,
     },
-    diamondEmoji: {
+    crownEmoji: {
         fontSize: 80,
     },
     planName: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
     price: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#00b14f',
+        color: '#10B981',
     },
     period: {
         fontSize: 16,
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
     upgradeButtonText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#00b14f',
+        color: '#1E3A8A',
     },
     upgradeButtonDisabled: {
         opacity: 0.6,

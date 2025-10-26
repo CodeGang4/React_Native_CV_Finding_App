@@ -8,10 +8,18 @@ import UpgradeAccount from "../screens/profile/UpgradeAccount";
 import AppliedJobs from "../screens/profile/AppliedJobs";
 import SaveJobs from "../screens/profile/SaveJobs";
 import JobDetailScreen from "../screens/home/JobDetail";
+import PaymentSuccessScreen from "../../shared/screens/payment/PaymentSuccessScreen";
+import PaymentFailedScreen from "../../shared/screens/payment/PaymentFailedScreen";
+import PaymentHistoryScreen from "../../shared/screens/payment/PaymentHistoryScreen";
+import NativePaymentScreen from "../../shared/screens/payment/NativePaymentScreen";
+import { useDeepLinking } from "../../shared/services/DeepLinkService";
 
 const Stack = createStackNavigator();
 
 export default function ProfileStackNavigator() {
+  // Setup deep linking handler
+  useDeepLinking();
+
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -40,8 +48,17 @@ export default function ProfileStackNavigator() {
         component={UpgradeAccount} 
         options={{ 
           title: "Nâng cấp tài khoản",
-          headerShown: true
+          headerShown: false
         }} 
+      />
+      <Stack.Screen
+        name="NativePayment"
+        component={NativePaymentScreen}
+        options={{ 
+          title: "Thanh toán",
+          headerShown: false,
+          presentation: 'modal',
+        }}
       />
       <Stack.Screen 
         name="EditProfile" 
@@ -65,6 +82,32 @@ export default function ProfileStackNavigator() {
         name="JobDetail"
         component={JobDetailScreen}
         options={{ title: "Chi tiết công việc" }}
+      />
+      <Stack.Screen
+        name="PaymentSuccess"
+        component={PaymentSuccessScreen}
+        options={{ 
+          title: "Thanh toán thành công",
+          headerShown: false,
+          gestureEnabled: false, // Prevent swipe back
+        }}
+      />
+      <Stack.Screen
+        name="PaymentFailed"
+        component={PaymentFailedScreen}
+        options={{ 
+          title: "Thanh toán thất bại",
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+      <Stack.Screen
+        name="PaymentHistory"
+        component={PaymentHistoryScreen}
+        options={{ 
+          title: "Lịch sử thanh toán",
+          headerShown: true,
+        }}
       />
     </Stack.Navigator>
   );

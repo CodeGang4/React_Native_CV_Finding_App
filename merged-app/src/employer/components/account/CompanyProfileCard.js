@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useEffect} from "react";
 import {
   View,
   Text,
@@ -10,13 +10,19 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+// import { UserApiService } from "../../../shared/services/api/UserApiService";
 
 export default function CompanyProfileCard({
   companyInfo,
   loading = false,
   onUpgrade,
   onLogoUpdate,
+  level,
 }) {
+
+
+
+
   const handleSelectImage = async () => {
     try {
       // Yêu cầu quyền truy cập thư viện ảnh
@@ -95,11 +101,40 @@ export default function CompanyProfileCard({
           <Text style={styles.companyEmployees}>
             {loading ? "..." : companyInfo.employees}
           </Text>
+          <View style={styles.levelContainer}>
+            <View style={[
+              styles.levelBadge, 
+              level === 'premium' ? styles.premiumBadge : styles.basicBadge
+            ]}>
+              <MaterialIcons 
+                name={level === 'premium' ? "star" : "account-circle"} 
+                size={14} 
+                color="#fff" 
+                style={styles.levelIcon}
+              />
+              <Text style={styles.levelText}>
+                {level === 'premium' ? "Premium" : "Cơ bản"}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
-      <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
-        <Text style={styles.upgradeButtonText}>Nâng cấp tài khoản</Text>
-      </TouchableOpacity>
+      {level !== "premium" ? (
+        <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
+          <MaterialIcons name="upgrade" size={16} color="#4CAF50" style={{ marginRight: 6 }} />
+          <Text style={styles.upgradeButtonText}>Nâng cấp Premium</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity 
+          style={[styles.upgradeButton, styles.premiumButton]} 
+          onPress={() => {Alert.alert("Thông tin","Tài khoản của bạn đã được nâng cấp lên Premium.")}}
+        >
+          <MaterialIcons name="verified" size={16} color="#FFD700" style={{ marginRight: 6 }} />
+          <Text style={[styles.upgradeButtonText, styles.premiumButtonText]}>
+            Tài khoản Premium
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -165,12 +200,66 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: "#f5f5f5",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 8,
     alignItems: "center",
     marginHorizontal: 0,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  upgradeButtonText: { fontSize: 14, fontWeight: "600", color: "#333" },
+  upgradeButtonText: { 
+    fontSize: 14, 
+    fontWeight: "600", 
+    color: "#4CAF50" 
+  },
+  premiumButton: {
+    backgroundColor: '#FFF8E1',
+    borderColor: '#FFD700',
+  },
+  premiumButtonText: {
+    color: '#B8860B',
+  },
+
+  // Level styling
+  levelContainer: {
+    marginTop: 8,
+  },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  premiumBadge: {
+    backgroundColor: '#FFD700', // Gold color for premium
+    borderWidth: 1,
+    borderColor: '#FFA500',
+  },
+  basicBadge: {
+    backgroundColor: '#6B7280', // Gray color for basic
+    borderWidth: 1,
+    borderColor: '#4B5563',
+  },
+  levelIcon: {
+    marginRight: 4,
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });

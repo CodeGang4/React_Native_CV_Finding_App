@@ -5,6 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import * as LocalAuthentication from "expo-local-authentication";
 import { supabase } from "../../../supabase/config";
 import JobNotificationHelper from "../utils/JobNotificationHelper";
+import apiClient from "../services/api/ApiClient";
 
 const AuthContext = createContext();
 const API = Constants.expoConfig.extra.API;
@@ -22,7 +23,16 @@ export const AuthProvider = ({ children }) => {
         const role = await SecureStore.getItemAsync("user_role");
         const userData = await SecureStore.getItemAsync("user_data");
 
+        console.log('🔍 [AuthContext] Checking auth state:', {
+          hasToken: !!token,
+          hasRole: !!role,
+          hasUserData: !!userData
+        });
+
         if (token && role && userData) {
+          // Set token in API client for all subsequent requests
+          apiClient.setAuthToken(token);
+          
           // Verify token with backend
           const response = await fetch(`${API}/client/auth/verify`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -32,13 +42,17 @@ export const AuthProvider = ({ children }) => {
             const parsedUserData = JSON.parse(userData);
             setUser(parsedUserData);
             setUserRole(role);
+            console.log('✅ [AuthContext] User authenticated:', parsedUserData.email);
           } else {
+            console.warn('⚠️ [AuthContext] Token verification failed, clearing data');
             // Token invalid, clear stored data
             await clearStoredData();
           }
+        } else {
+          console.log('ℹ️ [AuthContext] No stored credentials found');
         }
       } catch (error) {
-        console.log("Auth check error:", error);
+        console.log("❌ [AuthContext] Auth check error:", error);
         await clearStoredData();
       } finally {
         setLoading(false);
@@ -49,6 +63,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const clearStoredData = async () => {
+    // Clear token from API client
+    apiClient.setAuthToken(null);
+    
+    // Clear SecureStore
     await SecureStore.deleteItemAsync("user_token");
     await SecureStore.deleteItemAsync("user_role");
     await SecureStore.deleteItemAsync("user_data");
@@ -89,14 +107,16 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
 
       if (res.ok && data.user) {
+        const token = data.token || "dummy_token";
+        
+        // Set token in API client IMMEDIATELY for all subsequent requests
+        apiClient.setAuthToken(token);
+        
         setUser(data.user);
         setUserRole(data.user.role || role); // Use the selected role or fallback to user.role
 
         // Store user data securely
-        await SecureStore.setItemAsync(
-          "user_token",
-          data.token || "dummy_token"
-        );
+        await SecureStore.setItemAsync("user_token", token);
         await SecureStore.setItemAsync("user_role", data.user.role || role);
         await SecureStore.setItemAsync("user_data", JSON.stringify(data.user));
 
