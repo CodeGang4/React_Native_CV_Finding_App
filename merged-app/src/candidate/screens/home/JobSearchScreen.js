@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from "@expo/vector-icons";
 import JobListSection from "../../components/JobListSection";
 import processCV from "../../components/ScanCV";
@@ -17,9 +18,13 @@ export default function JobSearchScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const isFocused = useIsFocused();
+  const insets = useSafeAreaInsets();
 
   const initialQuery = route.params?.searchQuery || "";
 
+  // Tách biệt giá trị input và giá trị tìm kiếm
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [locationInput, setLocationInput] = useState("");
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [location, setLocation] = useState("");
   const [searchTrigger, setSearchTrigger] = useState(0);
@@ -29,15 +34,21 @@ export default function JobSearchScreen() {
 
   useEffect(() => {
     if (isFocused && initialQuery) {
+      setSearchInput(initialQuery);
+      setSearchQuery(initialQuery);
       setSearchTrigger((prev) => prev + 1);
     }
   }, [initialQuery, isFocused]);
 
   const handleSearch = () => {
-    if (!searchQuery.trim() && !location.trim()) {
+    if (!searchInput.trim() && !locationInput.trim()) {
       Alert.alert("Vui lòng nhập từ khoá hoặc địa điểm để tìm kiếm.");
       return;
     }
+    
+    // Chỉ cập nhật giá trị tìm kiếm khi bấm nút
+    setSearchQuery(searchInput);
+    setLocation(locationInput);
     setSearchTrigger((prev) => prev + 1);
   };
 
@@ -60,6 +71,8 @@ export default function JobSearchScreen() {
         return;
       }
 
+      // Cập nhật cả input và search query khi dùng AI
+      setSearchInput(aiKeywords);
       setSearchQuery(aiKeywords);
       setSearchTrigger((prev) => prev + 1);
     } catch (err) {
@@ -71,15 +84,16 @@ export default function JobSearchScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.searchSection}>
         <View style={styles.searchInput}>
           <MaterialIcons name="search" size={20} color="#666" />
           <TextInput
             style={styles.input}
             placeholder="Tìm kiếm công việc hoặc công ty..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={searchInput}
+            onChangeText={setSearchInput}
+            onSubmitEditing={handleSearch} // Cho phép search bằng nút Enter
           />
         </View>
 
@@ -88,8 +102,9 @@ export default function JobSearchScreen() {
           <TextInput
             style={styles.input}
             placeholder="Địa điểm..."
-            value={location}
-            onChangeText={setLocation}
+            value={locationInput}
+            onChangeText={setLocationInput}
+            onSubmitEditing={handleSearch} // Cho phép search bằng nút Enter
           />
         </View>
 
@@ -121,18 +136,27 @@ export default function JobSearchScreen() {
         </View>
       </View>
 
-      <JobListSection
-        searchQuery={searchQuery}
-        location={location}
-        searchTrigger={searchTrigger}
-        navigation={navigation}
-      />
+      <View style={styles.jobListContainer}>
+        <JobListSection
+          searchQuery={searchQuery}
+          location={location}
+          searchTrigger={searchTrigger}
+          navigation={navigation}
+          scrollEnabled={true}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#f5f5f5" 
+  },
+  jobListContainer: {
+    flex: 1,
+  },
   searchSection: {
     backgroundColor: "#fff",
     padding: 20,

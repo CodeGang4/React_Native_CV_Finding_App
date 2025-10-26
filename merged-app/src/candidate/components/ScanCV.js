@@ -49,15 +49,58 @@ export default function useCVAnalyzer() {
       console.log("Gemini phân tích thành công");
       console.log("KẾT QUẢ PHÂN TÍCH (CHƯA CẬP NHẬT):", JSON.stringify(aiResult, null, 2));
 
-      console.log("Phân tích hoàn thành! (Chưa cập nhật database)");
-      return aiResult;
+      // CẬP NHẬT DỮ LIỆU VÀO DATABASE
+      console.log("Đang cập nhật dữ liệu vào database...");
+      const updateSuccess = await updateCandidateWithAnalysis(user.id, aiResult);
+      
+      if (updateSuccess) {
+        console.log("Cập nhật database thành công!");
+        return aiResult;
+      } else {
+        console.error("Lỗi khi cập nhật database");
+        return null;
+      }
 
     } catch (error) {
       console.error("Lỗi trong quá trình phân tích CV:", error.message);
+      return null;
     }
   };
 
   return { analyzeAndUpdateCV };
+}
+
+async function updateCandidateWithAnalysis(candidateId, aiResult) {
+  try {
+    const updateData = {
+      education: aiResult.education || "",
+      experience: aiResult.experience || "",
+      skills: Array.isArray(aiResult.skills) ? aiResult.skills : [],
+      job_preferences: Array.isArray(aiResult.job_preferences) ? aiResult.job_preferences : []
+    };
+
+    console.log("Dữ liệu cập nhật:", JSON.stringify(updateData, null, 2));
+    const response = await CandidateApiService.updateCandidateProfile(candidateId, updateData);
+    
+    if (response && response.id) { 
+      console.log("Cập nhật candidate thành công!");
+      console.log("Dữ liệu đã cập nhật:", JSON.stringify(response, null, 2));
+      return true;
+    } else {
+      console.error("Lỗi từ API khi cập nhật candidate:", response);
+      return false;
+    }
+
+  } catch (error) {
+    console.error("Lỗi khi cập nhật candidate:", error.message);
+    
+    if (error.response) {
+      console.error("Response error:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
+    
+    return false;
+  }
 }
 
 async function extractTextFromCVWithOCR(cvUrl) {

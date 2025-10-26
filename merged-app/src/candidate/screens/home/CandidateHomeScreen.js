@@ -1,17 +1,35 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import JobListSection from "../../components/JobListSection";
+import CompanyListSection from "../../components/CompanyListSection";
+import PodcastListSection from "../../components/PodcastListSection";
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
 
   const quickAccessButtons = [
-    { label: "Việc làm", icon: "work", color: "#00b14f", route: "JobSearchScreen" },
-    { label: "Công ty", icon: "business", color: "#007bff", route: "CompanyScreen" },
-    { label: "CV", icon: "description", color: "#ffb400", route: "CVScreen" },
-    { label: "Podcast", icon: "radio", color: "#ff4444", route: "Podcast" },
+    {
+      label: "Việc làm",
+      icon: "work",
+      color: "#65cb93ff",
+      route: "JobSearchScreen",
+    },
+    {
+      label: "Công ty",
+      icon: "business",
+      color: "#65cb93ff",
+      route: "CompanyScreen",
+    },
+    { label: "CV", icon: "description", color: "#65cb93ff", route: "CVScreen" },
+    { label: "Podcast", icon: "radio", color: "#65cb93ff", route: "Podcast" },
   ];
 
   return (
@@ -32,30 +50,73 @@ export default function CandidateHomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.iconRowContainer}>
-        {quickAccessButtons.map((btn) => (
-          <TouchableOpacity
-            key={btn.label}
-            style={styles.iconButton}
-            onPress={() => navigation.navigate(btn.route)}
-          >
-            <View style={[styles.circle, { backgroundColor: btn.color }]}>
-              <MaterialIcons name={btn.icon} size={28} color="#fff" />
-            </View>
-            <Text style={styles.iconLabel}>{btn.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+      >
+        <View style={styles.iconRowContainer}>
+          {quickAccessButtons.map((btn) => (
+            <TouchableOpacity
+              key={btn.label}
+              style={styles.iconButton}
+              onPress={() => navigation.navigate(btn.route)}
+            >
+              <View style={[styles.circle, { backgroundColor: btn.color }]}>
+                <MaterialIcons name={btn.icon} size={28} color="#fff" />
+              </View>
+              <Text style={styles.iconLabel}>{btn.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <JobListSection navigation={navigation} />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Việc làm hấp dẫn</Text>
+          <TouchableOpacity
+            style={styles.seeMoreButton}
+            onPress={() => navigation.navigate("JobSearchScreen")}
+          >
+            <Text style={styles.seeMoreText}>Xem thêm</Text>
+            <Ionicons name="chevron-forward" size={16} color="#00b14f" />
+          </TouchableOpacity>
+        </View>
+        <JobListSection navigation={navigation} limit={3} />
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Công ty hàng đầu</Text>
+          <TouchableOpacity
+            style={styles.seeMoreButton}
+            onPress={() => navigation.navigate("CompanyScreen")}
+          >
+            <Text style={styles.seeMoreText}>Xem thêm</Text>
+            <Ionicons name="chevron-forward" size={16} color="#00b14f" />
+          </TouchableOpacity>
+        </View>
+        <CompanyListSection limit={2} />
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Podcast nổi bật</Text>
+          <TouchableOpacity
+            style={styles.seeMoreButton}
+            onPress={() => navigation.navigate("Podcast")}
+          >
+            <Text style={styles.seeMoreText}>Xem thêm</Text>
+            <Ionicons name="chevron-forward" size={16} color="#00b14f" />
+          </TouchableOpacity>
+        </View>
+        <PodcastListSection limit={3} />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
+  scrollView: {
+    flex: 1,
+  },
   searchBarContainer: {
-    backgroundColor: "#00b14f",
+    backgroundColor: "#16c765ff",
     paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 12,
@@ -73,11 +134,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   searchPlaceholder: { fontSize: 16, color: "#888" },
-
   iconRowContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#fff",
+    backgroundColor: "#16c765ff",
     paddingVertical: 20,
     marginBottom: 10,
   },
@@ -93,8 +153,32 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   iconLabel: {
-    color: "black",
+    color: "#fff",
     fontSize: 14,
     textAlign: "center",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  seeMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  seeMoreText: {
+    fontSize: 14,
+    color: "#00b14f",
+    fontWeight: "500",
+    marginRight: 4,
   },
 });

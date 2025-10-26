@@ -5,13 +5,13 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
-  Image,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import useVerifiedCompanies from "../../../shared/hooks/useVerifiedCompanies";
+import CompanyCard from "../../components/CompanyCard";
 
 export default function CompanyScreen() {
   const navigation = useNavigation();
@@ -24,21 +24,6 @@ export default function CompanyScreen() {
     await search(query.trim());
     setIsSearching(false);
   };
-
-  const renderCompanyCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate("CompanyDetail", { company: item })}
-    >
-      <Image source={{ uri: item.logo }} style={styles.logo} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.industry}>{item.industry}</Text>
-        <Text style={styles.address}>{item.address}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
@@ -64,64 +49,68 @@ export default function CompanyScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#00b14f" />}
+      {loading && <ActivityIndicator size="large" color="#00b14f" style={styles.loading} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
         data={filteredCompanies}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCompanyCard}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => <CompanyCard company={item} />}
+        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           !loading && (
-            <Text style={{ textAlign: "center", color: "#666", marginTop: 20 }}>
+            <Text style={styles.emptyText}>
               Không tìm thấy công ty nào.
             </Text>
           )
         }
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 10 },
-
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff", 
+    padding: 16 
+  },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f0f0f0",
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 16,
     paddingRight: 4,
   },
-
   searchInput: {
     flex: 1,
-    padding: 10,
-    fontSize: 15,
+    padding: 12,
+    fontSize: 16,
   },
-
   searchButton: {
     backgroundColor: "#00b14f",
     borderRadius: 8,
     padding: 10,
     marginLeft: 4,
   },
-
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fafafa",
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 2,
+  loading: {
+    marginTop: 20,
   },
-
-  logo: { width: 50, height: 50, marginRight: 12 },
-  name: { fontSize: 16, fontWeight: "bold", color: "#333" },
-  industry: { fontSize: 14, color: "#00b14f", marginTop: 2 },
-  address: { fontSize: 12, color: "#666", marginTop: 2 },
-  error: { color: "red", textAlign: "center", marginVertical: 10 },
+  error: { 
+    color: "red", 
+    textAlign: "center", 
+    marginVertical: 10,
+    fontSize: 16,
+  },
+  listContainer: { 
+    paddingBottom: 20 
+  },
+  emptyText: { 
+    textAlign: "center", 
+    color: "#666", 
+    marginTop: 40,
+    fontSize: 16,
+  },
 });

@@ -20,6 +20,7 @@ export const useAllPodcasts = () => {
       const transformPodcast = (podcast) => ({
         id: podcast.id,
         title: podcast.title || "Chưa có tiêu đề",
+        podcast_url: podcast.podcast_url,
         duration: formatDuration(
           podcast.duration || podcast.length || "00:00:00"
         ),

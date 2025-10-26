@@ -5,15 +5,23 @@ export class QuestionApiService {
   static clientEndpoint = "/client/interview-practice";
 
   static async getQuestionsByIndustryAndLevel(level, industry) {
-    const params = new URLSearchParams({
-      level: level,
-      industry: industry,
-    });
+    try {
+      const params = new URLSearchParams({
+        level: level,
+        industry: industry,
+      });
 
-    const response = await apiClient.get(
-      `${this.endpoint}/getQuestionsByIndustryAndLevel?${params.toString()}`
-    );
-    return response.data;
+      const response = await apiClient.get(
+        `${this.endpoint}/getQuestionsByIndustryAndLevel?${params.toString()}`
+      );
+      return response.data;
+    } catch (error) {
+      // Nếu là 404, trả về mảng rỗng thay vì throw error
+      if (error.response?.status === 404) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   static async createQuestion(questionData) {
@@ -36,27 +44,27 @@ export class QuestionApiService {
 
   static async gradeAnswer(candidateId, questionId, answerText) {
     const body = {
-        answer: answerText
+      answer: answerText,
     };
 
     const response = await apiClient.post(
-        `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
-        body
+      `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
+      body
     );
-    
+
     return Array.isArray(response.data) ? response.data[0] : response.data;
   }
 
   static async uploadAudio(userId, questionId, audioFile) {
     const formData = new FormData();
-    formData.append('audio', audioFile);
+    formData.append("audio", audioFile);
 
     const response = await apiClient.post(
       `${this.clientEndpoint}/uploadAudio/${userId}/${questionId}`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       }
     );
@@ -67,16 +75,15 @@ export class QuestionApiService {
     const response = await apiClient.post(
       `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
     );
-    
+
     return Array.isArray(response.data) ? response.data[0] : response.data;
   }
-
 
   static async gradeAudioAnswer(userId, questionId) {
     const response = await apiClient.post(
       `${this.clientEndpoint}/grade/${userId}/${questionId}`
     );
-    
+
     return Array.isArray(response.data) ? response.data[0] : response.data;
   }
 }
