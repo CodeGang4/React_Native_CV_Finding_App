@@ -5,6 +5,7 @@ import {
   MdPeople, 
   MdWork, 
   MdBusiness,
+  MdAttachMoney,
   MdMenu,
   MdMenuOpen 
 } from 'react-icons/md'
@@ -42,6 +43,12 @@ const AdminLayout = ({ children }) => {
       icon: <MdWork style={{ fontSize: '18px' }} />,
       label: 'Danh Sách Jobs',
       onClick: () => navigate('/jobs')
+    },
+    {
+      key: '/payments',
+      icon: <MdAttachMoney style={{ fontSize: '18px' }} />,
+      label: 'Thống Kê Doanh Thu',
+      onClick: () => navigate('/payments')
     }
   ]
 
@@ -102,7 +109,6 @@ const AdminLayout = ({ children }) => {
           {!collapsed && (
             <div>
               <div>Admin Portal v2.0</div>
-              <div>Powered by Supabase</div>
             </div>
           )}
         </div>

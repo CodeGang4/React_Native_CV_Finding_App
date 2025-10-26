@@ -23,6 +23,7 @@ import {
   registerCallbacks,
   unregisterCallbacks,
 } from "../../../shared/services/utils/callbackRegistry";
+import { useNavigation } from "@react-navigation/native";
 
 const EmployerAccountPage = () => {
   const navigation = useNavigation();

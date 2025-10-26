@@ -14,6 +14,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage'
 import UsersListPage from './pages/Users/UsersListPage'
 import CompaniesListPage from './pages/Companies/CompaniesListPage'
 import JobsListPage from './pages/Jobs/JobsListPage'
+import PaymentsPage from './pages/Payments/PaymentsPage'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ function App() {
               <Route path="/users" element={<UsersListPage />} />
               <Route path="/companies" element={<CompaniesListPage />} />
               <Route path="/jobs" element={<JobsListPage />} />
+              <Route path="/payments" element={<PaymentsPage />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
