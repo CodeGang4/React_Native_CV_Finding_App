@@ -7,6 +7,7 @@ import CVScreen from "../screens/profile/CVScreen";
 import CVViewer from "../screens/profile/CVViewer";
 import CompanyScreen from "../screens/home/CompanyScreen";
 import CompanyDetail from "../screens/home/CompanyDetail";
+import Podcast from "../screens/home/Podcast";
 
 const Stack = createStackNavigator();
 
@@ -47,6 +48,11 @@ export default function CandidateStackNavigator() {
         name="CompanyDetail"
         component={CompanyDetail}
         options={{ title: "Chi tiết công ty" }}
+      />
+      <Stack.Screen
+        name="Podcast"
+        component={Podcast}
+        options={{ title: "Podcast dành cho bạn" }}
       />
     </Stack.Navigator>
   );

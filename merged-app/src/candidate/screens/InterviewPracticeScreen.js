@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import RNPickerSelect from "react-native-picker-select";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Audio } from "expo-av";
 
@@ -25,11 +26,6 @@ const PRIMARY_COLOR = "#00b14f";
 
 export default function InterviewPracticeScreen() {
   const { user } = useAuth();
-  const navigation = useNavigation();
-
-  // Check if user has premium access
-  const [hasAccess, setHasAccess] = useState(false);
-  const [checkingAccess, setCheckingAccess] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [industry, setIndustry] = useState("");
@@ -44,7 +40,8 @@ export default function InterviewPracticeScreen() {
   const [recording, setRecording] = useState(null);
   const [recordings, setRecordings] = useState({});
   const [isRecording, setIsRecording] = useState(false);
-  const [currentRecordingQuestion, setCurrentRecordingQuestion] = useState(null);
+  const [currentRecordingQuestion, setCurrentRecordingQuestion] =
+    useState(null);
   const [playingRecordings, setPlayingRecordings] = useState({});
 
   const soundRefs = useRef({});
@@ -95,36 +92,48 @@ export default function InterviewPracticeScreen() {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      console.log("Đang tải thông tin profile...");
+      const resData = await CandidateApiService.getCandidateById(user.id);
+
+      const prefs = resData.job_preferences || [];
+      const detectedIndustry =
+        Array.isArray(prefs) && prefs.length > 0 ? prefs[0].trim() : "General";
+
+      console.log("Ngành nghề mới:", detectedIndustry);
+      setIndustry(detectedIndustry);
+    } catch (err) {
+      console.error("Lỗi khi lấy profile:", err.response?.data || err);
+      Alert.alert("Lỗi", "Không thể lấy thông tin hồ sơ người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const resData = await CandidateApiService.getCandidateById(user.id);
-
-        const prefs = resData.job_preferences || [];
-        const detectedIndustry =
-          Array.isArray(prefs) && prefs.length > 0
-            ? prefs[0].trim()
-            : "General";
-
-        setIndustry(detectedIndustry);
-      } catch (err) {
-        console.error("Lỗi khi lấy profile:", err.response?.data || err);
-        Alert.alert("Lỗi", "Không thể lấy thông tin hồ sơ người dùng.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
+    const unsubscribe = navigation.addListener("focus", () => {
+      console.log("Trang Interview Practice được focus - loading lại profile");
+      fetchProfile();
+    });
 
     return () => {
+      unsubscribe();
       Object.values(soundRefs.current).forEach((sound) => {
         if (sound) {
           sound.unloadAsync();
         }
       });
     };
-  }, [user]);
+  }, [user, navigation]);
+
+  useEffect(() => {
+    if (isFocused) {
+      console.log("🔍 isFocused changed - loading profile");
+      fetchProfile();
+    }
+  }, [isFocused]);
 
   async function startRecording(questionId) {
     try {
@@ -321,37 +330,52 @@ export default function InterviewPracticeScreen() {
   };
 
   const fetchQuestionsFromBank = async () => {
-    if (!industry || !level) {
-      Alert.alert("Thông báo", "Vui lòng chọn cấp độ trước khi lấy câu hỏi.");
-      return;
-    }
+  if (!industry || !level) {
+    Alert.alert("Thông báo", "Vui lòng chọn cấp độ trước khi lấy câu hỏi.");
+    return;
+  }
 
-    setAiThinking(true);
-    try {
-      let fetchedQuestions =
-        await QuestionApiService.getQuestionsByIndustryAndLevel(
-          level,
-          industry
-        );
+  setAiThinking(true);
+  try {
+    console.log("Bắt đầu fetch questions...");
+    
+    let fetchedQuestions = await QuestionApiService.getQuestionsByIndustryAndLevel(
+      level,
+      industry
+    );
 
-      if (Array.isArray(fetchedQuestions) && fetchedQuestions.length > 0) {
-        setQuestions(fetchedQuestions);
-      } else {
-        Alert.alert(
-          "Thông báo",
-          "Không có câu hỏi nào trong ngân hàng phù hợp với tiêu chí của bạn."
-        );
-        setQuestions([]);
-      }
-    } catch (err) {
-      console.error("Lỗi khi lấy câu hỏi:", err.response?.data || err);
-      const errorMessage =
-        err.response?.data?.message || "Lỗi kết nối hoặc API không phản hồi.";
-      Alert.alert("Lỗi", `Không thể lấy câu hỏi: ${errorMessage}`);
-    } finally {
-      setAiThinking(false);
+    console.log("Fetch questions thành công:", fetchedQuestions);
+
+    if (Array.isArray(fetchedQuestions) && fetchedQuestions.length > 0) {
+      setQuestions(fetchedQuestions);
+      console.log(`Đã tải ${fetchedQuestions.length} câu hỏi`);
+    } else {
+      console.log("Không có câu hỏi phù hợp");
+      Alert.alert(
+        "Thông báo",
+        "Không có câu hỏi nào phù hợp với bạn. Vui lòng tạo câu hỏi mới sử dụng AI."
+      );
+      setQuestions([]);
+      setActiveTab("generate");
     }
-  };
+  } catch (err) {
+    if (err.data && Array.isArray(err.data) && err.data.length === 0) {
+      console.log("Không có câu hỏi phù hợp (từ catch block)");
+      Alert.alert(
+        "Thông báo", 
+        "Không có câu hỏi nào phù hợp với bạn. Vui lòng tạo câu hỏi mới sử dụng AI."
+      );
+      setQuestions([]);
+      setActiveTab("generate");
+    } else {
+      console.error("Lỗi thực sự khi fetch questions:", err);
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi kết nối đến server.");
+    }
+  } finally {
+    console.log("Kết thúc fetch questions");
+    setAiThinking(false);
+  }
+};
 
   const generateNewQuestions = async () => {
     if (!industry || !level) {
@@ -371,7 +395,6 @@ export default function InterviewPracticeScreen() {
 
       if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
         setQuestions(generatedQuestions);
-        Alert.alert("Thành công", "AI đã tạo câu hỏi mới thành công!");
       } else {
         Alert.alert(
           "Thông báo",
@@ -536,6 +559,8 @@ export default function InterviewPracticeScreen() {
             }
           });
           soundRefs.current = {};
+
+          fetchProfile();
         },
       },
     ]);
@@ -659,31 +684,38 @@ export default function InterviewPracticeScreen() {
         <Text style={styles.value}>{industry}</Text>
 
         <Text style={styles.label}>Chọn cấp độ:</Text>
-        
+
         {/* Picker Select với style đã fix */}
         <View style={styles.pickerWrapper}>
           <RNPickerSelect
             onValueChange={(value) => {
-              console.log('Picker value changed:', value);
+              console.log("Picker value changed:", value);
               setLevel(value);
             }}
             value={level}
             placeholder={{
               label: "Chọn cấp độ...",
               value: null,
-              color: '#999',
+              color: "#999",
             }}
             items={levelItems}
             style={pickerSelectStyles}
             useNativeAndroidPickerStyle={false}
             Icon={() => {
-              return <Icon name="chevron-down" size={20} color="#666" style={styles.pickerIcon} />;
+              return (
+                <Icon
+                  name="chevron-down"
+                  size={20}
+                  color="#666"
+                  style={styles.pickerIcon}
+                />
+              );
             }}
             touchableWrapperProps={{
               activeOpacity: 0.7,
             }}
-            onOpen={() => console.log('Picker opened')}
-            onClose={() => console.log('Picker closed')}
+            onOpen={() => console.log("Picker opened")}
+            onClose={() => console.log("Picker closed")}
           />
         </View>
 
@@ -776,10 +808,6 @@ export default function InterviewPracticeScreen() {
 
         {questions.length > 0 && (
           <View style={styles.questionsContainer}>
-            <Text style={styles.subHeader}>
-              {questions.length} câu hỏi{" "}
-              {activeTab === "bank" ? "từ ngân hàng" : "được AI tạo"}
-            </Text>
 
             {questions.map((q, idx) => (
               <View key={q.id || idx} style={styles.questionCard}>
@@ -984,17 +1012,17 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
   },
-  label: { 
-    fontSize: 14, 
-    color: "#666", 
+  label: {
+    fontSize: 14,
+    color: "#666",
     marginTop: 10,
     marginBottom: 5,
   },
-  value: { 
-    fontSize: 16, 
-    fontWeight: "600", 
-    color: "#333", 
-    marginBottom: 15 
+  value: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 15,
   },
   pickerWrapper: {
     marginBottom: 15,
@@ -1042,13 +1070,13 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     elevation: 3,
   },
-  disabledButton: { 
-    backgroundColor: "#ccc" 
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
-  buttonText: { 
-    color: "#fff", 
-    fontWeight: "700", 
-    fontSize: 16 
+  buttonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
   },
   emptyState: {
     alignItems: "center",
@@ -1061,8 +1089,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
-  questionsContainer: { 
-    marginTop: 20 
+  questionsContainer: {
+    marginTop: 20,
   },
   subHeader: {
     fontSize: 18,
@@ -1237,10 +1265,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 20,
   },
-  submitText: { 
-    color: "#fff", 
-    fontSize: 17, 
-    fontWeight: "700" 
+  submitText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
   },
   center: {
     flex: 1,
@@ -1356,10 +1384,10 @@ const pickerSelectStyles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 10,
-    color: 'black',
-    backgroundColor: '#fff',
+    color: "black",
+    backgroundColor: "#fff",
     paddingRight: 40,
   },
   inputAndroid: {
@@ -1367,14 +1395,14 @@ const pickerSelectStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 10,
-    color: 'black',
-    backgroundColor: '#fff',
+    color: "black",
+    backgroundColor: "#fff",
     paddingRight: 40,
   },
   placeholder: {
-    color: '#999',
+    color: "#999",
   },
   iconContainer: {
     top: 12,

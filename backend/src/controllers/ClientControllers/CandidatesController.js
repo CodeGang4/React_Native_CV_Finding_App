@@ -100,9 +100,9 @@ class CandidatesController {
             skills,
             job_preferences,
         } = req.body;
-        if (!genders.includes(gender)) {
-            return res.status(400).json({ error: 'Invalid gender' });
-        }
+        // if (!genders.includes(gender)) {
+        //     return res.status(400).json({ error: 'Invalid gender' });
+        // }
 
         const { data, error } = await supabase
             .from('candidates')

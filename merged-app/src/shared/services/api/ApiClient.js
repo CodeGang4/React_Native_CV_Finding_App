@@ -339,14 +339,25 @@ apiClient.addResponseInterceptor({
       error.config?.method === "DELETE" &&
       error.config?.url?.includes("/job/deleteJob/");
 
-    if (isDeleteJob404) {
+    // THÊM: Skip log cho get questions với 404
+    const isGetQuestions404 =
+      error.response?.status === 404 &&
+      error.config?.method === "GET" &&
+      error.config?.url?.includes("/admin/questions/getQuestionsByIndustryAndLevel");
+
+    if (isDeleteJob404 || isGetQuestions404) {
       console.debug(
-        `[Expected Behavior] Delete job returned 404 (backend logic issue but job deleted successfully)`
+        `[Expected Behavior] API returned 404 - ${error.config?.url}`
       );
 
-      // Không track expected behavior để giảm noise
-      // Nếu cần debug có thể uncomment dòng dưới:
-      // errorTracker.track(error, { type: 'EXPECTED_DELETE_JOB_404', severity: 'warning' });
+      // Trả về response giả với data rỗng thay vì throw error
+      return {
+        data: [],
+        status: 200,
+        statusText: 'OK',
+        config: error.config,
+        headers: {}
+      };
     } else {
       // Log tất cả errors khác bình thường
       console.error(`[API Error] ${error.message}`);
