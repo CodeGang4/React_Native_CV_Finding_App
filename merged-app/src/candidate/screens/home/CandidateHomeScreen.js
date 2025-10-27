@@ -9,12 +9,9 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import JobListSection from "../../components/JobListSection";
-<<<<<<< HEAD
 import RateLimitMonitor from "../../../components/debug/RateLimitMonitor";
-=======
 import CompanyListSection from "../../components/CompanyListSection";
 import PodcastListSection from "../../components/PodcastListSection";
->>>>>>> 1f98fd0fec4529fb3c7c7163c6e6141397e8e4cd
 
 export default function CandidateHomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -74,12 +71,10 @@ export default function CandidateHomeScreen({ navigation }) {
           ))}
         </View>
 
-<<<<<<< HEAD
       <JobListSection navigation={navigation} />
       
       {/* Rate Limit Monitor - Only visible in development */}
       <RateLimitMonitor enabled={__DEV__} />
-=======
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Việc làm hấp dẫn</Text>
           <TouchableOpacity
@@ -116,7 +111,6 @@ export default function CandidateHomeScreen({ navigation }) {
         </View>
         <PodcastListSection limit={3} />
       </ScrollView>
->>>>>>> 1f98fd0fec4529fb3c7c7163c6e6141397e8e4cd
     </View>
   );
 }

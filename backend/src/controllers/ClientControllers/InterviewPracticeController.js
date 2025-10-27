@@ -142,7 +142,30 @@ class InterviewPracticeController {
         return res.status(500).json({ error: "Deepgram transcription failed" });
       }
 
-      const transcript = result.results.channels[0].alternatives[0].transcript;
+      // Check if transcript exists and is not empty
+      const transcript = result?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+      
+      if (!transcript || transcript.trim().length === 0) {
+        console.warn("⚠️ Empty transcript received from Deepgram");
+        // Return a default response instead of throwing error
+        const { data: updateData, error: updateError } = await supabase
+          .from("interviews_practices_results")
+          .update({ answer: "[Không thể nhận diện giọng nói]" })
+          .eq("id", data.id)
+          .select();
+
+        if (updateError) {
+          console.error("Supabase update error:", updateError);
+          return res.status(500).json({ error: "Error saving transcript" });
+        }
+
+        return res.status(200).json({
+          ...updateData[0],
+          warning: "Could not transcribe audio - no speech detected"
+        });
+      }
+
+      console.log("✅ Transcript received:", transcript);
 
       const { data: updateData, error: updateError } = await supabase
         .from("interviews_practices_results")
@@ -155,6 +178,7 @@ class InterviewPracticeController {
         return res.status(500).json({ error: "Error saving transcript" });
       }
 
+      console.log("✅ Transcript saved to database");
       return res.status(200).json(updateData[0]);
     } catch (err) {
       console.error("Error in transcribeAudio:", err);

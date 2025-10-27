@@ -14,7 +14,7 @@ import {
 import { useAuth } from "../../shared/contexts/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import RNPickerSelect from "react-native-picker-select";
-import { useIsFocused, useNavigation } from "@react-navigation/native";
+import { useIsFocused } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Audio } from "expo-av";
 
@@ -39,6 +39,10 @@ export default function InterviewPracticeScreen() {
 
   const [recording, setRecording] = useState(null);
   const [recordings, setRecordings] = useState({});
+  const navigation = useNavigation();
+  const [checkingAccess, setCheckingAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const isFocused = useIsFocused();
   const [isRecording, setIsRecording] = useState(false);
   const [currentRecordingQuestion, setCurrentRecordingQuestion] =
     useState(null);
@@ -307,6 +311,27 @@ export default function InterviewPracticeScreen() {
       console.log(`✅ Transcription result:`, transcribeResult);
 
       if (transcribeResult && transcribeResult.answer) {
+        // Check if it's a fallback message
+        if (transcribeResult.answer.includes("[Không thể nhận diện") || 
+            transcribeResult.answer.includes("[Lỗi kết nối")) {
+          console.warn("⚠️ Received fallback transcription:", transcribeResult.answer);
+          // Still set the answer but show a warning
+          setAnswers((prev) => ({
+            ...prev,
+            [questionId]: transcribeResult.answer,
+          }));
+          
+          Alert.alert(
+            "Cảnh báo",
+            "Không thể nhận diện giọng nói rõ ràng. Bạn có thể thử ghi lại hoặc nhập văn bản thủ công.",
+            [
+              { text: "OK", style: "default" }
+            ]
+          );
+          
+          return transcribeResult.answer;
+        }
+        
         setAnswers((prev) => ({
           ...prev,
           [questionId]: transcribeResult.answer,
@@ -320,10 +345,32 @@ export default function InterviewPracticeScreen() {
       
       // More specific error messages
       if (err.message.includes('Empty response')) {
+        Alert.alert(
+          "Lỗi kết nối",
+          "Server không phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.",
+          [{ text: "OK", style: "default" }]
+        );
         throw new Error("Server không phản hồi. Vui lòng kiểm tra kết nối mạng và thử lại.");
       } else if (err.message.includes('answer field')) {
+        Alert.alert(
+          "Lỗi dữ liệu",
+          "Server trả về dữ liệu không hợp lệ. Vui lòng thử lại.",
+          [{ text: "OK", style: "default" }]
+        );
         throw new Error("Server trả về dữ liệu không hợp lệ. Vui lòng thử lại.");
+      } else if (err.response?.status === 500) {
+        Alert.alert(
+          "Lỗi server",
+          "Có lỗi xảy ra trên server. Vui lòng thử lại sau ít phút.",
+          [{ text: "OK", style: "default" }]
+        );
+        throw new Error("Lỗi server. Vui lòng thử lại sau.");
       } else {
+        Alert.alert(
+          "Lỗi",
+          err.message || "Lỗi không xác định khi chuyển đổi âm thanh.",
+          [{ text: "OK", style: "default" }]
+        );
         throw new Error(err.message || "Lỗi không xác định khi chuyển đổi âm thanh.");
       }
     }

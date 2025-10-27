@@ -47,7 +47,6 @@ export class QuestionApiService {
       answer: answerText,
     };
 
-<<<<<<< HEAD
     try {
       const response = await apiClient.post(
           `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
@@ -63,21 +62,12 @@ export class QuestionApiService {
       console.error('❌ [QuestionApiService] Error grading answer:', error);
       throw error;
     }
-=======
-    const response = await apiClient.post(
-      `${this.clientEndpoint}/grade/${candidateId}/${questionId}`,
-      body
-    );
-
-    return Array.isArray(response.data) ? response.data[0] : response.data;
->>>>>>> 1f98fd0fec4529fb3c7c7163c6e6141397e8e4cd
   }
 
   static async uploadAudio(userId, questionId, audioFile) {
     const formData = new FormData();
     formData.append("audio", audioFile);
 
-<<<<<<< HEAD
     try {
       const response = await apiClient.post(
         `${this.clientEndpoint}/uploadAudio/${userId}/${questionId}`,
@@ -92,15 +82,6 @@ export class QuestionApiService {
       if (!response.data) {
         console.warn('⚠️ [QuestionApiService] Empty response from uploadAudio');
         return { success: true, message: 'Audio uploaded successfully' };
-=======
-    const response = await apiClient.post(
-      `${this.clientEndpoint}/uploadAudio/${userId}/${questionId}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
->>>>>>> 1f98fd0fec4529fb3c7c7163c6e6141397e8e4cd
       }
       
       return response.data;
@@ -111,34 +92,44 @@ export class QuestionApiService {
   }
 
   static async transcribeAudio(userId, questionId) {
-<<<<<<< HEAD
     try {
+      console.log(`🎤 Transcribing audio for user ${userId}, question ${questionId}`);
+      
       const response = await apiClient.post(
         `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
       );
       
       if (!response.data) {
+        console.warn('⚠️ [QuestionApiService] Empty response from transcription');
         throw new Error('Server returned empty response for transcription');
       }
       
       const data = Array.isArray(response.data) ? response.data[0] : response.data;
       
       if (!data.answer) {
-        throw new Error('Transcription response missing answer field');
+        console.warn('⚠️ [QuestionApiService] No answer field in transcription response');
+        // Return a default answer instead of throwing error
+        return {
+          ...data,
+          answer: "[Không thể nhận diện giọng nói]"
+        };
       }
       
+      console.log('✅ [QuestionApiService] Transcription successful:', data.answer?.substring(0, 50) + '...');
       return data;
     } catch (error) {
       console.error('❌ [QuestionApiService] Error transcribing audio:', error);
+      
+      // If it's a network error or server error, return a fallback response
+      if (error.response?.status >= 500 || !error.response) {
+        return {
+          answer: "[Lỗi kết nối - không thể nhận diện giọng nói]",
+          id: null
+        };
+      }
+      
       throw error;
     }
-=======
-    const response = await apiClient.post(
-      `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
-    );
-
-    return Array.isArray(response.data) ? response.data[0] : response.data;
->>>>>>> 1f98fd0fec4529fb3c7c7163c6e6141397e8e4cd
   }
 
   static async gradeAudioAnswer(userId, questionId) {
