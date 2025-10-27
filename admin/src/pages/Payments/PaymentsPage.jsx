@@ -114,9 +114,9 @@ const PaymentsPage = () => {
 
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'USD'
     }).format(amount)
   }
 
@@ -320,7 +320,7 @@ const PaymentsPage = () => {
             <Statistic
               title="Tổng doanh thu"
               value={stats?.totalRevenueVND || 0}
-              prefix={<MdAttachMoney style={{ fontSize: '24px' }} />}
+              // prefix={<MdAttachMoney style={{ fontSize: '24px' }} />}
               valueStyle={{ color: '#22c55e' }}
               formatter={(value) => formatCurrency(value)}
             />
