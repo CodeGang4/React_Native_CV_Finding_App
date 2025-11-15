@@ -1,324 +1,47 @@
-const supabase = require('../../supabase/config');
-const { sendNotification } = require('../../services/NotificationService');
+const NotificationService = require('../../services/NotificationService');
+const { asyncHandler } = require('../../middlewares/asyncHandler');
+const { sendData } = require('../../utils/responseHelper');
 
 class NotificationController {
-    // Gửi push notification (Firebase)
-    async sendPushNotification(req, res) {
-        const { token, title, body } = req.body;
+    sendPushNotification = asyncHandler(async (req, res) => {
+        const result = await NotificationService.sendPushNotification(req.body.token, req.body.title, req.body.body, req.body.data);
+        sendData(res, { message: 'Notification sent successfully', messageId: result }, 200);
+    });
 
-        if (!token || !title || !body) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
+    createNotification = asyncHandler(async (req, res) => {
+        const notification = await NotificationService.createNotification(req.body);
+        sendData(res, notification, 201);
+    });
 
-        try {
-            await sendNotification(token, title, body);
-            return res.status(200).json({ message: "Notification sent successfully" });
-        } catch (error) {
-            console.error("Error sending notification:", error);
-            return res.status(500).json({ error: "Failed to send notification" });
-        }
-    }
+    getUserNotifications = asyncHandler(async (req, res) => {
+        const notifications = await NotificationService.getUserNotifications(req.params.userId, req.query);
+        const unreadCount = await NotificationService.getUnreadCount(req.params.userId);
+        sendData(res, { 
+            notifications, 
+            pagination: { page: parseInt(req.query.page) || 1, limit: parseInt(req.query.limit) || 20 },
+            unread_count: unreadCount 
+        }, 200);
+    });
 
-    // Tạo thông báo mới trong database
-    async createNotification(req, res) {
-        try {
-            const {
-                recipient_id,
-                recipient_type,
-                sender_id,
-                sender_type,
-                title,
-                message,
-                type = 'other',
-                data = {}
-            } = req.body;
+    markAsRead = asyncHandler(async (req, res) => {
+        const notification = await NotificationService.markAsRead(req.params.notificationId, req.body.userId);
+        sendData(res, notification, 200);
+    });
 
-            if (!recipient_id || !recipient_type || !title || !message) {
-                return res.status(400).json({
-                    error: 'recipient_id, recipient_type, title, and message are required'
-                });
-            }
+    markAllAsRead = asyncHandler(async (req, res) => {
+        const notifications = await NotificationService.markAllAsRead(req.params.userId);
+        sendData(res, { message: `Marked ${notifications.length} notifications as read`, updated_count: notifications.length }, 200);
+    });
 
-            const { data: notification, error } = await supabase
-                .from('notifications')
-                .insert({
-                    recipient_id,
-                    recipient_type,
-                    sender_id,
-                    sender_type,
-                    title,
-                    message,
-                    type,
-                    data
-                })
-                .select()
-                .single();
+    deleteNotification = asyncHandler(async (req, res) => {
+        await NotificationService.deleteNotification(req.params.notificationId, req.body.userId);
+        sendData(res, { message: 'Notification deleted successfully' }, 200);
+    });
 
-            if (error) {
-                console.error('Error creating notification:', error);
-                return res.status(500).json({ error: 'Failed to create notification' });
-            }
-
-            res.status(201).json({
-                success: true,
-                data: notification
-            });
-
-        } catch (error) {
-            console.error('Error in createNotification:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Lấy thông báo của user
-    async getUserNotifications(req, res) {
-        try {
-            const { userId } = req.params;
-            const { 
-                page = 1, 
-                limit = 20, 
-                unread_only = false,
-                type 
-            } = req.query;
-
-            let query = supabase
-                .from('notifications')
-                .select(`
-                    *,
-                    sender:users!notifications_sender_id_fkey(
-                        id,
-                        username,
-                        avatar,
-                        role
-                    )
-                `)
-                .eq('recipient_id', userId)
-                .eq('is_archived', false)
-                .order('created_at', { ascending: false });
-
-            // Filter by read status
-            if (unread_only === 'true') {
-                query = query.eq('is_read', false);
-            }
-
-            // Filter by type
-            if (type) {
-                query = query.eq('type', type);
-            }
-
-            // Pagination
-            const offset = (page - 1) * limit;
-            query = query.range(offset, offset + limit - 1);
-
-            const { data: notifications, error } = await query;
-
-            if (error) {
-                console.error('Error fetching notifications:', error);
-                return res.status(500).json({ error: 'Failed to fetch notifications' });
-            }
-
-            // Get unread count
-            const { count: unreadCount, error: countError } = await supabase
-                .from('notifications')
-                .select('*', { count: 'exact', head: true })
-                .eq('recipient_id', userId)
-                .eq('is_read', false)
-                .eq('is_archived', false);
-
-            if (countError) {
-                console.error('Error counting unread notifications:', countError);
-            }
-
-            res.status(200).json({
-                success: true,
-                data: notifications,
-                pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total: notifications.length
-                },
-                unread_count: unreadCount || 0
-            });
-
-        } catch (error) {
-            console.error('Error in getUserNotifications:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Đánh dấu đã đọc
-    async markAsRead(req, res) {
-        try {
-            const { notificationId } = req.params;
-            const { userId } = req.body; // Để verify ownership
-
-            const { data: notification, error } = await supabase
-                .from('notifications')
-                .update({
-                    is_read: true,
-                    read_at: new Date().toISOString()
-                })
-                .eq('id', notificationId)
-                .eq('recipient_id', userId)
-                .select()
-                .single();
-
-            if (error) {
-                console.error('Error marking notification as read:', error);
-                return res.status(500).json({ error: 'Failed to mark as read' });
-            }
-
-            if (!notification) {
-                return res.status(404).json({ error: 'Notification not found' });
-            }
-
-            res.status(200).json({
-                success: true,
-                data: notification
-            });
-
-        } catch (error) {
-            console.error('Error in markAsRead:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Đánh dấu tất cả đã đọc
-    async markAllAsRead(req, res) {
-        try {
-            const { userId } = req.params;
-
-            const { data, error } = await supabase
-                .from('notifications')
-                .update({
-                    is_read: true,
-                    read_at: new Date().toISOString()
-                })
-                .eq('recipient_id', userId)
-                .eq('is_read', false)
-                .select();
-
-            if (error) {
-                console.error('Error marking all notifications as read:', error);
-                return res.status(500).json({ error: 'Failed to mark all as read' });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: `Marked ${data.length} notifications as read`,
-                updated_count: data.length
-            });
-
-        } catch (error) {
-            console.error('Error in markAllAsRead:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Xóa thông báo (archive)
-    async deleteNotification(req, res) {
-        try {
-            const { notificationId } = req.params;
-            const { userId } = req.body;
-
-            const { data: notification, error } = await supabase
-                .from('notifications')
-                .update({ is_archived: true })
-                .eq('id', notificationId)
-                .eq('recipient_id', userId)
-                .select()
-                .single();
-
-            if (error) {
-                console.error('Error archiving notification:', error);
-                return res.status(500).json({ error: 'Failed to delete notification' });
-            }
-
-            if (!notification) {
-                return res.status(404).json({ error: 'Notification not found' });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: 'Notification deleted successfully'
-            });
-
-        } catch (error) {
-            console.error('Error in deleteNotification:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    // Gửi thông báo hệ thống (broadcast)
-    async sendSystemNotification(req, res) {
-        try {
-            const {
-                recipient_type, // 'candidate', 'employer', 'admin', 'all'
-                title,
-                message,
-                type = 'system_announcement',
-                data = {}
-            } = req.body;
-
-            if (!title || !message) {
-                return res.status(400).json({
-                    error: 'title and message are required'
-                });
-            }
-
-            let recipients = [];
-
-            // Get recipients based on type
-            if (recipient_type === 'all') {
-                const { data: allUsers, error } = await supabase
-                    .from('users')
-                    .select('id, role');
-                
-                if (error) throw error;
-                recipients = allUsers;
-            } else {
-                const { data: users, error } = await supabase
-                    .from('users')
-                    .select('id, role')
-                    .eq('role', recipient_type);
-                
-                if (error) throw error;
-                recipients = users;
-            }
-
-            // Create notifications for all recipients
-            const notifications = recipients.map(user => ({
-                recipient_id: user.id,
-                recipient_type: user.role,
-                sender_type: 'system',
-                title,
-                message,
-                type,
-                data
-            }));
-
-            const { data: createdNotifications, error: insertError } = await supabase
-                .from('notifications')
-                .insert(notifications)
-                .select();
-
-            if (insertError) {
-                console.error('Error creating system notifications:', insertError);
-                return res.status(500).json({ error: 'Failed to send system notification' });
-            }
-
-            res.status(201).json({
-                success: true,
-                message: `Sent notification to ${recipients.length} users`,
-                sent_count: recipients.length,
-                data: createdNotifications
-            });
-
-        } catch (error) {
-            console.error('Error in sendSystemNotification:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
+    sendSystemNotification = asyncHandler(async (req, res) => {
+        const result = await NotificationService.sendSystemNotification(req.body);
+        sendData(res, { message: `Sent notification to ${result.sent_count} users`, ...result }, 201);
+    });
 }
 
 module.exports = new NotificationController();

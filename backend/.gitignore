@@ -5,3 +5,6 @@ serviceAccountKey.json
 PAYMENT_API_DOCUMENTATION.md
 PAYMENT_BACKEND_README.md
 PAYMENT_SETUP.md
+
+
+redis_data/

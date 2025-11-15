@@ -5,7 +5,7 @@ const AuthController = require('../../controllers/ClientControllers/AuthControll
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
-router.post('/google-login', AuthController.googleLogin);
+
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
 router.post('/logout', verifyToken, AuthController.logout);

@@ -2,6 +2,21 @@ const express = require('express');
 const app = express();
 const helmet = require('helmet');
 const rateLimit = require("express-rate-limit");
+const redisClient = require('./redis/config');
+
+app.use(async (req, res, next) => {
+    try {
+        if (!redisClient.isOpen) {
+            await redisClient.connect();
+            console.log('Redis reconnected');
+        }
+        next();
+    } catch (err) {
+        console.error('Redis reconnection error', err);
+        next();
+    }
+});
+
 require('dotenv').config();
 
 const route = require('./routes/index');
@@ -24,11 +39,11 @@ app.use(
 
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 phút
-    max: 100, // tối đa 100 request / IP trong 15 phút
+    windowMs: 15 * 60 * 1000,
+    max: 100, 
     message: "Too many requests, please try again later.",
-    standardHeaders: true, // gửi thông tin giới hạn trong header
-    legacyHeaders: false,  // tắt x-ratelimit-*
+    standardHeaders: true, 
+    legacyHeaders: false, 
 });
 app.use(limiter);
 route(app);

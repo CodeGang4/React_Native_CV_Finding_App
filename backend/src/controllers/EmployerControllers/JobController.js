@@ -1,339 +1,158 @@
-const supabase = require("../../supabase/config");
-const { createClient } = require("@supabase/supabase-js");
-const redis = require("../../redis/config");
+const JobService = require("../../services/EmployerServices/Job.service");
+const { asyncHandler } = require("../../utils/errorHandler");
+const { sendSuccess,sendData, sendError } = require("../../utils/response");
 
+/**
+ * Controller Layer - HTTP request/response handling for Jobs
+ * Responsibility: Handle HTTP requests, delegate to Service layer
+ */
 class JobController {
-  async getJobs(req, res) {
-    const { data, error } = await supabase.from("jobs").select();
+    /**
+     * Get all jobs
+     * GET /api/jobs
+     */
+    getJobs = asyncHandler(async (req, res) => {
+        const { userId } = req.query; // Optional: filter hidden jobs for user
+        
+        const jobs = await JobService.getAllJobs(userId);
+        
+        sendData(res, jobs);
+    });
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
+    /**
+     * Get jobs by company ID
+     * GET /api/jobs/company/:companyId
+     */
+    getJobByCompanyId = asyncHandler(async (req, res) => {
+        const { companyId } = req.params;
+        const { userId } = req.query; // Optional: filter hidden jobs for user
+        
+        const jobs = await JobService.getJobsByCompanyId(companyId, userId);
+        
+        sendData(res, jobs);
+    });
 
-    res.status(200).json(data);
-  }
+    /**
+     * Get job details by ID
+     * GET /api/jobs/:jobId
+     */
+    getJobDetails = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        const { userId } = req.query; // Optional: check if job is hidden for user
+        
+        const job = await JobService.getJobDetails(jobId, userId);
+        
+        sendData(res, job);
+    });
 
-  //[GET] /getJobByCompanyId/:companyId : Get jobs by company ID]
-  async getJobByCompanyId(req, res) {
-    const companyId = req.params.companyId;
-    if (!companyId) {
-      return res.status(400).json({ error: "Company ID is required" });
-    }
+    /**
+     * Create new job
+     * POST /api/jobs
+     */
+    createJob = asyncHandler(async (req, res) => {
+        const jobData = req.body;
+        
+        const result = await JobService.addJob(jobData);
+        
+        sendData(res, result);
+    });
 
-    try{
-      const { data, error } = await supabase
-        .from("jobs")
-        .select()
-        .eq("employer_id", companyId)
-        .order("created_at", { ascending: false });
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
+    /**
+     * Update job by ID
+     * PUT /api/jobs/:jobId
+     */
+    updateJob = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        const updateData = req.body;
+        
+        const updatedJob = await JobService.updateJob(jobId, updateData);
+        
+        sendData(res, updatedJob);
+    });
 
-      // 5. Trả dữ liệu cho client
-      res.status(200).json(data);
-    } catch (err) {
-      console.error("getJobByCompanyId error:", err);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
+    /**
+     * Delete job by ID
+     * DELETE /api/jobs/:jobId
+     */
+    deleteJob = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        
+        const deletedJob = await JobService.deleteJob(jobId);
+        
+        sendData(res, deletedJob);
+    });
 
-  async getJobDetail(req, res) {
-    const jobId = req.params.jobId;
-    if (!jobId) {
-      return res.status(400).json({ error: "Job ID is required" });
-    }
+    /**
+     * Increment job view count
+     * POST /api/jobs/:jobId/views
+     */
+    incrementJobViews = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        
+        const result = await JobService.incrementJobViewCount(jobId);
+        
+        sendData(res, result);
+    });
 
-    try {
-      // Check cache trước
-      
-      const { data, error } = await supabase
-        .from("jobs")
-        .select()
-        .eq("id", jobId)
-        .single();
+    /**
+     * Get top viewed jobs
+     * GET /api/jobs/top-viewed
+     */
+    getTopViewedJobs = asyncHandler(async (req, res) => {
+        const number = parseInt(req.query.number) || 10;
+        
+        const topJobs = await JobService.getTopViewedJobs(number);
+        
+        sendData(res, topJobs);
+    });
 
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
+    /**
+     * Hide job for specific user
+     * POST /api/jobs/:jobId/hide/:userId
+     */
+    hideJobForUser = asyncHandler(async (req, res) => {
+        const { jobId, userId } = req.params;
+        
+        const result = await JobService.hideJobForUser(userId, jobId);
+        
+        sendData(res, result);
+    });
 
-      if (!data) {
-        return res.status(404).json({ error: "Job not found" });
-      }
+    /**
+     * Get hidden jobs for user
+     * GET /api/jobs/hidden/:userId
+     */
+    getHiddenJobsForUser = asyncHandler(async (req, res) => {
+        const { userId } = req.params;
+        
+        const hiddenJobs = await JobService.getHiddenJobsForUser(userId);
+        
+        sendData(res, hiddenJobs);
+    });
 
-      
-      return res.status(200).json(data);
-    } catch (err) {
-      console.error("getJobDetail error:", err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
+    /**
+     * Admin: Hide job globally
+     * POST /api/admin/jobs/:jobId/hide
+     */
+    hideJobGlobally = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        
+        await JobService.hideJobGlobally(jobId);
+        
+        sendData(res, { jobId });
+    });
 
-  //[POST] /addJob/:companyId : Add a new job
-  async addJob(req, res) {
-    const companyId = req.params.companyId;
-
-    const company = await supabase
-      .from("employers")
-      .select("*")
-      .eq("user_id", companyId)
-      .single();
-    if (!company) {
-      return res.status(400).json({ error: "Company does not exist" });
-    }
-
-    const jobTypes = ["fulltime", "parttime", "internship", "freelance"];
-    const requiredFields = [
-      "title",
-      "description",
-      "requirements",
-      "location",
-      "job_type",
-      "salary",
-      "quantity",
-      "position",
-      "education",
-      "expired_date",
-      "is_expired",
-    ];
-    const missingFields = requiredFields.filter(
-      (field) => req.body[field] === undefined || req.body[field] === ""
-    );
-
-    if (!companyId) {
-      return res.status(400).json({ error: "Company ID is required" });
-    }
-    if (missingFields.length > 0) {
-      console.log("Missing fields:", missingFields);
-      return res
-        .status(400)
-        .json({ error: "Missing fields", fields: missingFields });
-    }
-
-    // Check employer existence
-    const { data: employerData, error: employerError } = await supabase
-      .from("employers")
-      .select("id")
-      .eq("user_id", companyId)
-      .single();
-    if (employerError || !employerData) {
-      return res.status(400).json({ error: "Employer does not exist" });
-    }
-
-    const {
-      title,
-      description,
-      requirements,
-      location,
-      job_type,
-      quantity,
-      position,
-      education,
-      expired_date,
-      salary,
-      is_expired,
-    } = req.body;
-
-    if (!jobTypes.includes(job_type)) {
-      return res.status(400).json({ error: "Invalid job type" });
-    }
-    const { data, error } = await supabase
-      .from("jobs")
-      .upsert({
-        title,
-        description,
-        requirements,
-        location,
-        job_type,
-        salary,
-        quantity,
-        position,
-        is_expired,
-        education,
-        expired_date,
-        employer_id: companyId,
-      })
-      .select(); // Thêm .select() để lấy lại dữ liệu vừa thêm
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.status(200).json(data);
-  }
-
-  //[DELETE] /deleteJob/:jobId : Delete a job
-  async deleteJob(req, res) {
-    const jobId = req.params.jobId;
-
-    if (!jobId) {
-      return res.status(400).json({ error: "Job ID is required" });
-    }
-    const { data, error } = await supabase
-      .from("jobs")
-      .delete()
-      .eq("id", jobId);
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: "Job not found or not deleted" });
-    }
-
-    res.status(200).json({ message: "Job deleted successfully" });
-  }
-
-  //[PUT] /updateJob/:jobId : Update a job
-  async updateJob(req, res) {
-    const jobId = req.params.jobId;
-    const {
-      title,
-      description,
-      requirements,
-      location,
-      job_type,
-      quantity,
-      position,
-      education,
-      expired_date,
-      salary,
-      is_expired,
-    } = req.body;
-
-    if (!jobId) {
-      return res.status(400).json({ error: "Job ID is required" });
-    }
-
-    const { data, error } = await supabase
-      .from("jobs")
-      .update({
-        title,
-        description,
-        requirements,
-        location,
-        job_type,
-        salary,
-        quantity,
-        position,
-        is_expired,
-        education,
-        expired_date,
-        updated_at: new Date(),
-      })
-      .eq("id", jobId)
-      .select();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: "Job not found or not updated" });
-    }
-
-    res.status(200).json(data[0]);
-  }
-
-  async incrementJobViews(req, res) {
-    const jobId = req.params.jobId;
-
-    if (!jobId) {
-      return res.status(400).json({ error: "Job ID is required" });
-    }
-
-    try {
-      // Sử dụng PostgreSQL's atomic increment
-      const { data, error } = await supabase.rpc("increment_views_atomic", {
-        job_uuid: jobId,
-      });
-
-      if (error) {
-        if (error.message.includes("not found")) {
-          return res.status(404).json({ error: "Job not found" });
-        }
-        throw error;
-      }
-
-      res.status(200).json({
-        success: true,
-        views: data,
-        jobId: jobId,
-      });
-    } catch (error) {
-      console.error("Error incrementing views:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  async getTopViewedJobs(req, res) {
-    const number = req.query.number || 10; // Mặc định lấy top 10 nếu không có tham số
-    try {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select()
-        .order("views", { ascending: false })
-        .limit(number);
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      res.status(200).json(data);
-    } catch (error) {
-      console.error("Error fetching top viewed jobs:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  async hideJob(req, res) {
-    const { jobId, candidate_id } = req.params;
-
-    try {
-      // Check job exists
-      const { data: job } = await supabase
-        .from("jobs")
-        .select("id")
-        .eq("id", jobId)
-        .single();
-
-      if (!job) {
-        return res.status(404).json({ error: "Job not found" });
-      }
-
-      // Insert hidden job (UPSERT để tránh duplicate)
-      const { data, error } = await supabase
-        .from("hidden_jobs")
-        .upsert({
-          candidate_id: candidate_id,
-          job_id: jobId,
-          reason: "swipe_delete",
-          hidden_at: new Date().toISOString(),
-        })
-        .select();
-
-      if (error) throw error;
-
-      res.json({
-        success: true,
-        hidden_at: data[0].hidden_at,
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-  async getHiddenJobs(req, res) {
-    const { candidate_id } = req.params;
-    try {
-      const { data, error } = await supabase
-        .from("hidden_jobs")
-        .select("*")
-        .eq("candidate_id", candidate_id)
-        .order("hidden_at", { ascending: false });
-      if (error) throw error;
-
-      res.json(data);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
+    /**
+     * Admin: Unhide job globally
+     * DELETE /api/admin/jobs/:jobId/hide
+     */
+    unhideJobGlobally = asyncHandler(async (req, res) => {
+        const { jobId } = req.params;
+        
+        await JobService.unhideJobGlobally(jobId);
+        
+        sendData(res, { jobId });
+    });
 }
 
 module.exports = new JobController();

@@ -1,57 +1,62 @@
-// Redis temporarily disabled to prevent connection errors
-// const { createClient } = require('redis');
-// require('dotenv').config();
 
-// const client = createClient({
-//     username: process.env.REDIS_USERNAME,
-//     password: process.env.REDIS_PASSWORD,
-//     socket: {
-//         host: process.env.REDIS_HOST,
-//         port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined,
-//     },
-// });
+const { createClient } = require('redis');
+require('dotenv').config();
 
-// client.on('error', err => console.error('Redis Client Error', err));
+const redisUrl = process.env.REDIS_URL;
 
-// (async () => {
-//     try {
-//         await client.connect();
-//         console.log('Redis connected');
-//     } catch (err) {
-//         console.error('Redis connection error', err);
-//     }
-// })();
-
-// Mock Redis client to prevent errors in controllers
-const mockRedis = {
-    setEx: async (key, ttl, value) => {
-        console.log(`[MOCK REDIS] setEx: ${key} = ${value} (TTL: ${ttl}s)`);
-        return Promise.resolve('OK');
-    },
-    set: async (key, value) => {
-        console.log(`[MOCK REDIS] set: ${key} = ${value}`);
-        return Promise.resolve('OK');
-    },
-    get: async (key) => {
-        console.log(`[MOCK REDIS] get: ${key}`);
-        return Promise.resolve(null);
-    },
-    del: async (key) => {
-        console.log(`[MOCK REDIS] del: ${key}`);
-        return Promise.resolve(1);
-    },
-    exists: async (key) => {
-        console.log(`[MOCK REDIS] exists: ${key}`);
-        return Promise.resolve(0);
-    },
-    expire: async (key, ttl) => {
-        console.log(`[MOCK REDIS] expire: ${key} (TTL: ${ttl}s)`);
-        return Promise.resolve(1);
-    },
-    flushAll: async () => {
-        console.log(`[MOCK REDIS] flushAll`);
-        return Promise.resolve('OK');
-    },
+const noopClient = {
+    isConnected: false,
+    async get() { return null; },
+    async setEx() { return null; },
+    async set() { return null; },
+    async del() { return null; },
+    on() { },
+    quit() { },
+    disconnect() { }
 };
 
-module.exports = mockRedis;
+let client = noopClient;
+
+if (!redisUrl) {
+    console.warn('REDIS_URL not set. Using no-op Redis client.');
+} else {
+    try {
+        client = createClient({ 
+            url: redisUrl,
+            socket: {
+                reconnectStrategy: false, 
+                connectTimeout: 5000,  
+            }
+        });
+
+        let errorLogged = false;
+        client.on('error', (err) => {
+            if (!errorLogged) {
+                console.error('Redis connection failed:', err.code || err.message);
+                console.warn('Falling back to no-op Redis client. Fix REDIS_URL to enable Redis.');
+                errorLogged = true;
+            }
+        });
+
+        // Try to connect once
+        (async () => {
+            try {
+                await client.connect();
+                client.isConnected = true;
+                console.log('Redis connected');
+            } catch (err) {
+                client.isConnected = false;
+                await client.quit().catch(() => {}); 
+                client = noopClient;
+                console.error('Redis connection failed:', err.code || err.message);
+                console.warn('Using no-op Redis client. Fix REDIS_URL to enable Redis.');
+            }
+        })();
+
+    } catch (err) {
+        console.error('Redis client creation failed:', err.message);
+        client = noopClient;
+    }
+}
+
+module.exports = client;

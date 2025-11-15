@@ -1,51 +1,175 @@
-const supabase = require('../supabase/config');
+const EmailTemplateRepository = require('../repositories/EmployerRepositories/EmailTemplate.repository');
+const EmailTemplateCache = require('../cache/EmployerCache/EmailTemplate.cache');
+const AppError = require('../utils/appError');
 
 class EmailTemplateService {
-    // Lấy template theo type và employer
+    /**
+     * Get all templates for employer (both employer-specific and default)
+     */
+    async getTemplates(employerId) {
+        if (!employerId) {
+            throw new AppError('Employer ID is required', 400);
+        }
+
+        const employerTemplates = await this.getEmployerTemplates(employerId);
+        const defaultTemplates = await this.getDefaultTemplates();
+
+        return {
+            employerTemplates,
+            defaultTemplates: defaultTemplates || [],
+            availableVariables: this.getAvailableVariables()
+        };
+    }
+
+    /**
+     * Get specific template by ID
+     */
+    async getTemplate(templateId) {
+        const cached = await EmailTemplateCache.getCachedTemplate(templateId);
+        if (cached) {
+            return {
+                template: cached,
+                availableVariables: this.getAvailableVariables()
+            };
+        }
+
+        const template = await EmailTemplateRepository.getTemplateById(templateId);
+        if (!template) {
+            throw new AppError('Template not found', 404);
+        }
+
+        await EmailTemplateCache.cacheTemplate(templateId, template);
+
+        return {
+            template,
+            availableVariables: this.getAvailableVariables()
+        };
+    }
+
+    /**
+     * Create new template
+     */
+    async createTemplate(employerId, templateData) {
+        const { name, type, subject, template } = templateData;
+
+        if (!name || !subject || !template) {
+            throw new AppError('Name, subject, and template are required', 400);
+        }
+
+        const newTemplate = await EmailTemplateRepository.createTemplate({
+            name: name.toLowerCase().trim(),
+            type: type || 'interview_invitation',
+            subject,
+            template,
+            employer_id: employerId,
+            candidate_id: null
+        });
+
+        await EmailTemplateCache.invalidateTemplateCache(employerId);
+
+        return {
+            message: 'Template created successfully',
+            template: newTemplate
+        };
+    }
+
+    /**
+     * Update template
+     */
+    async updateTemplate(templateId, templateData) {
+        const { name, type, subject, template } = templateData;
+
+        const updateData = {};
+        if (name) updateData.name = name.toLowerCase().trim();
+        if (type) updateData.type = type;
+        if (subject) updateData.subject = subject;
+        if (template) updateData.template = template;
+
+        const updated = await EmailTemplateRepository.updateTemplate(templateId, updateData);
+
+        // Get employer_id to invalidate cache
+        const templateInfo = await EmailTemplateRepository.getTemplateById(templateId);
+        if (templateInfo?.employer_id) {
+            await EmailTemplateCache.invalidateTemplateCache(templateInfo.employer_id, templateId);
+        }
+
+        return {
+            message: 'Template updated successfully',
+            template: updated
+        };
+    }
+
+    /**
+     * Delete template
+     */
+    async deleteTemplate(templateId) {
+        const templateInfo = await EmailTemplateRepository.getTemplateById(templateId);
+        
+        await EmailTemplateRepository.deleteTemplate(templateId);
+
+        if (templateInfo?.employer_id) {
+            await EmailTemplateCache.invalidateTemplateCache(templateInfo.employer_id, templateId);
+        }
+
+        return true;
+    }
+
+    /**
+     * Preview template with sample data
+     */
+    async previewTemplate(templateId, sampleData = {}) {
+        const templateData = await EmailTemplateRepository.getTemplateById(templateId);
+
+        if (!templateData) {
+            throw new AppError('Template not found', 404);
+        }
+
+        const defaultSampleData = {
+            toEmail: 'candidate@example.com',
+            companyName: 'TCC & Partners',
+            emailDateTime: '15/10/2024 - 14:00',
+            emailLocation: 'Tầng 10, Tòa nhà ABC',
+            emailDuration: '60 phút',
+            candidateName: 'Nguyễn Văn A',
+            jobTitle: 'Senior Developer'
+        };
+
+        const variables = { ...defaultSampleData, ...sampleData };
+
+        const processedSubject = this.processTemplate(templateData.subject, variables);
+        const processedTemplate = this.processTemplate(templateData.template, variables);
+
+        return {
+            preview: {
+                subject: processedSubject,
+                htmlContent: processedTemplate,
+                variables
+            }
+        };
+    }
+
+    /**
+     * Get template by name and employer (used by sendEmailService)
+     */
     async getTemplate(templateName, employerId = null) {
         try {
-            console.log(
-                `Fetching template: ${templateName} for employer: ${employerId || 'default'}`,
-            );
+            console.log(`Fetching template: ${templateName} for employer: ${employerId || 'default'}`);
 
             let templateData = null;
 
             if (employerId) {
-                const { data: employerTemplate, error: employerError } =
-                    await supabase
-                        .from('email_templates')
-                        .select('*')
-                        .eq('name', templateName)
-                        .eq('employer_id', employerId)
-                        .single();
-
-                if (!employerError && employerTemplate) {
-                    templateData = employerTemplate;
+                templateData = await EmailTemplateRepository.getTemplateByName(templateName, employerId);
+                if (templateData) {
                     console.log('Found employer-specific template');
                 }
             }
 
-            // Nếu không có employer template, lấy template mặc định
             if (!templateData) {
-                const { data: defaultTemplate, error: defaultError } =
-                    await supabase
-                        .from('email_templates')
-                        .select('*')
-                        .eq('name', templateName)
-                        .is('employer_id', null) // template mặc định
-                        .is('candidate_id', null) // template mặc định
-                        .single();
-
-                if (defaultError) {
-                    console.error(
-                        'Error fetching default template:',
-                        defaultError,
-                    );
-                    return null;
+                const defaultTemplates = await this.getDefaultTemplates();
+                templateData = defaultTemplates.find(t => t.name === templateName);
+                if (templateData) {
+                    console.log('Found default template');
                 }
-
-                templateData = defaultTemplate;
-                console.log('Found default template');
             }
 
             return templateData;
@@ -55,152 +179,62 @@ class EmailTemplateService {
         }
     }
 
-    // Xử lý template với biến thế
+    /**
+     * Process template with variables
+     */
     processTemplate(template, variables) {
         if (!template) return '';
 
         let processedTemplate = template;
 
-        // Thay thế tất cả các biến ${varName}
         Object.keys(variables).forEach((key) => {
             const regex = new RegExp(`\\$\\{${key}\\}`, 'g');
-            processedTemplate = processedTemplate.replace(
-                regex,
-                variables[key] || '',
-            );
+            processedTemplate = processedTemplate.replace(regex, variables[key] || '');
         });
 
         return processedTemplate;
     }
 
-    // Lấy tất cả templates của một employer
+    /**
+     * Get employer templates
+     */
     async getEmployerTemplates(employerId) {
-        try {
-            const { data, error } = await supabase
-                .from('email_templates')
-                .select('*')
-                .eq('employer_id', employerId)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error fetching employer templates:', error);
-                return [];
-            }
-
-            return data || [];
-        } catch (error) {
-            console.error('Error in getEmployerTemplates:', error);
-            return [];
+        const cached = await EmailTemplateCache.getCachedEmployerTemplates(employerId);
+        if (cached) {
+            return cached;
         }
+
+        const templates = await EmailTemplateRepository.getEmployerTemplates(employerId);
+        await EmailTemplateCache.cacheEmployerTemplates(employerId, templates);
+
+        return templates;
     }
 
-    // Lấy tất cả templates mặc định (hệ thống)
+    /**
+     * Get default templates
+     */
     async getDefaultTemplates() {
-        try {
-            const { data, error } = await supabase
-                .from('email_templates')
-                .select('*')
-                .is('employer_id', null)
-                .is('candidate_id', null)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error fetching default templates:', error);
-                return [];
-            }
-
-            return data || [];
-        } catch (error) {
-            console.error('Error in getDefaultTemplates:', error);
-            return [];
+        const cached = await EmailTemplateCache.getCachedDefaultTemplates();
+        if (cached) {
+            return cached;
         }
+
+        const templates = await EmailTemplateRepository.getDefaultTemplates();
+        await EmailTemplateCache.cacheDefaultTemplates(templates);
+
+        return templates;
     }
 
-    // Lấy template theo ID
+    /**
+     * Get template by ID
+     */
     async getTemplateById(templateId) {
-        try {
-            const { data, error } = await supabase
-                .from('email_templates')
-                .select('*')
-                .eq('id', templateId)
-                .single();
-
-            if (error) {
-                console.error('Error fetching template by ID:', error);
-                return null;
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error in getTemplateById:', error);
-            return null;
-        }
+        return await EmailTemplateRepository.getTemplateById(templateId);
     }
 
-    // Tạo template mới
-    async createTemplate(templateData) {
-        try {
-            const { data, error } = await supabase
-                .from('email_templates')
-                .insert([templateData])
-                .select()
-                .single();
-
-            if (error) {
-                console.error('Error creating template:', error);
-                throw new Error(`Failed to create template: ${error.message}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error in createTemplate:', error);
-            throw error;
-        }
-    }
-
-    // Cập nhật template
-    async updateTemplate(templateId, templateData) {
-        try {
-            const { data, error } = await supabase
-                .from('email_templates')
-                .update(templateData)
-                .eq('id', templateId)
-                .select()
-                .single();
-
-            if (error) {
-                console.error('Error updating template:', error);
-                throw new Error(`Failed to update template: ${error.message}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Error in updateTemplate:', error);
-            throw error;
-        }
-    }
-
-    // Xóa template
-    async deleteTemplate(templateId) {
-        try {
-            const { error } = await supabase
-                .from('email_templates')
-                .delete()
-                .eq('id', templateId);
-
-            if (error) {
-                console.error('Error deleting template:', error);
-                throw new Error(`Failed to delete template: ${error.message}`);
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Error in deleteTemplate:', error);
-            throw error;
-        }
-    }
-
-    // Lấy danh sách các biến có sẵn
+    /**
+     * Get available variables
+     */
     getAvailableVariables() {
         return [
             { name: 'toEmail', description: 'Email người nhận' },
@@ -210,7 +244,7 @@ class EmailTemplateService {
             { name: 'emailDuration', description: 'Thời lượng phỏng vấn' },
             { name: 'candidateName', description: 'Tên ứng viên' },
             { name: 'jobTitle', description: 'Vị trí tuyển dụng' },
-            { name: 'hrContact', description: 'Liên hệ HR' },
+            { name: 'hrContact', description: 'Liên hệ HR' }
         ];
     }
 }

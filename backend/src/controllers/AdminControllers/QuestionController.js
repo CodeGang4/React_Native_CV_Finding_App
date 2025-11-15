@@ -1,87 +1,61 @@
 const supabase = require('../../supabase/config');
 const redis = require('../../redis/config');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const QuestionRepository = require('../../repositories/AdminRepositories/Question.repository');
+const { sendData, sendError } = require('../../utils');
+const QuestionService = require('../../services/AdminServices/Question.service');
 const apiKey = process.env.OPEN_AI_KEY;
 class QuestionController {
+    /**
+     * Create a new question
+     * @route POST /create
+     */
     async createQuestion(req, res) {
         const { industry, level, question } = req.body;
-        if (!industry || !level || !question) {
-            return res
-                .status(400)
-                .json({ error: 'Missing industry, level, or question' });
+        const questionData = {
+            industry,
+            level,
+            question,
+            created_by: 'Admin',
         }
-        const existingQuestions = await supabase
-            .from('questions')
-            .select()
-            .eq('industry', industry)
-            .eq('level', level)
-            .eq('question', question)
-            .single();
-        if (existingQuestions.data) {
-            return res.status(409).json({ error: 'Question already exists' });
+        try {
+            const question = await QuestionService.createQuestions(questionData);
+            return sendData(res, question);
+        } catch (error) {
+            console.error("QuestionController.createQuestion error:", error);
+            return sendError(res, 'Failed to create question', 500);
         }
-        const { data, error } = await supabase
-            .from('questions')
-            .insert({ industry, level, question, created_by: 'Admin' })
-            .select();
-        if (error) {
-            console.error('Supabase insert error:', error);
-            return res.status(500).json({ error: 'Failed to save questions' });
-        }
-        return res.status(200).json(data);
-    }
-    async deleteQuestion(req, res) {
-        const questionId = req.params.id;
-        if (!questionId) {
-            return res.status(400).json({ error: 'Question ID is required' });
-        }
-        const { data, error } = await supabase
-            .from('questions')
-            .delete()
-            .eq('id', questionId)
-            .select();
-        if (error) {
-            console.error('Supabase delete error:', error);
-            return res.status(500).json({ error: 'Failed to delete question' });
-        }
-        if (!data || data.length === 0) {
-            return res
-                .status(404)
-                .json({ error: 'Question not found or not deleted' });
-        }
-        return res.status(200).json(data);
     }
 
+    /**
+     * Delete a question
+     * @route DELETE /delete/:id
+     */
+    async deleteQuestion(req, res) {
+        const questionId = req.params.id;
+        const question = await QuestionService.deleteQuestion(questionId);
+        return sendData(res, question);
+    }
+
+    /**
+     * Update a question
+     * @route PUT /update/:id
+     */
     async updateQuestion(req, res) {
         const questionId = req.params.id;
         const { industry, level, question } = req.body;
-        if (!questionId || !industry || !level || !question) {
-            return res.status(400).json({
-                error: 'Missing question ID, industry, level, or question',
-            });
-        }
-        const { data, error } = await supabase
-            .from('questions')
-            .update({ industry, level, question })
-            .eq('id', questionId)
-            .select();
-        if (error) {
-            console.error('Supabase update error:', error);
-            return res.status(500).json({ error: 'Failed to update question' });
-        }
-        if (!data || data.length === 0) {
-            return res
-                .status(404)
-                .json({ error: 'Question not found or not updated' });
-        }
-        return res.status(200).json(data);
+        const questionData = { industry, level, question };
+        const updatedQuestion = await QuestionService.updateQuestion(questionId, questionData);
+        return sendData(res, updatedQuestion);
     }
 
+
+    /**
+     * Cenerate a question using Gemini API
+     * @route POST /generate
+     */
     async generate(req, res) {
         const { industry, level } = req.body;
-        if (!industry || !level) {
-            return res.status(400).json({ error: 'Missing industry or level' });
-        }
         const prompt = `Bạn là 1 chuyên gia tuyển dụng trong lĩnh vực ${industry}. Hãy tạo 1 câu hỏi phỏng vấn cho vị trí ${level}. Không bao gồm bất kỳ phần giới thiệu, giải thích hoặc văn bản bổ sung nào. Câu hỏi bằng tiếng Việt`;
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -91,17 +65,10 @@ class QuestionController {
                 result.response.candidates?.[0]?.content?.parts?.[0]?.text ||
                 '';
 
-            const { data, error } = await supabase
-                .from('questions')
-                .insert({ industry, level, question: answer, created_by: 'AI' })
-                .select();
-            if (error) {
-                console.error('Supabase insert error:', error);
-                return res
-                    .status(500)
-                    .json({ error: 'Failed to save questions' });
-            }
-            return res.status(200).json(data);
+            const questionData = {industry, level, question: answer, created_by: 'AI'};
+            const data = await QuestionService.generate(questionData);
+            return sendData(res, data);
+
         } catch (error) {
             if (error.status === 429) {
                 return res.status(429).json({
@@ -109,64 +76,38 @@ class QuestionController {
                 });
             }
             console.error('Gemini API error:', error.message || error);
-            return res
-                .status(500)
-                .json({ error: 'Failed to generate content' });
+            return sendError(res, 500, 'Failed to generate question');
         }
     }
+
+    /**
+     * Get questions by industry and level
+     * @route GET /questions?industry=industry&level=level
+     */
     async getQuestionsByIndustryAndLevel(req, res) {
         const { industry, level } = req.query;
-        if (!industry || !level) {
-            return res.status(400).json({ error: 'Missing industry or level' });
-        }
-        const { data, error } = await supabase
-            .from('questions')
-            .select()
-            .eq('industry', industry)
-            .eq('level', level);
-        if (error) {
-            console.error('Supabase fetch error:', error);
-            return res.status(500).json({ error: 'Failed to fetch questions' });
-        }
-        if (data.length === 0) {
-            return res
-                .status(404)
-                .json({
-                    error: 'No questions found for this industry and level',
-                });
-        }
-        res.status(200).json(data);
+        const data= await QuestionService.getQuestionsByIndustryAndLevel(industry,level);
+        return sendData(res, data);
     }
+
+    /**
+     * Get questions by industry
+     * @route GET /questions?industry=industry
+     */
     async getQuestionsByIndustry(req, res) {
         const { industry } = req.query;
-        console.log({ industry });
-        if (!industry) {
-            return res.status(400).json({ error: 'Missing industry' });
-        }
-        const { data, error } = await supabase
-            .from('questions')
-            .select()
-            .eq('industry', industry);
-        if (error) {
-            console.error('Supabase fetch error:', error);
-            return res.status(500).json({ error: 'Failed to fetch questions' });
-        }
-
-        if (data.length === 0) {
-            return res
-                .status(404)
-                .json({ error: 'No questions found for this industry' });
-        }
-        res.status(200).json(data);
+        const data= await QuestionService.getQuestionsByIndustry(industry);
+        return sendData(res, data);
     }
 
+
+    /**
+     * Get all questions
+     * @route GET /getQuestions
+     */
     async getAllQuestions(req, res) {
-        const { data, error } = await supabase.from('questions').select('*');
-        if (error) {
-            console.error('Supabase fetch error:', error);
-            return res.status(500).json({ error: 'Failed to fetch questions' });
-        }
-        res.status(200).json(data);
+        const data= await QuestionService.getAllQuestions();
+        return sendData(res, data);
     }
 }
 

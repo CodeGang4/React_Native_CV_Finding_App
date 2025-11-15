@@ -1,0 +1,9 @@
+services:
+  web:
+    image: redis:7
+    container_name: redis_backend
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ./redis_data:/data
