@@ -19,13 +19,13 @@ class ApplicationCache {
             const cachedApplication = await redis.get(cacheKey);
             
             if (cachedApplication) {
-                console.log(`✅ Found application in cache: ${cacheKey}`);
+                console.log(` Found application in cache: ${cacheKey}`);
                 return true;
             }
             
             return false;
         } catch (error) {
-            console.log('⚠️ Application cache check failed (non-critical):', error.message);
+            console.log('Application cache check failed (non-critical):', error.message);
             return false;
         }
     }
@@ -42,9 +42,9 @@ class ApplicationCache {
             const value = exists ? 'exists' : 'not_exists';
             
             await redis.setEx(cacheKey, this.APPLICATION_TTL, value);
-            console.log(`📦 Cached application existence: ${cacheKey} = ${value}`);
+            console.log(` Cached application existence: ${cacheKey} = ${value}`);
         } catch (error) {
-            console.log('⚠️ Failed to cache application existence (non-critical):', error.message);
+            console.log(' Failed to cache application existence (non-critical):', error.message);
         }
     }
 
@@ -59,12 +59,12 @@ class ApplicationCache {
             const cachedCandidate = await redis.get(cacheKey);
             
             if (cachedCandidate) {
-                console.log(`📦 Found candidate in cache: ${candidateId}`);
+                console.log(`Found candidate in cache: ${candidateId}`);
                 return JSON.parse(cachedCandidate);
             }
 
             // Cache miss - fetch from database
-            console.log(`🔍 Candidate cache miss, fetching from database: ${candidateId}`);
+            console.log(` Candidate cache miss, fetching from database: ${candidateId}`);
             const { data, error } = await supabase
                 .from('candidates')
                 .select('*')
@@ -72,7 +72,7 @@ class ApplicationCache {
                 .single();
 
             if (error || !data) {
-                console.log(`❌ Candidate not found: ${candidateId}`);
+                console.log(` Candidate not found: ${candidateId}`);
                 return null;
             }
 
@@ -81,7 +81,7 @@ class ApplicationCache {
             return data;
 
         } catch (error) {
-            console.log('⚠️ Error fetching candidate data (non-critical):', error.message);
+            console.log(' Error fetching candidate data (non-critical):', error.message);
             return null;
         }
     }
@@ -95,9 +95,9 @@ class ApplicationCache {
         try {
             const cacheKey = `candidate:${candidateId}`;
             await redis.setEx(cacheKey, this.DEFAULT_TTL, JSON.stringify(candidateData));
-            console.log(`📦 Cached candidate data: ${candidateId}`);
+            console.log(` Cached candidate data: ${candidateId}`);
         } catch (error) {
-            console.log('⚠️ Failed to cache candidate data (non-critical):', error.message);
+            console.log(' Failed to cache candidate data (non-critical):', error.message);
         }
     }
 
@@ -112,12 +112,12 @@ class ApplicationCache {
             const cachedJob = await redis.get(cacheKey);
             
             if (cachedJob) {
-                console.log(`📦 Found job in cache: ${jobId}`);
+                console.log(` Found job in cache: ${jobId}`);
                 return JSON.parse(cachedJob);
             }
 
             // Cache miss - fetch from database
-            console.log(`🔍 Job cache miss, fetching from database: ${jobId}`);
+            console.log(` Job cache miss, fetching from database: ${jobId}`);
             const { data, error } = await supabase
                 .from('jobs')
                 .select('*')
@@ -125,7 +125,7 @@ class ApplicationCache {
                 .single();
 
             if (error || !data) {
-                console.log(`❌ Job not found: ${jobId}`);
+                console.log(` Job not found: ${jobId}`);
                 return null;
             }
 
@@ -134,7 +134,7 @@ class ApplicationCache {
             return data;
 
         } catch (error) {
-            console.log('⚠️ Error fetching job data (non-critical):', error.message);
+            console.log(' Error fetching job data (non-critical):', error.message);
             return null;
         }
     }
@@ -148,9 +148,9 @@ class ApplicationCache {
         try {
             const cacheKey = `job:${jobId}`;
             await redis.setEx(cacheKey, this.DEFAULT_TTL, JSON.stringify(jobData));
-            console.log(`📦 Cached job data: ${jobId}`);
+            console.log(` Cached job data: ${jobId}`);
         } catch (error) {
-            console.log('⚠️ Failed to cache job data (non-critical):', error.message);
+            console.log(' Failed to cache job data (non-critical):', error.message);
         }
     }
 
@@ -174,13 +174,13 @@ class ApplicationCache {
             // Cache full application data
             const appCacheKey = `application:data:${applicationData.id}`;
             await redis.setEx(appCacheKey, this.APPLICATION_TTL, JSON.stringify(applicationData));
-            console.log(`📦 Cached application data: ${appCacheKey}`);
+            console.log(` Cached application data: ${appCacheKey}`);
 
             // Cache candidate applications list (invalidate and refresh)
             await this.invalidateCandidateApplications(applicationData.candidate_id);
 
         } catch (error) {
-            console.log('⚠️ Failed to cache application data (non-critical):', error.message);
+            console.log(' Failed to cache application data (non-critical):', error.message);
         }
     }
 
@@ -195,13 +195,13 @@ class ApplicationCache {
             const cachedApplications = await redis.get(cacheKey);
             
             if (cachedApplications) {
-                console.log(`📦 Found candidate applications in cache: ${candidateId}`);
+                console.log(` Found candidate applications in cache: ${candidateId}`);
                 return JSON.parse(cachedApplications);
             }
 
             return null;
         } catch (error) {
-            console.log('⚠️ Error getting candidate applications from cache (non-critical):', error.message);
+            console.log(' Error getting candidate applications from cache (non-critical):', error.message);
             return null;
         }
     }
@@ -215,9 +215,9 @@ class ApplicationCache {
         try {
             const cacheKey = `candidate:${candidateId}:applications`;
             await redis.setEx(cacheKey, this.DEFAULT_TTL, JSON.stringify(applications));
-            console.log(`📦 Cached candidate applications: ${candidateId} (${applications.length} items)`);
+            console.log(` Cached candidate applications: ${candidateId} (${applications.length} items)`);
         } catch (error) {
-            console.log('⚠️ Failed to cache candidate applications (non-critical):', error.message);
+            console.log(' Failed to cache candidate applications (non-critical):', error.message);
         }
     }
 
@@ -231,7 +231,7 @@ class ApplicationCache {
             await redis.del(cacheKey);
             console.log(`🗑️ Invalidated candidate applications cache: ${candidateId}`);
         } catch (error) {
-            console.log('⚠️ Failed to invalidate candidate applications cache (non-critical):', error.message);
+            console.log(' Failed to invalidate candidate applications cache (non-critical):', error.message);
         }
     }
 
@@ -246,13 +246,13 @@ class ApplicationCache {
             const cachedCandidates = await redis.get(cacheKey);
             
             if (cachedCandidates) {
-                console.log(`📦 Found job candidates in cache: ${jobId}`);
+                console.log(` Found job candidates in cache: ${jobId}`);
                 return JSON.parse(cachedCandidates);
             }
 
             return null;
         } catch (error) {
-            console.log('⚠️ Error getting job candidates from cache (non-critical):', error.message);
+            console.log(' Error getting job candidates from cache (non-critical):', error.message);
             return null;
         }
     }
@@ -266,9 +266,9 @@ class ApplicationCache {
         try {
             const cacheKey = `job:${jobId}:candidates`;
             await redis.setEx(cacheKey, this.DEFAULT_TTL, JSON.stringify(candidates));
-            console.log(`📦 Cached job candidates: ${jobId} (${candidates.length} items)`);
+            console.log(` Cached job candidates: ${jobId} (${candidates.length} items)`);
         } catch (error) {
-            console.log('⚠️ Failed to cache job candidates (non-critical):', error.message);
+            console.log(' Failed to cache job candidates (non-critical):', error.message);
         }
     }
 
@@ -281,9 +281,9 @@ class ApplicationCache {
         try {
             const cacheKey = `job:${jobId}:competition`;
             await redis.setEx(cacheKey, 1800, JSON.stringify(competitionData)); // 30 minutes TTL
-            console.log(`📦 Cached competition rate: ${jobId}`);
+            console.log(` Cached competition rate: ${jobId}`);
         } catch (error) {
-            console.log('⚠️ Failed to cache competition rate (non-critical):', error.message);
+            console.log(' Failed to cache competition rate (non-critical):', error.message);
         }
     }
 
@@ -298,13 +298,13 @@ class ApplicationCache {
             const cachedData = await redis.get(cacheKey);
             
             if (cachedData) {
-                console.log(`📦 Found competition rate in cache: ${jobId}`);
+                console.log(` Found competition rate in cache: ${jobId}`);
                 return JSON.parse(cachedData);
             }
 
             return null;
         } catch (error) {
-            console.log('⚠️ Error getting competition rate from cache (non-critical):', error.message);
+            console.log(' Error getting competition rate from cache (non-critical):', error.message);
             return null;
         }
     }
@@ -325,7 +325,7 @@ class ApplicationCache {
             await Promise.all(keysToDelete.map(key => redis.del(key)));
             console.log(`🗑️ Invalidated application cache for job: ${jobId}, candidate: ${candidateId}`);
         } catch (error) {
-            console.log('⚠️ Failed to invalidate application cache (non-critical):', error.message);
+            console.log(' Failed to invalidate application cache (non-critical):', error.message);
         }
     }
 }

@@ -53,7 +53,7 @@ class PodcastService {
             // Try to get from cache first
             let podcast = await PodcastCache.getPodcastCache(podcastId);
             if (podcast) {
-                console.log("✅ Podcast retrieved from cache");
+                console.log(" Podcast retrieved from cache");
                 return podcast;
             }
 
@@ -70,7 +70,7 @@ class PodcastService {
 
             // Cache the podcast
             await PodcastCache.setPodcastCache(podcastId, data);
-            console.log("✅ Podcast cached successfully");
+            console.log(" Podcast cached successfully");
 
             return data;
         } catch (error) {

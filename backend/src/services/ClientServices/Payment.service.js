@@ -113,7 +113,7 @@ class PaymentService {
         if (payment) {
             // Invalidate cache
             await PaymentCache.invalidatePaymentCache(payment.user_id);
-            console.log('✅ Payment updated to succeeded:', payment);
+            console.log(' Payment updated to succeeded:', payment);
         }
     }
 
@@ -121,7 +121,7 @@ class PaymentService {
      * Handle Payment Succeeded Webhook
      */
     static async handlePaymentSucceeded(paymentIntent) {
-        console.log('💰 Payment succeeded:', paymentIntent.id);
+        console.log('Payment succeeded:', paymentIntent.id);
 
         // Update payment status
         const payment = await PaymentRepository.updatePaymentStatus(
@@ -130,20 +130,20 @@ class PaymentService {
         );
 
         if (!payment) {
-            console.error('❌ Payment not found for:', paymentIntent.id);
+            console.error(' Payment not found for:', paymentIntent.id);
             return;
         }
 
-        console.log('✅ Payment updated to succeeded');
+        console.log(' Payment updated to succeeded');
 
         // Update user to premium
         if (payment.user_id) {
-            console.log(`🎯 Updating user ${payment.user_id} to premium level`);
+            console.log(` Updating user ${payment.user_id} to premium level`);
 
             const updatedUser = await PaymentRepository.updateUserToPremium(payment.user_id);
 
             if (updatedUser) {
-                console.log('✅ User upgraded to premium:', updatedUser.id);
+                console.log(' User upgraded to premium:', updatedUser.id);
                 
                 // Cache subscription status
                 await PaymentCache.cacheSubscriptionStatus(payment.user_id, {
@@ -161,7 +161,7 @@ class PaymentService {
      * Handle Payment Failed Webhook
      */
     static async handlePaymentFailed(paymentIntent) {
-        console.log('❌ Payment failed:', paymentIntent.id);
+        console.log(' Payment failed:', paymentIntent.id);
 
         const payment = await PaymentRepository.updatePaymentStatus(
             paymentIntent.id,

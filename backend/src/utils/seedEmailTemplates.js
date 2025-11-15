@@ -125,7 +125,7 @@ async function seedDefaultTemplates() {
                     );
                 } else {
                     console.log(
-                        `✅ Created default template: ${template.name}`,
+                        ` Created default template: ${template.name}`,
                     );
                 }
             } else {

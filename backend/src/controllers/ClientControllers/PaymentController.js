@@ -35,7 +35,7 @@ class PaymentController {
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
         if (!webhookSecret) {
-            console.error('⚠️ Missing STRIPE_WEBHOOK_SECRET');
+            console.error(' Missing STRIPE_WEBHOOK_SECRET');
             return res.status(500).send('Webhook secret not configured');
         }
 
@@ -68,13 +68,13 @@ class PaymentController {
                     break;
                 }
                 default:
-                    console.log(`ℹ️ Unhandled event type: ${event.type}`);
+                    console.log(`Unhandled event type: ${event.type}`);
             }
 
             return res.status(200).json({ received: true });
 
         } catch (err) {
-            console.error('❌ Webhook processing error:', err);
+            console.error(' Webhook processing error:', err);
             return res.status(500).json({ error: 'Webhook processing failed' });
         }
     }
@@ -85,10 +85,10 @@ class PaymentController {
     confirmPayment = asyncHandler(async (req, res) => {
         const { payment_intent_id } = req.body;
         
-        console.log('🔍 Confirming payment:', payment_intent_id);
+        console.log(' Confirming payment:', payment_intent_id);
         
         const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
-        console.log('📊 Stripe PaymentIntent status:', paymentIntent.status);
+        console.log(' Stripe PaymentIntent status:', paymentIntent.status);
         
         if (paymentIntent.status !== 'succeeded') {
             return sendData(res, { error: 'Payment not completed', status: paymentIntent.status }, 400);

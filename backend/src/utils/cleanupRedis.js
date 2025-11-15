@@ -10,10 +10,10 @@ async function cleanupRedis() {
         
         const deletedCount = await QuestionCache.cleanupOldKeys();
         
-        console.log(`✅ Cleanup completed! Deleted ${deletedCount} old keys`);
+        console.log(` Cleanup completed! Deleted ${deletedCount} old keys`);
         process.exit(0);
     } catch (error) {
-        console.error('❌ Cleanup failed:', error);
+        console.error(' Cleanup failed:', error);
         process.exit(1);
     }
 }

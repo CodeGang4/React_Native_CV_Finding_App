@@ -16,10 +16,10 @@ class NotificationService {
 
         try {
             const response = await admin.messaging().send(message);
-            console.log("✅ Notification sent successfully:", response);
+            console.log(" Notification sent successfully:", response);
             return response;
         } catch (error) {
-            console.error("❌ Error sending push notification:", error);
+            console.error(" Error sending push notification:", error);
             throw new AppError('Failed to send push notification', 500);
         }
     }

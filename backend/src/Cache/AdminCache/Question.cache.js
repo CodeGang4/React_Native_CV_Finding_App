@@ -1,8 +1,8 @@
 const redis = require("../../redis/config");
 
 const REDIS_KEYS = {
-    ALL_QUESTIONS: "admin:questions:all", // Hash: questionId -> question data
-    CONTENT_TO_ID: "admin:question:content", // Hash: content -> questionId (for duplicate check)
+    ALL_QUESTIONS: "admin:questions:all", 
+    CONTENT_TO_ID: "admin:question:content", 
 };
 
 class QuestionCache {
@@ -47,13 +47,11 @@ class QuestionCache {
      */
     async setQuestionCache(questionId, questionData) {
         try {
-            console.log(`📝 Attempting to cache question ID: ${questionId}`);
-            
             // Check if content already cached with different ID (optional, can skip for now)
             if (questionData.question) {
                 const existingId = await this.questionContentExists(questionData.question);
                 if (existingId && existingId !== questionId) {
-                    console.log(`⚠️ Question content already cached with ID: ${existingId}, but will update with new ID: ${questionId}`);
+                    console.log(`Question content already cached with ID: ${existingId}, but will update with new ID: ${questionId}`);
                     // Continue anyway to update with new ID
                 }
             }
@@ -70,14 +68,14 @@ class QuestionCache {
             
             // Check if pipeline executed successfully
             if (!results) {
-                console.error("❌ Pipeline execution returned null");
+                console.error("Pipeline execution returned null");
                 return false;
             }
             
-            console.log(`✅ Successfully cached question with ID: ${questionId}`);
+            console.log(`Successfully cached question with ID: ${questionId}`);
             return true;
         } catch (error) {
-            console.error("❌ Error setting question cache:", error);
+            console.error("Error setting question cache:", error);
             console.error("Stack trace:", error.stack);
             return false;
         }

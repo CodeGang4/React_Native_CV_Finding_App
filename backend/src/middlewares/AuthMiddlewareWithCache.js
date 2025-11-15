@@ -26,15 +26,15 @@ class AuthMiddleware {
             try {
                 const cachedToken = await AuthCache.getAccessToken(user.id);
                 if (cachedToken && cachedToken === token) {
-                    console.log(`✅ Token verified from cache for user: ${user.id}`);
+                    console.log(` Token verified from cache for user: ${user.id}`);
                 } else {
-                    console.log(`⚠️ Token not in cache or mismatch for user: ${user.id}`);
+                    console.log(` Token not in cache or mismatch for user: ${user.id}`);
                     // Token hợp lệ nhưng không có trong cache - có thể do cache expired
                     // Cache lại token này với TTL ngắn
                     await AuthCache.setAccessToken(user.id, token, 3600);
                 }
             } catch (cacheError) {
-                console.log('⚠️ Cache check failed (non-critical):', cacheError.message);
+                console.log(' Cache check failed (non-critical):', cacheError.message);
             }
 
             // 3. Lấy user data từ cache hoặc database
@@ -43,9 +43,9 @@ class AuthMiddleware {
                 const cachedUser = await redis.get(`user:${user.id}`);
                 if (cachedUser) {
                     userData = JSON.parse(cachedUser);
-                    console.log(`📦 User data from cache: ${user.id}`);
+                    console.log(` User data from cache: ${user.id}`);
                 } else {
-                    console.log(`🔍 User cache miss, fetching from database: ${user.id}`);
+                    console.log(` User cache miss, fetching from database: ${user.id}`);
                     const { data: dbUser, error: dbError } = await supabase
                         .from('users')
                         .select('*')
@@ -56,11 +56,11 @@ class AuthMiddleware {
                         userData = dbUser;
                         // Cache user data
                         await redis.setEx(`user:${user.id}`, 3600, JSON.stringify(userData));
-                        console.log(`📦 Cached user data: ${user.id}`);
+                        console.log(` Cached user data: ${user.id}`);
                     }
                 }
             } catch (cacheError) {
-                console.log('⚠️ User data cache error (non-critical):', cacheError.message);
+                console.log(' User data cache error (non-critical):', cacheError.message);
             }
 
             // 4. Attach user info to request
@@ -74,7 +74,7 @@ class AuthMiddleware {
             next();
 
         } catch (error) {
-            console.error('❌ Auth middleware error:', error);
+            console.error(' Auth middleware error:', error);
             return res.status(500).json({ error: 'Authentication error' });
         }
     }
