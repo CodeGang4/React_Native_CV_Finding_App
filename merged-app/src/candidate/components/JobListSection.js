@@ -56,7 +56,7 @@ export default function JobListSection({
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ width: "100%", paddingHorizontal: 16 }}>
       <JobList
         jobs={limitedJobs} 
         onJobPress={(job) => {
