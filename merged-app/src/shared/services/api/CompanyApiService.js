@@ -42,6 +42,12 @@ export class CompanyApiService {
 
   // Get company by ID
   static async getCompanyById(companyId) {
+    // Validate companyId before making API call
+    if (!companyId || companyId === 'undefined' || companyId === null) {
+      console.warn('[CompanyApiService] Invalid companyId:', companyId);
+      throw new Error('Invalid company ID');
+    }
+
     const response = await apiClient.get(
       `${this.endpoint}/getCompanyInfo/${companyId}`
     );

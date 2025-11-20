@@ -33,7 +33,7 @@ export const testNotificationEndpoints = async (userId = 'test-user-123') => {
     console.log('=== TESTING NOTIFICATION ENDPOINTS ===');
     console.log('Using test user ID:', userId);
     
-    const baseUrl = 'http://172.20.10.10:3000';
+    const baseUrl = 'http://192.168.84.28:3000';
     
     try {
         // Test 1: Get user notifications

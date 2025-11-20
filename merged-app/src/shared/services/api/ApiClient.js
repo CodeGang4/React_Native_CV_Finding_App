@@ -16,11 +16,12 @@ class ApiClient {
       response: [],
     };
 
-    // Initialize rate limit handler with recommended settings
+    // Initialize rate limit handler with conservative settings
     this.rateLimitHandler = new RateLimitHandler({
-      maxConcurrentRequests: 10, // Allow up to 10 concurrent requests
-      requestDelay: 100, // Small delay between requests (100ms)
-      retryDelays: [1000, 2000, 4000, 8000, 16000], // Exponential backoff for retries
+      maxConcurrentRequests: 2, // Reduce to 2 concurrent requests
+      requestDelay: 500, // Increase delay to 500ms between requests
+      maxRetries: 5, // Enable retries for 429 errors
+      retryDelays: [3000, 6000, 12000, 24000, 48000], // Longer exponential backoff: 3s, 6s, 12s, 24s, 48s
     });
   }
 
@@ -31,10 +32,10 @@ class ApiClient {
   setAuthToken(token) {
     if (token) {
       this.defaultHeaders["Authorization"] = `Bearer ${token}`;
-      console.log('✅ [ApiClient] Auth token set:', token.substring(0, 20) + '...');
+      console.log('[ApiClient] Auth token set:', token.substring(0, 20) + '...');
     } else {
       delete this.defaultHeaders["Authorization"];
-      console.log('❌ [ApiClient] Auth token cleared');
+      console.log('[ApiClient] Auth token cleared');
     }
   }
 
@@ -69,8 +70,8 @@ class ApiClient {
 
     // Debug log for default headers
     if (config.url.includes('/payment/')) {
-      console.log('🔧 [ApiClient] Before merge - defaultHeaders:', this.defaultHeaders);
-      console.log('🔧 [ApiClient] Before merge - config.headers:', config.headers);
+      console.log('[ApiClient] Before merge - defaultHeaders:', this.defaultHeaders);
+      console.log('[ApiClient] Before merge - config.headers:', config.headers);
     }
 
     // Merge headers
@@ -81,7 +82,7 @@ class ApiClient {
 
     // Debug log for authentication
     if (config.url.includes('/payment/')) {
-      console.log('🔐 [ApiClient] Payment request headers:', {
+      console.log('[ApiClient] Payment request headers:', {
         hasAuth: !!headers.Authorization,
         authPreview: headers.Authorization ? headers.Authorization.substring(0, 30) + '...' : 'MISSING',
         url: config.url
@@ -130,17 +131,12 @@ class ApiClient {
       requestConfig.body = requestConfig.data;
     }
 
-    // Debug log before fetch
+    // Debug log for important endpoints
     if (config.url.includes('/payment/')) {
-      console.log('🚀 [ApiClient] About to fetch:', {
+      console.log('[ApiClient] Payment request:', {
         url: requestConfig.url,
         method: requestConfig.method,
         hasBody: !!requestConfig.body,
-        bodyType: typeof requestConfig.body,
-        bodyPreview: requestConfig.body ? 
-          (typeof requestConfig.body === 'string' ? requestConfig.body.substring(0, 100) : JSON.stringify(requestConfig.body).substring(0, 100)) 
-          : 'NONE',
-        headers: requestConfig.headers,
       });
     }
 

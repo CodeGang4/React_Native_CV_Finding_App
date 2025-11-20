@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
         const role = await SecureStore.getItemAsync("user_role");
         const userData = await SecureStore.getItemAsync("user_data");
 
-        console.log('🔍 [AuthContext] Checking auth state:', {
+        console.log('[AuthContext] Checking auth state:', {
           hasToken: !!token,
           hasRole: !!role,
           hasUserData: !!userData

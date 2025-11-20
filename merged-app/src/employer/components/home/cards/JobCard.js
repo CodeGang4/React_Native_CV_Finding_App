@@ -79,9 +79,7 @@ export default function JobCard({
         </View>
       </View>
 
-      <TouchableOpacity style={styles.heartContainer}>
-        <Text style={styles.heart}>♡</Text>
-      </TouchableOpacity>
+      
     </TouchableOpacity>
   );
 }

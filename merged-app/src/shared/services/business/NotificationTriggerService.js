@@ -47,11 +47,13 @@ class NotificationTriggerService {
             
             console.log('📬 API Response:', JSON.stringify(response, null, 2));
             
-            if (response.success) {
+            // Check if response indicates success
+            if (response && !response.error && response.success !== false) {
                 console.log('✅ NotificationTriggerService: Job saved notification created successfully');
                 return response;
             } else {
                 console.error('❌ NotificationTriggerService: Failed to create job saved notification:', response);
+                console.warn('⚠️ Notification failed but app will continue normally');
                 return null;
             }
 
@@ -186,13 +188,27 @@ class NotificationTriggerService {
      */
     async triggerSystemNotification(userId, userType, title, message, data = {}) {
         try {
-            console.log('NotificationTriggerService: Triggering system notification');
+            // Validate required parameters
+            if (!userId) {
+                throw new Error('userId is required for system notification');
+            }
+            if (!userType) {
+                throw new Error('userType is required for system notification');
+            }
+            
+            // Ensure userType is valid
+            const validTypes = ['candidate', 'employer'];
+            const finalUserType = validTypes.includes(userType) ? userType : 'candidate';
+            
+            if (userType !== finalUserType) {
+                console.warn(`⚠️ Invalid userType: ${userType}, using 'candidate' instead`);
+            }
 
             const notificationData = {
                 recipient_id: userId,
-                recipient_type: userType,
-                title: title,
-                message: message,
+                recipient_type: finalUserType,
+                title: title || '📢 Thông báo hệ thống',
+                message: message || 'Bạn có một thông báo mới',
                 type: 'system_announcement',
                 data: {
                     action: 'system',
@@ -218,7 +234,18 @@ class NotificationTriggerService {
      */
     async triggerTestNotification(userId, userType) {
         try {
-            console.log('NotificationTriggerService: Triggering test notification');
+            // Validate parameters
+            if (!userId) {
+                throw new Error('userId is required for test notification');
+            }
+            
+            // Ensure userType is valid, default to 'candidate'
+            const validTypes = ['candidate', 'employer'];
+            const finalUserType = validTypes.includes(userType) ? userType : 'candidate';
+            
+            if (!userType || userType !== finalUserType) {
+                console.warn(`⚠️ Invalid or missing userType: ${userType}, using 'candidate'`);
+            }
 
             const testMessages = {
                 candidate: {
@@ -231,9 +258,9 @@ class NotificationTriggerService {
                 }
             };
 
-            const { title, message } = testMessages[userType] || testMessages.candidate;
+            const { title, message } = testMessages[finalUserType] || testMessages.candidate;
 
-            return await this.triggerSystemNotification(userId, userType, title, message, {
+            return await this.triggerSystemNotification(userId, finalUserType, title, message, {
                 test: true,
                 environment: 'development'
             });

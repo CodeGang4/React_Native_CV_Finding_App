@@ -53,7 +53,7 @@ export default function UpgradeAccount({ navigation }) {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity 
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('Profile')}
                         style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={24} color="#fff" />

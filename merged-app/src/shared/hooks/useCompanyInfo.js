@@ -19,8 +19,11 @@ export const useCompanyInfo = (companyId = null) => {
   // Fetch company info
   const fetchCompanyInfo = useCallback(
     async (forceRefresh = false) => {
-      if (!activeCompanyId) {
-        setError("No company ID available");
+      // Validate company ID before fetching
+      if (!activeCompanyId || activeCompanyId === 'undefined' || activeCompanyId === null) {
+        const errorMsg = `Invalid company ID: ${activeCompanyId}`;
+        setError(errorMsg);
+        console.warn("[useCompanyInfo]", errorMsg);
         return;
       }
 
@@ -35,7 +38,7 @@ export const useCompanyInfo = (companyId = null) => {
         setCompanyInfo(info);
       } catch (err) {
         setError(err.message);
-        console.error("Fetch company info error:", err);
+        console.error("[useCompanyInfo] Fetch company info error:", err);
       } finally {
         setLoading(false);
       }

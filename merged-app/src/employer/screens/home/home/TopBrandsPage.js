@@ -115,7 +115,8 @@ const BrandCard = ({ brand, onPress }) => {
 
   React.useEffect(() => {
     const fetchJobCount = async () => {
-      const companyId = brand.id || brand.company_id;
+      const companyId = brand.id || brand.company_id || brand.user_id || brand.employer_id;
+
       console.log(
         "[BrandCard] Fetching job count for company:",
         companyId,

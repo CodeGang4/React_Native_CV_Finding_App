@@ -39,6 +39,12 @@ export class EmployerRepository extends BaseRepository {
 
   // Lấy thông tin công ty theo ID
   async getCompanyInfo(companyId, forceRefresh = false) {
+    // Validate companyId before proceeding
+    if (!companyId || companyId === 'undefined' || companyId === null) {
+      console.warn('[EmployerRepository] Invalid companyId:', companyId);
+      throw new Error('Invalid company ID');
+    }
+
     const cacheKey = `company_info_${companyId}`;
 
     // Kiểm tra cache trước (trừ khi bắt buộc refresh)

@@ -126,7 +126,7 @@ class HomeDataManager {
     // Transform with company info
     const transformJob = async (job) => {
       let companyInfo = null;
-      if (job.employer_id) {
+      if (job.employer_id && job.employer_id !== 'undefined' && job.employer_id !== null) {
         try {
           companyInfo = await HomeApiService.getCompanyByEmployerId(
             job.employer_id
@@ -185,15 +185,43 @@ class HomeDataManager {
   async fetchCompanies() {
     const topCompanies = await HomeApiService.getTopCompanies(4);
 
-    const transformCompany = (company) => ({
-      id: company.company_id || company.id,
-      name: company.company_name || "Chưa có tên công ty",
-      category: this.getCompanyCategory(company.industry),
-      logo: company.company_logo || this.getLogoForIndustry(company.industry),
-      tag: company.unique_candidates > 10 ? "VNR500" : "",
-    });
+    console.log('[HomeDataManager] Raw companies from API:', topCompanies.length);
+    if (topCompanies.length > 0) {
+      console.log('[HomeDataManager] First raw company:', topCompanies[0]);
+    }
 
-    return topCompanies.map(transformCompany);
+    const transformCompany = (company) => {
+      // Try multiple possible ID fields in order of preference
+      const companyId = company.user_id || company.employer_id || company.company_id || company.id;
+      
+      console.log('[HomeDataManager] Transforming company:', {
+        raw_user_id: company.user_id,
+        raw_employer_id: company.employer_id,
+        raw_company_id: company.company_id,
+        raw_id: company.id,
+        selected_id: companyId,
+        name: company.company_name
+      });
+      
+      if (!companyId) {
+        console.warn('[HomeDataManager] Company missing ID:', company);
+      }
+
+      return {
+        id: companyId,
+        user_id: company.user_id, // Preserve original ID fields for API calls
+        employer_id: company.employer_id || company.user_id,
+        company_id: company.company_id,
+        name: company.company_name || "Chưa có tên công ty",
+        category: this.getCompanyCategory(company.industry),
+        logo: company.company_logo || this.getLogoForIndustry(company.industry),
+        tag: company.unique_candidates > 10 ? "VNR500" : "",
+      };
+    };
+
+    const transformed = topCompanies.map(transformCompany);
+    console.log('[HomeDataManager] Transformed companies:', transformed);
+    return transformed;
   }
 
   /**

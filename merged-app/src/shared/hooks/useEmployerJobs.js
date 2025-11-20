@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import employerJobBusinessService from "../services/business/EmployerJobBusinessService";
-import JobNotificationHelper from "../utils/JobNotificationHelper";
+import AutoNotificationService from "../services/AutoNotificationService";
 import {
   registerCallbacks,
   getCallbacks,
@@ -96,7 +96,7 @@ export const useEmployerJobs = () => {
           setJobStats(stats);
 
           // 🔥 AUTO: Gửi notification cho candidates khi có job mới
-          JobNotificationHelper.autoNotifyJobPosted(newJob, user.id);
+          AutoNotificationService.notifyJobPosted(newJob, user.id);
 
           // Đồng bộ với các trang khác
           const callbacks = getCallbacks("jobSyncCallbacks");

@@ -24,13 +24,13 @@ export const useHomeJobs = () => {
         let companyInfo = null;
 
         // Lấy thông tin công ty nếu có employer_id
-        if (job.employer_id) {
+        if (job.employer_id && job.employer_id !== 'undefined' && job.employer_id !== null) {
           try {
             companyInfo = await HomeApiService.getCompanyByEmployerId(
               job.employer_id
             );
           } catch (error) {
-            // Không log error nữa để tránh spam console
+            console.log(`[useHomeJobs] Skip company info for job ${job.id}: ${error.message}`);
           }
         }
 

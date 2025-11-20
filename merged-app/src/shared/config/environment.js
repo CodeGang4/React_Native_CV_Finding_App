@@ -7,9 +7,9 @@ import Constants from 'expo-constants';
 
 const ENV = {
   development: {
-    apiUrl: Constants.expoConfig?.extra?.API || 'http://172.20.10.10:3000',
+    apiUrl: Constants.expoConfig?.extra?.API || 'http://1192.168.84.28:3000',
     deepLinkScheme: 'jobbridge',
-        deepLinkPrefix: 'exp://172.20.10.10:8081', // Update with your local IP
+        deepLinkPrefix: 'exp://192.168.84.28:8081', // Update with your local IP
     webUrl: 'http://localhost:3000',
     stripePublishableKey: 'pk_test_...', // Add your test key
   },
@@ -48,9 +48,9 @@ const config = getEnvVars();
 
 // Log current environment in development
 if (__DEV__) {
-  console.log('🌍 Environment:', __DEV__ ? 'development' : 'production');
-  console.log('🔗 API URL:', config.apiUrl);
-  console.log('🔗 Deep Link Prefix:', config.deepLinkPrefix);
+  console.log('Environment:', __DEV__ ? 'development' : 'production');
+  console.log('API URL:', config.apiUrl);
+  console.log('Deep Link Prefix:', config.deepLinkPrefix);
 }
 
 export default config;

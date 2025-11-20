@@ -19,7 +19,7 @@ export default function useJobs() {
 
       const uniqueEmployerIds = [
         ...new Set(validJobs.map((job) => job.employer_id)),
-      ];
+      ].filter(id => id && id !== 'undefined' && id !== null); // Filter out invalid IDs
 
       const companyMap = {};
       for (const id of uniqueEmployerIds) {

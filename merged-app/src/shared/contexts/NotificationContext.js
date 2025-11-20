@@ -31,47 +31,107 @@ export const NotificationProvider = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const pollingIntervalRef = useRef(null);
+    const lastRefreshTimeRef = useRef(0);
 
     // Fetch notifications from backend
     const fetchNotifications = async (userId, options = {}) => {
-        if (!userId) return;
+        if (!userId) {
+            console.log('⚠️ NotificationContext: Cannot fetch - no userId');
+            return;
+        }
         
+        console.log('🔄 NotificationContext: Fetching notifications for user:', userId);
         setLoading(true);
         setError(null);
         
         try {
             const response = await notificationApiService.getUserNotifications(userId, options);
+            console.log('📦 NotificationContext: Received response:', response);
             
-            if (response.success) {
-                // Transform backend data to match frontend format
-                const transformedNotifications = response.data.map(notification => ({
-                    id: notification.id,
-                    title: notification.title,
-                    body: notification.message,
-                    data: notification.data || {},
-                    timestamp: new Date(notification.created_at),
-                    read: notification.is_read,
-                    type: notification.type,
-                    sender: notification.sender
-                }));
-                
-                setNotifications(transformedNotifications);
-                setUnreadCount(response.unread_count || 0);
+            // Handle different response formats
+            let notificationsData = [];
+            let unreadCountValue = 0;
+            
+            if (response.notifications && Array.isArray(response.notifications)) {
+                // Format 1: { notifications: [...], unread_count: N, pagination: {...} }
+                notificationsData = response.notifications;
+                unreadCountValue = response.unread_count || 0;
+                console.log('✅ NotificationContext: Format 1 - notifications array found');
+            } else if (response.success && response.data) {
+                // Format 2: { success: true, data: [...], unread_count: N }
+                notificationsData = response.data;
+                unreadCountValue = response.unread_count || 0;
+                console.log('✅ NotificationContext: Format 2 - success with data');
+            } else if (Array.isArray(response)) {
+                // Format 3: Direct array of notifications
+                notificationsData = response;
+                unreadCountValue = response.filter(n => !n.is_read).length;
+                console.log('✅ NotificationContext: Format 3 - direct array');
+            } else if (response.data && Array.isArray(response.data)) {
+                // Format 4: { data: [...] }
+                notificationsData = response.data;
+                unreadCountValue = response.unread_count || response.data.filter(n => !n.is_read).length;
+                console.log('✅ NotificationContext: Format 4 - data array');
+            } else {
+                console.warn('⚠️ NotificationContext: Unexpected response format:', response);
+                notificationsData = [];
             }
+            
+            // Transform backend data to match frontend format
+            const transformedNotifications = notificationsData.map(notification => ({
+                id: notification.id,
+                title: notification.title,
+                body: notification.message || notification.body,
+                data: notification.data || {},
+                timestamp: new Date(notification.created_at),
+                read: notification.is_read || notification.read || false,
+                type: notification.type,
+                sender: notification.sender
+            }));
+            
+            console.log(`✅ NotificationContext: Transformed ${transformedNotifications.length} notifications`);
+            console.log('📋 NotificationContext: First notification sample:', transformedNotifications[0]);
+            
+            setNotifications(transformedNotifications);
+            setUnreadCount(unreadCountValue);
+            
+            console.log('✅ NotificationContext: State updated - notifications.length:', transformedNotifications.length, 'unreadCount:', unreadCountValue);
         } catch (error) {
-            console.error('Error fetching notifications:', error);
+            console.error('❌ NotificationContext: Error fetching notifications:', error);
             setError(error.message);
         } finally {
             setLoading(false);
         }
     };
 
-    // Refresh notifications
+    // Debounced refresh to prevent rate limiting
+    const MIN_REFRESH_INTERVAL = 5000; // Minimum 5 seconds between refreshes
+    
     const refreshNotifications = () => {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
+        
+        if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
+            console.log('⏱️ NotificationContext: Refresh throttled (too soon), skipping...');
+            return;
+        }
+        
+        console.log('🔄 NotificationContext: Manual refresh requested');
         if (user?.id) {
+            lastRefreshTimeRef.current = now;
             fetchNotifications(user.id);
+        } else {
+            console.log('⚠️ NotificationContext: Cannot refresh - no user ID');
         }
     };
+    
+    // Register global refresh function
+    useEffect(() => {
+        global.refreshNotifications = refreshNotifications;
+        return () => {
+            delete global.refreshNotifications;
+        };
+    }, [user?.id]);
 
     // Start polling for notifications
     const startPolling = () => {
@@ -84,7 +144,7 @@ export const NotificationProvider = ({ children }) => {
                 console.log('NotificationContext: Polling for new notifications...');
                 fetchNotifications(user.id);
             }
-        }, 1800000); // Poll every 30 seconds
+        }, 60000); // Poll every 60 seconds (1 minute) to prevent rate limiting
     };
 
     // Stop polling
@@ -262,8 +322,9 @@ export const NotificationProvider = ({ children }) => {
                 
                 // Refresh notifications to show the new one
                 setTimeout(() => {
+                    console.log('🔔 Test notification created, refreshing list...');
                     refreshNotifications();
-                }, 1000);
+                }, 500); // Refresh after 500ms
                 
                 console.log('Backend test notification created successfully');
             } catch (error) {

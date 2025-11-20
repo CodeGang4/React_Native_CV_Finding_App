@@ -34,7 +34,6 @@ export default function JobList({ jobs = [], onJobPress, onFavoritePress, savedJ
       initialNumToRender={6}
       windowSize={10}
       removeClippedSubviews
-      nestedScrollEnabled={true}
       scrollEnabled={scrollEnabled}
       refreshControl={refreshControl}
     />

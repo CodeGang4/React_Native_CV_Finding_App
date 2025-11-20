@@ -29,6 +29,16 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
 
+  // Debug log for notifications
+  console.log('[NotificationsScreen] Render:', {
+    notificationsCount: notifications?.length || 0,
+    unreadCount,
+    loading,
+    error,
+    isAuthenticated,
+    userId: user?.id
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshNotifications();
@@ -234,7 +244,12 @@ export default function NotificationsScreen() {
                 Đăng nhập để xem thông báo từ hệ thống
               </Text>
             </View>
-          ) : !loading && notifications.length === 0 ? (
+          ) : loading && (!notifications || notifications.length === 0) ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#00b14f" />
+              <Text style={styles.loadingText}>Đang tải thông báo...</Text>
+            </View>
+          ) : (!notifications || notifications.length === 0) ? (
             <View style={styles.emptyState}>
               <Ionicons name="notifications-outline" size={64} color="#ccc" />
               <Text style={styles.emptyText}>Không có thông báo</Text>
@@ -248,7 +263,7 @@ export default function NotificationsScreen() {
           ) : (
             <FlatList
               data={notifications}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
               renderItem={renderNotification}
               style={styles.notificationsList}
               showsVerticalScrollIndicator={false}

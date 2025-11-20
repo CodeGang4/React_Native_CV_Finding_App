@@ -32,7 +32,11 @@ export default function useAppliedJobs() {
             const jobDetail = allJobs.find((job) => job.id === app.job_id) || {};
             let company = {};
             try {
-              company = await HomeApiService.getCompanyByEmployerId(app.employer_id);
+              if (app.employer_id && app.employer_id !== 'undefined' && app.employer_id !== null) {
+                company = await HomeApiService.getCompanyByEmployerId(app.employer_id);
+              } else {
+                company = { company_name: "Không rõ công ty", company_logo: null };
+              }
             } catch {
               company = { company_name: "Không rõ công ty", company_logo: null };
             }

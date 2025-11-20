@@ -55,7 +55,22 @@ export default function HomePage() {
   };
 
   const handleCompanyPress = (company) => {
-    console.log("[HomePage] Company pressed:", company.id);
+    const companyId = company.user_id || company.employer_id || company.company_id || company.id;
+    console.log("[HomePage] Company pressed:", companyId);
+    console.log("[HomePage] Company data:", {
+      id: company.id,
+      user_id: company.user_id,
+      employer_id: company.employer_id,
+      company_id: company.company_id,
+      name: company.name,
+    });
+    
+    if (!companyId) {
+      console.error("[HomePage] Invalid company - no ID found:", company);
+      Alert.alert("Lỗi", "Không tìm thấy thông tin công ty");
+      return;
+    }
+    
     setSelectedCompany(company);
     setShowCompanyDetail(true);
   };

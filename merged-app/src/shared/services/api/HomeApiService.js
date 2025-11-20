@@ -21,6 +21,12 @@ export class HomeApiService {
 
   // Get company info by employer_id
   static async getCompanyByEmployerId(employerId) {
+    // Validate employerId before making API call
+    if (!employerId || employerId === 'undefined' || employerId === null) {
+      console.warn('[HomeApiService] Invalid employerId:', employerId);
+      throw new Error('Invalid employer ID');
+    }
+
     return requestQueue.enqueue(
       async () => {
         const response = await apiClient.get(`/employer/getCompanyInfo/${employerId}`);
@@ -67,6 +73,17 @@ export class HomeApiService {
           acceptedCompanies.length,
           "accepted companies"
         );
+        
+        // Debug: Log first company to see available fields
+        if (acceptedCompanies.length > 0) {
+          console.log("[HomeApiService] Sample company data:", {
+            id: acceptedCompanies[0].id,
+            user_id: acceptedCompanies[0].user_id,
+            employer_id: acceptedCompanies[0].employer_id,
+            company_id: acceptedCompanies[0].company_id,
+            company_name: acceptedCompanies[0].company_name,
+          });
+        }
         return acceptedCompanies;
       },
       `top-companies-${number}` // cache key

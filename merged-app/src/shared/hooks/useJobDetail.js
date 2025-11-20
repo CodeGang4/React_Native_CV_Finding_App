@@ -27,10 +27,19 @@ export default function useJobDetail(job, userId) {
     if (!job) return;
     setLoading(true);
     try {
-      const companyData = await HomeApiService.getCompanyByEmployerId(
-        job.employer_id
-      );
-      setCompany(companyData);
+      // Fetch company data if employer_id exists and is valid
+      if (job.employer_id && job.employer_id !== 'undefined' && job.employer_id !== null) {
+        const companyData = await HomeApiService.getCompanyByEmployerId(
+          job.employer_id
+        );
+        setCompany(companyData);
+      } else {
+        setCompany({
+          company_name: "Không rõ công ty",
+          company_logo: null,
+          company_address: "Không rõ địa chỉ",
+        });
+      }
 
       await fetchSavedJobs();
 

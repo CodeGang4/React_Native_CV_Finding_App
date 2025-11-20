@@ -19,36 +19,51 @@ const CompanyDetailScreen = ({ company, onBack }) => {
   const [error, setError] = useState(null);
   const [jobs, setJobs] = useState([]);
 
-  useEffect(() => {
-    const fetchCompanyDetail = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchCompanyDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Fetch company details
-        const companyData = await HomeApiService.getCompanyByEmployerId(
-          company.id || company.company_id
-        );
-        setCompanyDetail(companyData);
+      const companyId = company.id || company.company_id || company.employer_id || company.user_id;
 
-        // Fetch company jobs if available
-        try {
-          const companyJobs = await HomeApiService.getJobsByCompanyId(
-            company.id || company.company_id
-          );
-          setJobs(companyJobs || []);
-        } catch (jobsError) {
-          console.log("[CompanyDetail] Jobs fetch error:", jobsError);
-          setJobs([]);
-        }
-      } catch (err) {
-        console.error("[CompanyDetail] Fetch error:", err);
-        setError(err.message || "Không thể tải thông tin công ty");
-      } finally {
-        setLoading(false);
+      console.log('[CompanyDetail] Attempting to fetch with ID:', companyId);
+      console.log('[CompanyDetail] Company object:', {
+        id: company.id,
+        company_id: company.company_id,
+        employer_id: company.employer_id,
+        user_id: company.user_id
+      });
+
+      // Validate company ID before fetching
+      if (!companyId || companyId === 'undefined' || companyId === null) {
+        throw new Error('Invalid company ID');
       }
-    };
 
+      // Fetch company details
+      const companyData = await HomeApiService.getCompanyByEmployerId(
+        companyId
+      );
+      setCompanyDetail(companyData);
+
+      // Fetch company jobs if available
+      try {
+        const companyJobs = await HomeApiService.getJobsByCompanyId(
+          companyId
+        );
+        setJobs(companyJobs || []);
+      } catch (jobsError) {
+        console.log("[CompanyDetail] Jobs fetch error:", jobsError);
+        setJobs([]);
+      }
+    } catch (err) {
+      console.error("[CompanyDetail] Fetch error:", err);
+      setError(err.message || "Không thể tải thông tin công ty");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (company) {
       fetchCompanyDetail();
     }
