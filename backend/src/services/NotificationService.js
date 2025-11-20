@@ -1,7 +1,7 @@
 const admin = require("../supabase/firebaseConfig");
 const NotificationRepository = require('../repositories/AdminRepositories/Notification.repository');
 const NotificationCache = require('../cache/AdminCache/Notification.cache');
-const AppError = require('../utils/appError');
+const {AppError} = require('../utils/errorHandler');
 
 class NotificationService {
     /**
@@ -28,15 +28,17 @@ class NotificationService {
      * Create database notification
      */
     static async createNotification(notificationData) {
-        const { recipient_id, sender_id, type, title, message, data } = notificationData;
+        const { recipient_id, recipient_type, sender_id, sender_type, type, title, message, data } = notificationData;
 
-        if (!recipient_id || !type || !title || !message) {
-            throw new AppError('Missing required fields: recipient_id, type, title, message', 400);
+        if (!recipient_id || !recipient_type || !type || !title || !message) {
+            throw new AppError('Missing required fields: recipient_id, recipient_type, type, title, message', 400);
         }
 
         const notification = await NotificationRepository.createNotification({
             recipient_id,
+            recipient_type,
             sender_id,
+            sender_type,
             type,
             title,
             message,
@@ -133,7 +135,9 @@ class NotificationService {
         // Create notifications for all users
         const notifications = users.map(user => ({
             recipient_id: user.id,
+            recipient_type: user.role,
             sender_id,
+            sender_type: 'system',
             type,
             title,
             message,

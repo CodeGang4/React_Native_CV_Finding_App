@@ -51,8 +51,9 @@ class JobController {
      */
     createJob = asyncHandler(async (req, res) => {
         const jobData = req.body;
+        const companyId = req.params.companyId;
         
-        const result = await JobService.addJob(jobData);
+        const result = await JobService.addJob(companyId, jobData);
         
         sendData(res, result);
     });

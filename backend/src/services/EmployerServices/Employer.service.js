@@ -1,6 +1,6 @@
 const EmployerRepository = require('../../repositories/EmployerRepositories/Employer.repository');
-const EmployerCache = require('../../caches/EmployerCaches/Employer.cache');
-const { AppError } = require('../../utils/AppError');
+const EmployerCache = require('../../Cache/EmployerCache/Employer.cache');
+const { AppError } = require('../../utils/errorHandler');
 
 class EmployerService {
     /**

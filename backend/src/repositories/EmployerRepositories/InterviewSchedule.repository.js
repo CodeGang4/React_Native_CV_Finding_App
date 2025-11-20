@@ -110,7 +110,7 @@ class InterviewScheduleRepository {
                 .select(`
                     *,
                     candidates(full_name, users(email)),
-                    jobs(title, position_level),
+                    jobs(title, position),
                     employers(company_name, company_logo)
                 `)
                 .eq('id', scheduleId)

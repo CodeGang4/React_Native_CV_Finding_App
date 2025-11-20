@@ -14,7 +14,7 @@ const PodcastRouter = require('./ClientRoutes/PodcastRouter');
 const SavePodcastRouter = require('./ClientRoutes/SavePodcastRouter');
 const NotificationRouter = require('./AdminRoutes/NotificationRouter');
 const PaymentRouter = require('./ClientRoutes/PaymentRouter');
-
+const AddressRouter = require('./EmployerRoutes/AddressRouter');
 
 function route(app) {
     // Client Routes
@@ -39,6 +39,7 @@ function route(app) {
 
     //Employer Routes
     app.use('/job', JobRouter);
+    app.use('/address', AddressRouter);
     app.use('/employer', EmployerRouter);
     app.use('/email', EmailRouter);
     app.use('/email-template', EmailTemplatesRouter);

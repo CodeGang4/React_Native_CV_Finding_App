@@ -1,5 +1,5 @@
 const UserService = require('../../services/ClientServices/User.service');
-const { asyncHandler } = require('../../utils/asyncHandler');
+const { asyncHandler } = require('../../utils/errorHandler');
 const { sendData } = require('../../utils/response');
 
 class UserController {

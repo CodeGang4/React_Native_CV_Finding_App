@@ -32,10 +32,10 @@ class InterviewPracticeService {
             }
 
             // Validate audio file type
-            const allowedMimeTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/webm", "audio/ogg"];
-            if (!allowedMimeTypes.includes(file.mimetype)) {
-                throw new AppError("Invalid file type. Only audio files are allowed", 400);
-            }
+            // const allowedMimeTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/webm", "audio/ogg"];
+            // if (!allowedMimeTypes.includes(file.mimetype)) {
+            //     throw new AppError("Invalid file type. Only audio files are allowed", 400);
+            // }
 
             // Validate file size (max 50MB for audio)
             const maxSize = 50 * 1024 * 1024; // 50MB

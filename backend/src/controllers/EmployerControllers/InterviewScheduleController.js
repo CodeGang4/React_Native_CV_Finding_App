@@ -1,6 +1,6 @@
 const InterviewScheduleService = require('../../services/EmployerServices/InterviewSchedule.service');
-const { asyncHandler } = require('../../middlewares/asyncHandler');
-const { sendData } = require('../../utils/responseHelper');
+const { asyncHandler } = require('../../utils/errorHandler');
+const { sendData } = require('../../utils/response');
 
 class InterviewScheduleController {
     createInterviewSchedule = asyncHandler(async (req, res) => {

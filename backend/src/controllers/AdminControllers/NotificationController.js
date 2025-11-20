@@ -1,6 +1,6 @@
 const NotificationService = require('../../services/NotificationService');
-const { asyncHandler } = require('../../middlewares/asyncHandler');
-const { sendData } = require('../../utils/responseHelper');
+const { asyncHandler } = require('../../utils/errorHandler');
+const { sendData } = require('../../utils/response');
 
 class NotificationController {
     sendPushNotification = asyncHandler(async (req, res) => {

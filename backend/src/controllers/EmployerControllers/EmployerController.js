@@ -1,5 +1,5 @@
 const EmployerService = require('../../services/EmployerServices/Employer.service');
-const { asyncHandler } = require('../../utils/asyncHandler');
+const { asyncHandler } = require('../../utils/errorHandler');
 const { sendData } = require('../../utils/response');
 
 class EmployerController {

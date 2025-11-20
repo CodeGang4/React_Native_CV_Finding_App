@@ -1,6 +1,6 @@
 const UserRepository = require('../../repositories/ClientRepositories/User.repository');
 const UserCache = require("../../Cache/ClientCache/User.cache");
-const { AppError } = require('../../utils/AppError');
+const { AppError } = require('../../utils/errorHandler');
 const redis = require('../../redis/config');
 
 class UserService {

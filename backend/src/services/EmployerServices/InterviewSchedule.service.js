@@ -1,6 +1,6 @@
 const InterviewScheduleRepository = require('../../repositories/EmployerRepositories/InterviewSchedule.repository');
 const InterviewScheduleCache = require('../../cache/EmployerCache/InterviewSchedule.cache');
-const { AppError } = require('../../utils/AppError');
+const { AppError } = require('../../utils/errorHandler');
 const sendEmailService = require('../sendEmailService');
 
 class InterviewScheduleService {

@@ -9,7 +9,7 @@ router.use(express.urlencoded({ extended: true }));
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login);
 router.post('/logout', verifyToken, AuthController.logout);
-router.post('/reset-password', AuthController.resetPasswordForEmail);
+// router.post('/reset-password', AuthController.resetPasswordForEmail);
 
 // Debug routes
 router.get('/debug/candidates', AuthController.checkCandidates);

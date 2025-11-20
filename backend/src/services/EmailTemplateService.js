@@ -1,6 +1,6 @@
 const EmailTemplateRepository = require('../repositories/EmployerRepositories/EmailTemplate.repository');
 const EmailTemplateCache = require('../cache/EmployerCache/EmailTemplate.cache');
-const AppError = require('../utils/appError');
+const {AppError} = require('../utils/errorHandler');
 
 class EmailTemplateService {
     /**

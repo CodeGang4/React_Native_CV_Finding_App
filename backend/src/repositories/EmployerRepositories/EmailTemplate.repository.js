@@ -122,20 +122,23 @@ class EmailTemplateRepository {
     /**
      * Get template by name and employer
      */
-    static async getTemplateByName(employerId, templateName) {
+    static async getTemplateByName(templateName, employerId) {
         try {
             const { data, error } = await supabase
                 .from('email_templates')
                 .select('*')
-                .eq('employer_id', employerId)
                 .eq('name', templateName.toLowerCase().trim())
+                .eq('employer_id', employerId)
                 .single();
 
-            if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" error
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error in getTemplateByName:', error);
+                return null; // Return null instead of throwing
+            }
             return data;
         } catch (error) {
             console.error('Error in getTemplateByName:', error);
-            throw error;
+            return null; // Return null to allow fallback
         }
     }
 }

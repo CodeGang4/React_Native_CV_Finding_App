@@ -56,7 +56,7 @@ class QuestionController {
      */
     async generate(req, res) {
         const { industry, level } = req.body;
-        const prompt = `Bạn là 1 chuyên gia tuyển dụng trong lĩnh vực ${industry}. Hãy tạo 1 câu hỏi phỏng vấn cho vị trí ${level}. Không bao gồm bất kỳ phần giới thiệu, giải thích hoặc văn bản bổ sung nào. Câu hỏi bằng tiếng Việt`;
+        const prompt = `Bạn là 1 chuyên gia tuyển dụng trong lĩnh vực ${industry}. Hãy tạo 1 câu hỏi phỏng vấn cho vị trí ${level}.Câu hỏi nên thiên hướng có thể trả lời bằng giọng nói, không phải những câu cần thao tác code. Không bao gồm bất kỳ phần giới thiệu, giải thích hoặc văn bản bổ sung nào. Câu hỏi bằng tiếng Việt`;
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         try {

@@ -1,6 +1,6 @@
 const EmailRepository = require('../../repositories/EmployerRepositories/Email.repository');
 const EmailCache = require('../../cache/EmployerCache/Email.cache');
-const { AppError } = require('../../utils/AppError');
+const { AppError } = require('../../utils/errorHandler');
 const sendEmailService = require('../sendEmailService');
 
 class EmailService {

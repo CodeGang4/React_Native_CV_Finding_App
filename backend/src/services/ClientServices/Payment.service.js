@@ -1,6 +1,6 @@
 const PaymentRepository = require('../../repositories/ClientRepositories/Payment.repository');
-const PaymentCache = require('../../caches/ClientCaches/Payment.cache');
-const { AppError } = require('../../utils/AppError');
+const PaymentCache = require('../../Cache/ClientCache/Payment.cache');
+const { AppError } = require('../../utils/errorHandler');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 class PaymentService {

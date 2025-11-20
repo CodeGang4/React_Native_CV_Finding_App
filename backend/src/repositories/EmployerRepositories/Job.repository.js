@@ -44,7 +44,7 @@ class JobRepository {
         }
     }
 
-    async addJob(JobData) {
+    async addJob(employer_id,JobData) {
         try {
             const {data,error}  =await supabase.from("jobs").insert(JobData).select();
             return {data,error};

@@ -180,8 +180,11 @@ class JobService {
      * @param {Object|Array} jobData - Single job or array of jobs
      * @returns {Promise<Object>}
      */
-    async addJob(jobData) {
+    async addJob(employer_id,jobData) {
         try {
+            if(!employer_id) {
+                throw new AppError("Employer ID is required", 400);
+            }
             const jobArray = Array.isArray(jobData) ? jobData : [jobData];
 
             if (jobArray.length === 0) {
@@ -208,6 +211,7 @@ class JobService {
             // Filter out jobs that already exist
             const existingTitles = new Set((existingJobs || []).map(job => job.title));
             const newJobs = jobArray.filter(job => !existingTitles.has(job.title));
+            const newJobsWithEmployerId = newJobs.map(job => ({ ...job, employer_id }));
 
             if (newJobs.length === 0) {
                 throw new AppError("All job titles already exist", 409);
@@ -218,7 +222,7 @@ class JobService {
             }
 
             // Add new jobs to database
-            const { data, error } = await JobRepository.addJob(newJobs);
+            const { data, error } = await JobRepository.addJob(employer_id,newJobsWithEmployerId);
             if (error) {
                 console.error("Database error:", error);
                 throw new AppError("Failed to create jobs in database", 500);

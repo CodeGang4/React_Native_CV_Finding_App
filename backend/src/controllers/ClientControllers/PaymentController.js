@@ -1,7 +1,7 @@
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const PaymentService = require('../../services/ClientServices/Payment.service');
-const { asyncHandler } = require('../../utils/asyncHandler');
+const { asyncHandler } = require('../../utils/errorHandler');
 const { sendData } = require('../../utils/response');
 
 class PaymentController {
