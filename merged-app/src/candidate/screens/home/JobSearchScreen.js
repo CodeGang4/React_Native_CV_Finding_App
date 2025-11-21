@@ -22,7 +22,6 @@ export default function JobSearchScreen() {
 
   const initialQuery = route.params?.searchQuery || "";
 
-  // Tách biệt giá trị input và giá trị tìm kiếm
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [locationInput, setLocationInput] = useState("");
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -46,7 +45,6 @@ export default function JobSearchScreen() {
       return;
     }
     
-    // Chỉ cập nhật giá trị tìm kiếm khi bấm nút
     setSearchQuery(searchInput);
     setLocation(locationInput);
     setSearchTrigger((prev) => prev + 1);

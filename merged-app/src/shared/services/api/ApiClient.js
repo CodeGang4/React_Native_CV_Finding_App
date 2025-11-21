@@ -18,10 +18,16 @@ class ApiClient {
 
     // Initialize rate limit handler with conservative settings
     this.rateLimitHandler = new RateLimitHandler({
-      maxConcurrentRequests: 2, // Reduce to 2 concurrent requests
-      requestDelay: 500, // Increase delay to 500ms between requests
-      maxRetries: 5, // Enable retries for 429 errors
-      retryDelays: [3000, 6000, 12000, 24000, 48000], // Longer exponential backoff: 3s, 6s, 12s, 24s, 48s
+      maxConcurrentRequests: 2,
+      requestDelay: 500,
+      maxRetries: 0, // Giảm xuống 3 lần thôi
+      retryDelays: [1000, 3000, 5000], // Giảm thời gian retry
+      // Thêm config để chỉ retry với certain status codes
+      shouldRetry: (error) => {
+        // Chỉ retry với lỗi 429 (Rate Limit) hoặc network errors
+        const status = error.response?.status;
+        return status === 429 || status === 408 || !status; // 408: Timeout, !status: network error
+      },
     });
   }
 
@@ -32,10 +38,13 @@ class ApiClient {
   setAuthToken(token) {
     if (token) {
       this.defaultHeaders["Authorization"] = `Bearer ${token}`;
-      console.log('[ApiClient] Auth token set:', token.substring(0, 20) + '...');
+      console.log(
+        "[ApiClient] Auth token set:",
+        token.substring(0, 20) + "..."
+      );
     } else {
       delete this.defaultHeaders["Authorization"];
-      console.log('[ApiClient] Auth token cleared');
+      console.log("[ApiClient] Auth token cleared");
     }
   }
 
@@ -69,9 +78,12 @@ class ApiClient {
       : `${this.baseURL}${config.url}`;
 
     // Debug log for default headers
-    if (config.url.includes('/payment/')) {
-      console.log('[ApiClient] Before merge - defaultHeaders:', this.defaultHeaders);
-      console.log('[ApiClient] Before merge - config.headers:', config.headers);
+    if (config.url.includes("/payment/")) {
+      console.log(
+        "[ApiClient] Before merge - defaultHeaders:",
+        this.defaultHeaders
+      );
+      console.log("[ApiClient] Before merge - config.headers:", config.headers);
     }
 
     // Merge headers
@@ -81,19 +93,21 @@ class ApiClient {
     };
 
     // Debug log for authentication
-    if (config.url.includes('/payment/')) {
-      console.log('[ApiClient] Payment request headers:', {
+    if (config.url.includes("/payment/")) {
+      console.log("[ApiClient] Payment request headers:", {
         hasAuth: !!headers.Authorization,
-        authPreview: headers.Authorization ? headers.Authorization.substring(0, 30) + '...' : 'MISSING',
-        url: config.url
+        authPreview: headers.Authorization
+          ? headers.Authorization.substring(0, 30) + "..."
+          : "MISSING",
+        url: config.url,
       });
     }
 
     // Build request config - IMPORTANT: spread config first, then override headers
     let requestConfig = {
-      ...config,                  // Spread config properties first
+      ...config, // Spread config properties first
       method: config.method || "GET",
-      headers,                    // Then set merged headers (overrides config.headers)
+      headers, // Then set merged headers (overrides config.headers)
     };
 
     // Apply request interceptors
@@ -132,8 +146,8 @@ class ApiClient {
     }
 
     // Debug log for important endpoints
-    if (config.url.includes('/payment/')) {
-      console.log('[ApiClient] Payment request:', {
+    if (config.url.includes("/payment/")) {
+      console.log("[ApiClient] Payment request:", {
         url: requestConfig.url,
         method: requestConfig.method,
         hasBody: !!requestConfig.body,
@@ -205,7 +219,7 @@ class ApiClient {
 
   async parseResponseData(response) {
     const contentType = response.headers.get("content-type");
-    
+
     // Check if response has content
     const contentLength = response.headers.get("content-length");
     if (contentLength === "0") {
@@ -215,10 +229,10 @@ class ApiClient {
     // Clone response to check if body is empty
     const clonedResponse = response.clone();
     const text = await clonedResponse.text();
-    
+
     // If body is empty, return null instead of trying to parse
     if (!text || text.trim() === "") {
-      console.warn('[ApiClient] Empty response body received');
+      console.warn("[ApiClient] Empty response body received");
       return null;
     }
 
@@ -226,8 +240,8 @@ class ApiClient {
       try {
         return await response.json();
       } catch (error) {
-        console.error('[ApiClient] JSON parse error:', error.message);
-        console.error('[ApiClient] Response text:', text);
+        console.error("[ApiClient] JSON parse error:", error.message);
+        console.error("[ApiClient] Response text:", text);
         throw new Error(`Invalid JSON response: ${error.message}`);
       }
     } else if (contentType && contentType.includes("text/")) {
@@ -339,7 +353,9 @@ apiClient.addResponseInterceptor({
     const isGetQuestions404 =
       error.response?.status === 404 &&
       error.config?.method === "GET" &&
-      error.config?.url?.includes("/admin/questions/getQuestionsByIndustryAndLevel");
+      error.config?.url?.includes(
+        "/admin/questions/getQuestionsByIndustryAndLevel"
+      );
 
     if (isDeleteJob404 || isGetQuestions404) {
       console.debug(
@@ -350,9 +366,9 @@ apiClient.addResponseInterceptor({
       return {
         data: [],
         status: 200,
-        statusText: 'OK',
+        statusText: "OK",
         config: error.config,
-        headers: {}
+        headers: {},
       };
     } else {
       // Log tất cả errors khác bình thường
