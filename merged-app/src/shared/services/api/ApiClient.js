@@ -16,12 +16,12 @@ class ApiClient {
       response: [],
     };
 
-    // Initialize rate limit handler with conservative settings
+    // Initialize rate limit handler with balanced settings
     this.rateLimitHandler = new RateLimitHandler({
-      maxConcurrentRequests: 2, // Reduce to 2 concurrent requests
-      requestDelay: 500, // Increase delay to 500ms between requests
-      maxRetries: 5, // Enable retries for 429 errors
-      retryDelays: [3000, 6000, 12000, 24000, 48000], // Longer exponential backoff: 3s, 6s, 12s, 24s, 48s
+      maxConcurrentRequests: 5, // Allow 5 concurrent requests
+      requestDelay: 200, // 200ms delay between requests
+      maxRetries: 3, // Retry up to 3 times for 429 errors
+      retryDelays: [1000, 2000, 4000], // Shorter backoff: 1s, 2s, 4s
     });
   }
 
@@ -368,9 +368,38 @@ apiClient.addResponseInterceptor({
 
     // Handle authentication errors
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid
-      apiClient.setAuthToken(null);
-      // You might want to redirect to login or refresh token here
+      console.log('[ApiClient] 401 error - Token may be expired');
+      
+      // Try to refresh token using Supabase
+      try {
+        const { getSupabaseClient } = require('../../../../../supabase/config');
+        const supabase = getSupabaseClient();
+        
+        console.log('[ApiClient] Attempting to refresh session...');
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !session) {
+          console.error('[ApiClient] Session refresh failed:', refreshError?.message);
+          // Clear token and let user re-login
+          apiClient.setAuthToken(null);
+          throw error;
+        }
+        
+        console.log('[ApiClient] Session refreshed successfully');
+        // Update token
+        apiClient.setAuthToken(session.access_token);
+        
+        // Retry the original request with new token
+        const originalRequest = error.config;
+        originalRequest.headers.Authorization = `Bearer ${session.access_token}`;
+        
+        console.log('[ApiClient] Retrying original request with new token');
+        return apiClient._executeRequest(originalRequest);
+      } catch (refreshErr) {
+        console.error('[ApiClient] Failed to refresh and retry:', refreshErr.message);
+        apiClient.setAuthToken(null);
+        throw error;
+      }
     }
 
     throw error; // Re-throw error thay vì return Promise.reject

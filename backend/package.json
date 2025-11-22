@@ -40,6 +40,7 @@
         "node-cron": "^4.2.1",
         "nodemailer": "^7.0.6",
         "nodemon": "^3.1.10",
+        "openai": "^6.9.1",
         "prettier": "^3.6.2",
         "pretty": "^2.0.0",
         "redis": "^4.7.1",

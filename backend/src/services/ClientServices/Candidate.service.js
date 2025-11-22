@@ -21,24 +21,29 @@ class CandidateService {
             // Try cache first
             let profile = await CandidateCache.getProfileCache(userId);
             if (profile) {
-                console.log(`Profile retrieved from cache: ${userId}`);
+                console.log(`✅ Profile retrieved from cache: ${userId}`);
                 return profile;
             }
 
+            console.log(`🔍 Cache miss for profile: ${userId}`);
+            
             // Cache miss: Get from database
             const { data, error } = await CandidateRepository.getById(userId);
             if (error) {
-                console.error("Database error:", error);
+                console.error("❌ Database error:", error);
+                console.error(`💡 Hint: Make sure userId '${userId}' exists in candidates table with column 'user_id'`);
                 throw new AppError("Failed to fetch candidate profile", 500);
             }
 
             if (!data) {
+                console.warn(`⚠️ Candidate profile not found for userId: ${userId}`);
+                console.warn(`💡 Hint: This might be a record ID instead of user_id. Check if you're using the correct ID from JWT token.`);
                 throw new AppError("Candidate profile not found", 404);
             }
 
             // Cache the profile
             await CandidateCache.setProfileCache(userId, data);
-            console.log(`Profile cached successfully: ${userId}`);
+            console.log(`✅ Profile cached successfully: ${userId}`);
             return data;
         } catch (error) {
             console.error("CandidateService.getCandidateProfile error:", error);

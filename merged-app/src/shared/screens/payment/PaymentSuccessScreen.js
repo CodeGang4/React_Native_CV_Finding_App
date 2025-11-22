@@ -8,8 +8,8 @@ import {
   Animated,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../services/api/ApiClient';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * Payment Success Screen
@@ -18,7 +18,8 @@ import apiClient from '../../services/api/ApiClient';
 export default function PaymentSuccessScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { payment_id, amount, plan } = route.params || {};
+  const { payment_id, amount, plan, currency } = route.params || {};
+  const { refreshUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [paymentData, setPaymentData] = useState(null);
@@ -30,6 +31,21 @@ export default function PaymentSuccessScreen() {
 
   useEffect(() => {
     verifyPayment();
+    
+    // Refresh user data ONCE after successful payment
+    const updateUserData = async () => {
+      try {
+        console.log('💳 [PaymentSuccess] Refreshing user profile after payment...');
+        const result = await refreshUser();
+        if (result?.success) {
+          console.log('✅ [PaymentSuccess] User profile updated! New level:', result.user?.level);
+        }
+      } catch (error) {
+        console.error('❌ [PaymentSuccess] Failed to refresh user:', error);
+      }
+    };
+
+    updateUserData();
   }, []);
 
   useEffect(() => {
@@ -52,50 +68,22 @@ export default function PaymentSuccessScreen() {
   }, [loading, error]);
 
   const verifyPayment = async () => {
-    if (!payment_id) {
-      console.log('⚠️ No payment_id, showing success anyway');
-      // Nếu không có payment_id, vẫn hiển thị thành công với data từ params
-      setPaymentData({
-        payment: {
-          amount_cents: amount || 4900,
-          currency: 'usd',
-          id: payment_id || 'N/A',
-          created_at: new Date().toISOString(),
-        },
-        payment_status: 'paid',
-      });
-      setLoading(false);
-      return;
-    }
-
-    try {
-      console.log('🔍 Verifying payment:', payment_id);
-      const response = await apiClient.get('/payment/verify', {
-        params: { payment_id },
-        priority: 'high',
-      });
-
-      console.log('✅ Payment verified:', response.data);
-      if (response.data.success) {
-        setPaymentData(response.data);
-      } else {
-        setError('Payment verification failed');
-      }
-    } catch (err) {
-      console.error('❌ Payment verification error:', err);
-      // Nếu verify failed, vẫn hiển thị success với data có sẵn
-      setPaymentData({
-        payment: {
-          amount_cents: amount || 4900,
-          currency: 'usd',
-          id: payment_id || 'N/A',
-          created_at: new Date().toISOString(),
-        },
-        payment_status: 'paid',
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Payment is already confirmed by Stripe SDK and backend /payment/confirm endpoint
+    // No need for additional verification - just show success
+    console.log('✅ Payment confirmed, payment_id:', payment_id);
+    
+    setPaymentData({
+      payment: {
+        amount_cents: amount || 4900,
+        currency: currency || 'usd',
+        id: payment_id || 'N/A',
+        created_at: new Date().toISOString(),
+      },
+      payment_status: 'succeeded',
+      success: true,
+    });
+    
+    setLoading(false);
   };
 
   const handleContinue = () => {
@@ -124,7 +112,6 @@ export default function PaymentSuccessScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={80} color="#f44336" />
           <Text style={styles.errorTitle}>Verification Failed</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={verifyPayment}>
@@ -152,11 +139,6 @@ export default function PaymentSuccessScreen() {
           },
         ]}
       >
-        {/* Success Icon */}
-        <View style={styles.iconContainer}>
-          <Ionicons name="checkmark-circle" size={100} color="#4CAF50" />
-        </View>
-
         {/* Success Message */}
         <Text style={styles.successTitle}>Payment Successful!</Text>
         <Text style={styles.successSubtitle}>
@@ -199,22 +181,18 @@ export default function PaymentSuccessScreen() {
 
         {/* Premium Benefits */}
         <View style={styles.benefitsContainer}>
-          <Text style={styles.benefitsTitle}>🎉 You now have access to:</Text>
+          <Text style={styles.benefitsTitle}>You now have access to:</Text>
           <View style={styles.benefitItem}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.benefitText}>Unlimited job applications</Text>
+            <Text style={styles.benefitText}>• Unlimited job applications</Text>
           </View>
           <View style={styles.benefitItem}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.benefitText}>Priority support</Text>
+            <Text style={styles.benefitText}>• Priority support</Text>
           </View>
           <View style={styles.benefitItem}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.benefitText}>Advanced analytics</Text>
+            <Text style={styles.benefitText}>• Advanced analytics</Text>
           </View>
           <View style={styles.benefitItem}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#4CAF50" />
-            <Text style={styles.benefitText}>Ad-free experience</Text>
+            <Text style={styles.benefitText}>• Ad-free experience</Text>
           </View>
         </View>
 
@@ -225,14 +203,12 @@ export default function PaymentSuccessScreen() {
             onPress={handleContinue}
           >
             <Text style={styles.primaryButtonText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={handleViewReceipt}
           >
-            <Ionicons name="receipt-outline" size={20} color="#2196F3" />
             <Text style={styles.secondaryButtonText}>View Receipt</Text>
           </TouchableOpacity>
         </View>

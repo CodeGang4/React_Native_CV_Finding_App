@@ -124,17 +124,23 @@ class PaymentRepository {
      * Update user level to premium
      */
     async updateUserToPremium(userId) {
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('users')
             .update({ 
                 level: 'premium',
                 updated_at: new Date().toISOString()
             })
-            .eq('id', userId);
+            .eq('id', userId)
+            .select()
+            .single();
 
         if (error) {
+            console.error('❌ Failed to update user to premium:', error);
             throw error;
         }
+
+        console.log('✅ User updated to premium:', data);
+        return data;
     }
 
     /**

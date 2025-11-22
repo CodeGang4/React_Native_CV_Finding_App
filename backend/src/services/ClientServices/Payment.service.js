@@ -1,5 +1,7 @@
 const PaymentRepository = require('../../repositories/ClientRepositories/Payment.repository');
 const PaymentCache = require('../../Cache/ClientCache/Payment.cache');
+const CandidateCache = require('../../Cache/ClientCache/Candidate.cache');
+const UserCache = require('../../Cache/ClientCache/User.cache');
 const { AppError } = require('../../utils/errorHandler');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -12,36 +14,70 @@ class PaymentService {
             throw new AppError('Invalid amount', 400);
         }
 
-        console.log('Creating payment intent:', { amount, currency, userId });
+        console.log('💳 [PaymentService] Creating payment intent:', { amount, currency, userId });
+        
+        // Validate Stripe key
+        if (!process.env.STRIPE_SECRET_KEY) {
+            console.error('❌ [PaymentService] STRIPE_SECRET_KEY is missing in .env');
+            throw new AppError('Payment service not configured', 500);
+        }
 
-        // Create Stripe PaymentIntent
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: Number(amount),
-            currency,
-            metadata: { user_id: userId },
-            automatic_payment_methods: {
-                enabled: true,
-            },
-        });
+        let paymentIntent;
+        try {
+            // Create Stripe PaymentIntent
+            console.log('🔄 [PaymentService] Calling Stripe API...');
+            paymentIntent = await stripe.paymentIntents.create({
+                amount: Number(amount),
+                currency,
+                metadata: { user_id: userId },
+                automatic_payment_methods: {
+                    enabled: true,
+                },
+            });
+            
+            console.log('✅ [PaymentService] Stripe PaymentIntent created:', paymentIntent.id);
+        } catch (stripeError) {
+            console.error('❌ [PaymentService] Stripe API error:', {
+                message: stripeError.message,
+                type: stripeError.type,
+                code: stripeError.code,
+                statusCode: stripeError.statusCode
+            });
+            throw new AppError(`Stripe error: ${stripeError.message}`, 500);
+        }
 
         // Save payment record
-        const payment = await PaymentRepository.createPaymentRecord({
-            user_id: userId,
-            amount_cents: Number(amount),
-            currency,
-            provider: 'stripe',
-            provider_transaction_id: paymentIntent.id,
-            status: 'pending',
-            metadata: { 
-                payment_intent_id: paymentIntent.id,
-                type: 'native_card'
-            }
-        });
+        console.log('💾 [PaymentService] Saving payment record to database...');
+        let payment;
+        try {
+            payment = await PaymentRepository.createPaymentRecord(
+                userId,
+                Number(amount),
+                currency,
+                'stripe',
+                paymentIntent.id,
+                { 
+                    payment_intent_id: paymentIntent.id,
+                    type: 'native_card'
+                }
+            );
+            console.log('✅ [PaymentService] Payment record saved:', payment.id);
+        } catch (dbError) {
+            console.error('❌ [PaymentService] Database error:', dbError.message);
+            throw new AppError(`Database error: ${dbError.message}`, 500);
+        }
 
         // Cache payment
-        await PaymentCache.cachePayment(payment.id, payment);
+        try {
+            console.log('📦 [PaymentService] Caching payment...');
+            await PaymentCache.cachePayment(payment.id, payment);
+            console.log('✅ [PaymentService] Payment cached');
+        } catch (cacheError) {
+            console.warn('⚠️ [PaymentService] Cache error (non-critical):', cacheError.message);
+            // Don't throw - cache errors shouldn't break the flow
+        }
 
-        console.log('Payment intent created:', paymentIntent.id, '| Payment:', payment.id);
+        console.log('✅ [PaymentService] Payment intent created:', paymentIntent.id, '| Payment:', payment.id);
 
         return {
             clientSecret: paymentIntent.client_secret,
@@ -145,16 +181,33 @@ class PaymentService {
             if (updatedUser) {
                 console.log(' User upgraded to premium:', updatedUser.id);
                 
-                // Cache subscription status
+                // Invalidate ALL user-related caches so next fetch gets fresh data
+                console.log('🔄 Invalidating all caches for user:', payment.user_id);
+                await Promise.all([
+                    PaymentCache.invalidatePaymentCache(payment.user_id),
+                    CandidateCache.invalidateCandidateCache(payment.user_id),
+                    UserCache.invalidateUserCache(payment.user_id),
+                ]);
+                console.log('✅ All caches invalidated');
+                
+                // Cache fresh subscription status
                 await PaymentCache.cacheSubscriptionStatus(payment.user_id, {
                     level: 'premium',
                     updated_at: updatedUser.updated_at
                 });
+
+                // Also proactively update candidate and user caches with the fresh user
+                try {
+                    console.log('📌 Writing fresh user into CandidateCache and UserCache');
+                    // Candidate cache expects user data keyed by user_id
+                    await CandidateCache.updateCandidateCache(payment.user_id, updatedUser);
+                    await UserCache.cacheUserProfile(payment.user_id, updatedUser);
+                    console.log('✅ Candidate and User caches updated with fresh user');
+                } catch (cacheWriteError) {
+                    console.warn('⚠️ Failed to write fresh user into caches:', cacheWriteError.message || cacheWriteError);
+                }
             }
         }
-
-        // Invalidate payment cache
-        await PaymentCache.invalidatePaymentCache(payment.user_id);
     }
 
     /**

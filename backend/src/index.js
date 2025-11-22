@@ -39,8 +39,8 @@ app.use(
 
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100, 
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Increased from 100 to 500 requests per 15 minutes
     message: "Too many requests, please try again later.",
     standardHeaders: true, 
     legacyHeaders: false, 

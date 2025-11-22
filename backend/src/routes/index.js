@@ -15,6 +15,7 @@ const SavePodcastRouter = require('./ClientRoutes/SavePodcastRouter');
 const NotificationRouter = require('./AdminRoutes/NotificationRouter');
 const PaymentRouter = require('./ClientRoutes/PaymentRouter');
 const AddressRouter = require('./EmployerRoutes/AddressRouter');
+const ChatbotRouter = require('./ClientRoutes/chatbotRoutes');
 
 function route(app) {
     // Client Routes
@@ -25,6 +26,7 @@ function route(app) {
     app.use('/client/candidates', CandidatesRouter);
     app.use('/client/podcast', PodcastRouter);
     app.use('/client/savePodcast', SavePodcastRouter);
+    app.use('/client/chatbot', ChatbotRouter);
     app.use('/client', (req, res) => {
         res.status(200).json({ message: 'Client route' });
     });

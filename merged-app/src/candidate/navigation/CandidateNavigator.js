@@ -6,6 +6,7 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 
 import NotificationsScreen from "../screens/NotificationsScreen";
 import InterviewPracticeScreen from "../screens/InterviewPracticeScreen";
+import ChatbotScreen from "../screens/ChatbotScreen";
 import ProfileStackNavigator from "./ProfileStackNavigator";
 import CandidateStackNavigator from "./CandidateStackNavigator";
 import { useAuth } from "../../shared/contexts/AuthContext";
@@ -41,6 +42,7 @@ export default function CandidateNavigator() {
           if (route.name === "CandidateHome") iconName = "home";
           else if (route.name === "Notifications") iconName = "notifications";
           else if (route.name === "InterviewPractice") iconName = "question-answer";
+          else if (route.name === "Chatbot") iconName = "chat";
           else iconName = "person";
 
           return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -77,6 +79,12 @@ export default function CandidateNavigator() {
         name="InterviewPractice"
         component={InterviewPracticeScreen}
         options={{ title: "Luyện phỏng vấn" }}
+      />
+
+      <Tab.Screen
+        name="Chatbot"
+        component={ChatbotScreen}
+        options={{ title: "Trợ lý AI" }}
       />
       
       <Tab.Screen

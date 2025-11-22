@@ -40,7 +40,47 @@ export const AuthProvider = ({ children }) => {
 
           if (response.ok) {
             const parsedUserData = JSON.parse(userData);
-            setUser(parsedUserData);
+            
+            // 🔧 Migration fix: Check if user ID matches JWT sub (Supabase auth ID)
+            try {
+              const tokenParts = token.split('.');
+              if (tokenParts.length === 3) {
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const supabaseUserId = payload.sub;
+                
+                // If stored user.id doesn't match JWT sub, it's likely a record ID (wrong!)
+                // Fetch correct user data from backend
+                if (parsedUserData.id !== supabaseUserId) {
+                  console.warn('⚠️ [AuthContext] User ID mismatch detected. Fetching correct user data...');
+                  console.log(`   Stored ID: ${parsedUserData.id}`);
+                  console.log(`   JWT sub (correct): ${supabaseUserId}`);
+                  
+                  const userResponse = await fetch(`${API}/client/user/getInfor/${supabaseUserId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  
+                  if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    const correctedUser = userData.user || userData.data || userData;
+                    
+                    // Update stored data with correct user info
+                    setUser(correctedUser);
+                    await SecureStore.setItemAsync("user_data", JSON.stringify(correctedUser));
+                    console.log('✅ [AuthContext] User data corrected and saved');
+                  } else {
+                    setUser(parsedUserData);
+                  }
+                } else {
+                  setUser(parsedUserData);
+                }
+              } else {
+                setUser(parsedUserData);
+              }
+            } catch (migrationError) {
+              console.error('⚠️ [AuthContext] Migration fix failed:', migrationError);
+              setUser(parsedUserData);
+            }
+            
             setUserRole(role);
             console.log('✅ [AuthContext] User authenticated:', parsedUserData.email);
           } else {
@@ -305,6 +345,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      console.log('🔄 [AuthContext] Refreshing user data...');
+      const token = await SecureStore.getItemAsync("user_token");
+      
+      if (!token) {
+        console.warn('⚠️ [AuthContext] No token available');
+        return { success: false, error: 'No token' };
+      }
+
+      // Decode JWT to get the real Supabase user ID (not the record ID)
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        console.error('❌ [AuthContext] Invalid token format');
+        return { success: false, error: 'Invalid token' };
+      }
+
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const supabaseUserId = payload.sub; // This is the real user_id from Supabase auth
+      
+      console.log('🔍 [AuthContext] Using Supabase user ID:', supabaseUserId);
+      
+      // Use /user/getInfor endpoint which queries the users table directly
+      const response = await fetch(`${API}/client/user/getInfor/${supabaseUserId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const updatedUser = data.user || data.data || data;
+        
+        setUser(updatedUser);
+        await SecureStore.setItemAsync("user_data", JSON.stringify(updatedUser));
+        
+        console.log('✅ [AuthContext] User refreshed:', {
+          id: updatedUser.id,
+          level: updatedUser.level,
+          email: updatedUser.email
+        });
+        
+        return { success: true, user: updatedUser };
+      } else {
+        console.warn('⚠️ [AuthContext] Failed to refresh user:', response.status);
+        return { success: false };
+      }
+    } catch (error) {
+      console.error('❌ [AuthContext] Refresh user error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -316,6 +407,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         loginWithFaceID,
         switchRole,
+        refreshUser,
         isCandidate: userRole === "candidate",
         isEmployer: userRole === "employer",
       }}

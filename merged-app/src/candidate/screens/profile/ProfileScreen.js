@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -26,9 +27,13 @@ export default function ProfileScreen() {
   const [level,setLevel] = useState("");
 
 
-  useEffect( () => {
-     fetchUserLevel();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserLevel();
+      fetchProfile();
+    }, [])
+  );
+
 
   const fetchUserLevel = async () => {
     const profile = await UserApiService.getUserById(user.id);
