@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   // Chat Window
   chatWindow: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 150,
     right: 20,
     width: SCREEN_WIDTH - 40,
     maxWidth: 380,

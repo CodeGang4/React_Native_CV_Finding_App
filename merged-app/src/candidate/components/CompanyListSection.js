@@ -39,7 +39,8 @@ export default function CompanyListSection({ limit = 2 }) {
         renderItem={({ item }) => <CompanyCard company={item} />}
         contentContainerStyle={styles.listContainer}
         nestedScrollEnabled={true}
-        scrollEnabled={false}
+        // scrollEnabled={false}
+      
         ListEmptyComponent={
           !loading && (
             <Text style={styles.emptyText}>

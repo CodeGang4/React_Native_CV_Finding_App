@@ -22,7 +22,6 @@ export default function JobSearchScreen() {
 
   const initialQuery = route.params?.searchQuery || "";
 
-  // Tách biệt giá trị input và giá trị tìm kiếm
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [locationInput, setLocationInput] = useState("");
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -46,7 +45,6 @@ export default function JobSearchScreen() {
       return;
     }
     
-    // Chỉ cập nhật giá trị tìm kiếm khi bấm nút
     setSearchQuery(searchInput);
     setLocation(locationInput);
     setSearchTrigger((prev) => prev + 1);
@@ -93,7 +91,7 @@ export default function JobSearchScreen() {
             placeholder="Tìm kiếm công việc hoặc công ty..."
             value={searchInput}
             onChangeText={setSearchInput}
-            onSubmitEditing={handleSearch} // Cho phép search bằng nút Enter
+            onSubmitEditing={handleSearch}
           />
         </View>
 
@@ -104,7 +102,7 @@ export default function JobSearchScreen() {
             placeholder="Địa điểm..."
             value={locationInput}
             onChangeText={setLocationInput}
-            onSubmitEditing={handleSearch} // Cho phép search bằng nút Enter
+            onSubmitEditing={handleSearch}
           />
         </View>
 
@@ -155,7 +153,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5" 
   },
   jobListContainer: {
-    flex: 1,
+    width: "100%",
+    paddingHorizontal: 0,
   },
   searchSection: {
     backgroundColor: "#fff",
