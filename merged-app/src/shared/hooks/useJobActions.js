@@ -29,9 +29,9 @@ export const useJobActions = () => {
 
         try {
             // First, save the job (your existing save job API call)
-            console.log('🎯 useJobActions: START - Saving job:', jobId, 'for candidate:', user.id);
-            console.log('📝 Job data:', JSON.stringify(jobData, null, 2));
-            console.log('👔 Employer ID:', employerId);
+            console.log(' useJobActions: START - Saving job:', jobId, 'for candidate:', user.id);
+            console.log(' Job data:', JSON.stringify(jobData, null, 2));
+            console.log(' Employer ID:', employerId);
             
             // TODO: Replace this with your actual save job API call
             const saveResponse = await fetch(`http://192.168.1.3:3000/job/saveJob`, {
@@ -51,11 +51,11 @@ export const useJobActions = () => {
             }
 
             const saveResult = await saveResponse.json();
-            console.log('✅ useJobActions: Job saved successfully:', JSON.stringify(saveResult, null, 2));
+            console.log(' useJobActions: Job saved successfully:', JSON.stringify(saveResult, null, 2));
 
             // Then trigger notification for employer
             if (employerId) {
-                console.log('🔔 useJobActions: Triggering job saved notification for employer:', employerId);
+                console.log(' useJobActions: Triggering job saved notification for employer:', employerId);
                 
                 await triggerJobSaved(
                     user.id, // candidateId
@@ -64,16 +64,16 @@ export const useJobActions = () => {
                     employerId
                 );
 
-                console.log('🎉 useJobActions: Job saved notification triggered successfully');
+                console.log(' useJobActions: Job saved notification triggered successfully');
             } else {
-                console.warn('⚠️ useJobActions: No employerId provided, skipping notification');
+                console.warn(' useJobActions: No employerId provided, skipping notification');
             }
 
             return { success: true, data: saveResult };
 
         } catch (error) {
-            console.error('💥 useJobActions: Error saving job with notification:', error);
-            console.error('📋 Error details:', error.message);
+            console.error(' useJobActions: Error saving job with notification:', error);
+            console.error(' Error details:', error.message);
             setError(error.message);
             return { success: false, error: error.message };
         } finally {

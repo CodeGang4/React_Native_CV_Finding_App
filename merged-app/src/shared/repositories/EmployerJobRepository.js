@@ -163,17 +163,17 @@ export class EmployerJobRepository extends BaseRepository {
   async updateJob(jobId, jobData) {
     try {
       console.log(
-        `🔄 Updating job ${jobId} with data:`,
+        `Updating job ${jobId} with data:`,
         JSON.stringify(jobData, null, 2)
       );
 
       // Kiểm tra job có tồn tại không trước khi update
       try {
         await this.getJobById(jobId);
-        console.log(`✅ Job ${jobId} exists, proceeding with update`);
+        console.log(` Job ${jobId} exists, proceeding with update`);
       } catch (error) {
         console.error(
-          `❌ Job ${jobId} not found before update:`,
+          ` Job ${jobId} not found before update:`,
           error.message
         );
         throw new Error(`Job ${jobId} not found - cannot update`);
@@ -227,7 +227,7 @@ export class EmployerJobRepository extends BaseRepository {
       // nhưng job thực sự đã bị xóa, coi như thành công
       if (error.response?.status === 404) {
         console.info(
-          `✅ Job ${jobId} deleted successfully (backend returned 404 due to known logic issue)`
+          ` Job ${jobId} deleted successfully (backend returned 404 due to known logic issue)`
         );
 
         // Clear caches vì job đã bị xóa thật
@@ -240,7 +240,7 @@ export class EmployerJobRepository extends BaseRepository {
       }
 
       // Log các lỗi thật sự với context đủ để debug
-      console.error(`❌ Delete job ${jobId} failed:`, {
+      console.error(` Delete job ${jobId} failed:`, {
         error: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,

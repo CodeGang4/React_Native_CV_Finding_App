@@ -30,12 +30,12 @@ class ErrorTracker {
 
       if (severity === "warning") {
         // Chỉ log ngắn gọn cho warnings
-        console.debug(`⚠️ Warning tracked: ${error.message}`, {
+        console.debug(` Warning tracked: ${error.message}`, {
           context: context.type,
         });
       } else {
         // Log chi tiết cho errors thật sự
-        console.group(`🔍 Error Tracked: ${error.message}`);
+        console.group(`Error Tracked: ${error.message}`);
         console.log("Context:", context);
         console.log("Stack:", error.stack);
         console.groupEnd();

@@ -136,18 +136,18 @@ export class EmployerRepository extends BaseRepository {
   // Upload logo công ty
   async uploadCompanyLogo(companyId, imageFile) {
     try {
-      console.log("🔄 EmployerRepository.uploadCompanyLogo called with:");
+      console.log("EmployerRepository.uploadCompanyLogo called with:");
       console.log("   Company ID:", companyId);
       console.log(
         "   Image file:",
-        imageFile ? "✅ File provided" : "❌ No file"
+        imageFile ? " File provided" : " No file"
       );
 
       const formData = new FormData();
       formData.append("companyLogo", imageFile);
 
       console.log(
-        "📤 Making upload request to: /employer/uploadCompanyLogo/" + companyId
+        "Making upload request to: /employer/uploadCompanyLogo/" + companyId
       );
 
       const response = await this.makeEmployerRequest(
@@ -160,7 +160,7 @@ export class EmployerRepository extends BaseRepository {
         }
       );
 
-      console.log("✅ Upload response received:", response.status);
+      console.log(" Upload response received:", response.status);
 
       // Cập nhật cache
       const cachedInfo = this.getFromCache(`company_info_${companyId}`);

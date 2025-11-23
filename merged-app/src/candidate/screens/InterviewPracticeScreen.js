@@ -60,7 +60,7 @@ export default function InterviewPracticeScreen() {
       
       // Check user level from profile
       const profile = await UserApiService.getUserById(user.id);
-      console.log('👤 User profile level:', profile.user?.level);
+      console.log(' User profile level:', profile.user?.level);
       
       if (profile.user?.level === 'premium') {
         setHasAccess(true);
@@ -70,7 +70,7 @@ export default function InterviewPracticeScreen() {
         setHasAccess(false);
       }
     } catch (error) {
-      console.error('❌ Error checking premium access:', error);
+      console.error(' Error checking premium access:', error);
       setHasAccess(false);
     } finally {
       setCheckingAccess(false);
@@ -134,7 +134,7 @@ export default function InterviewPracticeScreen() {
 
   useEffect(() => {
     if (isFocused) {
-      console.log("🔍 isFocused changed - loading profile");
+      console.log("isFocused changed - loading profile");
       fetchProfile();
     }
   }, [isFocused]);
@@ -299,22 +299,22 @@ export default function InterviewPracticeScreen() {
         name: `recording_${questionId}_${Date.now()}.m4a`,
       };
 
-      console.log(`📤 Uploading audio for question ${questionId}...`);
+      console.log(`Uploading audio for question ${questionId}...`);
       await QuestionApiService.uploadAudio(user.id, questionId, audioFile);
 
-      console.log(`🎤 Transcribing audio for question ${questionId}...`);
+      console.log(`Transcribing audio for question ${questionId}...`);
       const transcribeResult = await QuestionApiService.transcribeAudio(
         user.id,
         questionId
       );
 
-      console.log(`✅ Transcription result:`, transcribeResult);
+      console.log(` Transcription result:`, transcribeResult);
 
       if (transcribeResult && transcribeResult.answer) {
         // Check if it's a fallback message
         if (transcribeResult.answer.includes("[Không thể nhận diện") || 
             transcribeResult.answer.includes("[Lỗi kết nối")) {
-          console.warn("⚠️ Received fallback transcription:", transcribeResult.answer);
+          console.warn(" Received fallback transcription:", transcribeResult.answer);
           // Still set the answer but show a warning
           setAnswers((prev) => ({
             ...prev,
@@ -341,7 +341,7 @@ export default function InterviewPracticeScreen() {
         throw new Error("Không thể chuyển đổi âm thanh thành văn bản. Vui lòng thử lại.");
       }
     } catch (err) {
-      console.error("❌ Lỗi khi chuyển đổi âm thanh:", err);
+      console.error(" Lỗi khi chuyển đổi âm thanh:", err);
       
       // More specific error messages
       if (err.message.includes('Empty response')) {
@@ -478,19 +478,19 @@ export default function InterviewPracticeScreen() {
 
       if (audioUri && (!answerText || answerText.trim() === "")) {
         setAiThinking(true);
-        console.log(`🎤 Transcribing audio before grading for question ${questionId}...`);
+        console.log(`Transcribing audio before grading for question ${questionId}...`);
         transcribedText = await uploadAndTranscribeAudio(questionId);
-        console.log(`✅ Transcribed text:`, transcribedText);
+        console.log(` Transcribed text:`, transcribedText);
       }
 
-      console.log(`📝 Grading question ${questionId} with answer:`, transcribedText);
+      console.log(` Grading question ${questionId} with answer:`, transcribedText);
       gradeResult = await QuestionApiService.gradeAnswer(
         user.id,
         questionId,
         transcribedText
       );
 
-      console.log("✅ Grade result:", gradeResult);
+      console.log(" Grade result:", gradeResult);
 
       if (!gradeResult) {
         throw new Error("Server không trả về kết quả chấm điểm. Vui lòng thử lại.");
@@ -503,7 +503,7 @@ export default function InterviewPracticeScreen() {
       
       Alert.alert("Thành công", "Đã chấm điểm xong!");
     } catch (err) {
-      console.error("❌ Lỗi khi chấm điểm:", err);
+      console.error(" Lỗi khi chấm điểm:", err);
       
       // More specific error messages
       let errorMessage = "Không thể chấm điểm. Vui lòng thử lại.";

@@ -36,17 +36,17 @@ export const NotificationProvider = ({ children }) => {
     // Fetch notifications from backend
     const fetchNotifications = async (userId, options = {}) => {
         if (!userId) {
-            console.log('⚠️ NotificationContext: Cannot fetch - no userId');
+            console.log(' NotificationContext: Cannot fetch - no userId');
             return;
         }
         
-        console.log('🔄 NotificationContext: Fetching notifications for user:', userId);
+        console.log('NotificationContext: Fetching notifications for user:', userId);
         setLoading(true);
         setError(null);
         
         try {
             const response = await notificationApiService.getUserNotifications(userId, options);
-            console.log('📦 NotificationContext: Received response:', response);
+            console.log(' NotificationContext: Received response:', response);
             
             // Handle different response formats
             let notificationsData = [];
@@ -56,24 +56,24 @@ export const NotificationProvider = ({ children }) => {
                 // Format 1: { notifications: [...], unread_count: N, pagination: {...} }
                 notificationsData = response.notifications;
                 unreadCountValue = response.unread_count || 0;
-                console.log('✅ NotificationContext: Format 1 - notifications array found');
+                console.log(' NotificationContext: Format 1 - notifications array found');
             } else if (response.success && response.data) {
                 // Format 2: { success: true, data: [...], unread_count: N }
                 notificationsData = response.data;
                 unreadCountValue = response.unread_count || 0;
-                console.log('✅ NotificationContext: Format 2 - success with data');
+                console.log(' NotificationContext: Format 2 - success with data');
             } else if (Array.isArray(response)) {
                 // Format 3: Direct array of notifications
                 notificationsData = response;
                 unreadCountValue = response.filter(n => !n.is_read).length;
-                console.log('✅ NotificationContext: Format 3 - direct array');
+                console.log(' NotificationContext: Format 3 - direct array');
             } else if (response.data && Array.isArray(response.data)) {
                 // Format 4: { data: [...] }
                 notificationsData = response.data;
                 unreadCountValue = response.unread_count || response.data.filter(n => !n.is_read).length;
-                console.log('✅ NotificationContext: Format 4 - data array');
+                console.log(' NotificationContext: Format 4 - data array');
             } else {
-                console.warn('⚠️ NotificationContext: Unexpected response format:', response);
+                console.warn(' NotificationContext: Unexpected response format:', response);
                 notificationsData = [];
             }
             
@@ -89,15 +89,15 @@ export const NotificationProvider = ({ children }) => {
                 sender: notification.sender
             }));
             
-            console.log(`✅ NotificationContext: Transformed ${transformedNotifications.length} notifications`);
-            console.log('📋 NotificationContext: First notification sample:', transformedNotifications[0]);
+            console.log(` NotificationContext: Transformed ${transformedNotifications.length} notifications`);
+            console.log(' NotificationContext: First notification sample:', transformedNotifications[0]);
             
             setNotifications(transformedNotifications);
             setUnreadCount(unreadCountValue);
             
-            console.log('✅ NotificationContext: State updated - notifications.length:', transformedNotifications.length, 'unreadCount:', unreadCountValue);
+            console.log(' NotificationContext: State updated - notifications.length:', transformedNotifications.length, 'unreadCount:', unreadCountValue);
         } catch (error) {
-            console.error('❌ NotificationContext: Error fetching notifications:', error);
+            console.error(' NotificationContext: Error fetching notifications:', error);
             setError(error.message);
         } finally {
             setLoading(false);
@@ -112,16 +112,16 @@ export const NotificationProvider = ({ children }) => {
         const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
         
         if (timeSinceLastRefresh < MIN_REFRESH_INTERVAL) {
-            console.log('⏱️ NotificationContext: Refresh throttled (too soon), skipping...');
+            console.log('NotificationContext: Refresh throttled (too soon), skipping...');
             return;
         }
         
-        console.log('🔄 NotificationContext: Manual refresh requested');
+        console.log('NotificationContext: Manual refresh requested');
         if (user?.id) {
             lastRefreshTimeRef.current = now;
             fetchNotifications(user.id);
         } else {
-            console.log('⚠️ NotificationContext: Cannot refresh - no user ID');
+            console.log(' NotificationContext: Cannot refresh - no user ID');
         }
     };
     
@@ -322,7 +322,7 @@ export const NotificationProvider = ({ children }) => {
                 
                 // Refresh notifications to show the new one
                 setTimeout(() => {
-                    console.log('🔔 Test notification created, refreshing list...');
+                    console.log(' Test notification created, refreshing list...');
                     refreshNotifications();
                 }, 500); // Refresh after 500ms
                 

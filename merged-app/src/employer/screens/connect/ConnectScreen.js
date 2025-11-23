@@ -60,7 +60,7 @@ export default function ConnectScreen({ navigation }) {
       // Debug: Log first candidate's avatar data
       if (result.candidates.length > 0) {
         const firstCandidate = result.candidates[0];
-        console.log("🔍 Sample candidate avatar data:", {
+        console.log("Sample candidate avatar data:", {
           id: firstCandidate.id,
           name: firstCandidate.name,
           avatar: firstCandidate.avatar,
@@ -294,7 +294,7 @@ export default function ConnectScreen({ navigation }) {
             onClose={() => setShowAISettings(false)}
             onSave={() => {
               // Reload AI services sau khi cấu hình
-              console.log("🔄 AI settings saved, reloading services...");
+              console.log("AI settings saved, reloading services...");
             }}
           />
         ) : (

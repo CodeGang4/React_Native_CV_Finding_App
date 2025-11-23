@@ -14,18 +14,18 @@ class PaymentService {
             throw new AppError('Invalid amount', 400);
         }
 
-        console.log('💳 [PaymentService] Creating payment intent:', { amount, currency, userId });
+        console.log('[PaymentService] Creating payment intent:', { amount, currency, userId });
         
         // Validate Stripe key
         if (!process.env.STRIPE_SECRET_KEY) {
-            console.error('❌ [PaymentService] STRIPE_SECRET_KEY is missing in .env');
+            console.error(' [PaymentService] STRIPE_SECRET_KEY is missing in .env');
             throw new AppError('Payment service not configured', 500);
         }
 
         let paymentIntent;
         try {
             // Create Stripe PaymentIntent
-            console.log('🔄 [PaymentService] Calling Stripe API...');
+            console.log('[PaymentService] Calling Stripe API...');
             paymentIntent = await stripe.paymentIntents.create({
                 amount: Number(amount),
                 currency,
@@ -35,9 +35,9 @@ class PaymentService {
                 },
             });
             
-            console.log('✅ [PaymentService] Stripe PaymentIntent created:', paymentIntent.id);
+            console.log(' [PaymentService] Stripe PaymentIntent created:', paymentIntent.id);
         } catch (stripeError) {
-            console.error('❌ [PaymentService] Stripe API error:', {
+            console.error(' [PaymentService] Stripe API error:', {
                 message: stripeError.message,
                 type: stripeError.type,
                 code: stripeError.code,
@@ -47,7 +47,7 @@ class PaymentService {
         }
 
         // Save payment record
-        console.log('💾 [PaymentService] Saving payment record to database...');
+        console.log('[PaymentService] Saving payment record to database...');
         let payment;
         try {
             payment = await PaymentRepository.createPaymentRecord(
@@ -61,23 +61,23 @@ class PaymentService {
                     type: 'native_card'
                 }
             );
-            console.log('✅ [PaymentService] Payment record saved:', payment.id);
+            console.log(' [PaymentService] Payment record saved:', payment.id);
         } catch (dbError) {
-            console.error('❌ [PaymentService] Database error:', dbError.message);
+            console.error(' [PaymentService] Database error:', dbError.message);
             throw new AppError(`Database error: ${dbError.message}`, 500);
         }
 
         // Cache payment
         try {
-            console.log('📦 [PaymentService] Caching payment...');
+            console.log(' [PaymentService] Caching payment...');
             await PaymentCache.cachePayment(payment.id, payment);
-            console.log('✅ [PaymentService] Payment cached');
+            console.log(' [PaymentService] Payment cached');
         } catch (cacheError) {
-            console.warn('⚠️ [PaymentService] Cache error (non-critical):', cacheError.message);
+            console.warn(' [PaymentService] Cache error (non-critical):', cacheError.message);
             // Don't throw - cache errors shouldn't break the flow
         }
 
-        console.log('✅ [PaymentService] Payment intent created:', paymentIntent.id, '| Payment:', payment.id);
+        console.log(' [PaymentService] Payment intent created:', paymentIntent.id, '| Payment:', payment.id);
 
         return {
             clientSecret: paymentIntent.client_secret,
@@ -182,13 +182,13 @@ class PaymentService {
                 console.log(' User upgraded to premium:', updatedUser.id);
                 
                 // Invalidate ALL user-related caches so next fetch gets fresh data
-                console.log('🔄 Invalidating all caches for user:', payment.user_id);
+                console.log('Invalidating all caches for user:', payment.user_id);
                 await Promise.all([
                     PaymentCache.invalidatePaymentCache(payment.user_id),
                     CandidateCache.invalidateCandidateCache(payment.user_id),
                     UserCache.invalidateUserCache(payment.user_id),
                 ]);
-                console.log('✅ All caches invalidated');
+                console.log(' All caches invalidated');
                 
                 // Cache fresh subscription status
                 await PaymentCache.cacheSubscriptionStatus(payment.user_id, {
@@ -202,9 +202,9 @@ class PaymentService {
                     // Candidate cache expects user data keyed by user_id
                     await CandidateCache.updateCandidateCache(payment.user_id, updatedUser);
                     await UserCache.cacheUserProfile(payment.user_id, updatedUser);
-                    console.log('✅ Candidate and User caches updated with fresh user');
+                    console.log(' Candidate and User caches updated with fresh user');
                 } catch (cacheWriteError) {
-                    console.warn('⚠️ Failed to write fresh user into caches:', cacheWriteError.message || cacheWriteError);
+                    console.warn(' Failed to write fresh user into caches:', cacheWriteError.message || cacheWriteError);
                 }
             }
         }

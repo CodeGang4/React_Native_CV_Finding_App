@@ -53,7 +53,7 @@ export default function JobListItem({ job, onPress }) {
   // Debug job data to check deadline fields (only once per job)
   React.useEffect(() => {
     if (job) {
-      console.log("🔍 Job data fields:", {
+      console.log("Job data fields:", {
         id: job.id,
         title: job.title,
         deadline: job.deadline,

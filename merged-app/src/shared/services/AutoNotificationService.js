@@ -136,7 +136,7 @@ class AutoNotificationService {
 
             const statusMessages = {
                 accepted: {
-                    title: '🎉 Hồ sơ được chấp nhận',
+                    title: ' Hồ sơ được chấp nhận',
                     message: `Chúc mừng! Hồ sơ của bạn cho vị trí "${data.jobTitle}" đã được chấp nhận.`
                 },
                 rejected: {
@@ -255,11 +255,11 @@ class AutoNotificationService {
 
             const messages = {
                 candidate: {
-                    title: '👋 Chào mừng đến với JobFinder!',
+                    title: 'Chào mừng đến với JobFinder!',
                     message: `Xin chào ${userName}! Hãy hoàn thiện hồ sơ và bắt đầu tìm kiếm công việc phù hợp ngay hôm nay.`
                 },
                 employer: {
-                    title: '👋 Chào mừng Nhà tuyển dụng!',
+                    title: 'Chào mừng Nhà tuyển dụng!',
                     message: `Xin chào ${userName}! Bắt đầu đăng tin tuyển dụng để tìm kiếm ứng viên tài năng.`
                 }
             };

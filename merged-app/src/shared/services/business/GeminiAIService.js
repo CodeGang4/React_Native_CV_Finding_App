@@ -13,7 +13,7 @@ export class GeminiAIService {
     // Kiểm tra API key
     if (!AIConfig.isValidAPIKey(this.config.API_KEY)) {
       console.warn(
-        "⚠️ Google Gemini API key chưa được cấu hình. Xem hướng dẫn trong AIConfig.js"
+        " Google Gemini API key chưa được cấu hình. Xem hướng dẫn trong AIConfig.js"
       );
       this.isConfigured = false;
       return;
@@ -23,9 +23,9 @@ export class GeminiAIService {
       this.genAI = new GoogleGenerativeAI(this.config.API_KEY);
       this.model = this.genAI.getGenerativeModel({ model: this.config.MODEL });
       this.isConfigured = true;
-      console.log("✅ Google Gemini AI đã sẵn sàng");
+      console.log(" Google Gemini AI đã sẵn sàng");
     } catch (error) {
-      console.error("❌ Lỗi khởi tạo Gemini AI:", error);
+      console.error(" Lỗi khởi tạo Gemini AI:", error);
       this.isConfigured = false;
     }
   }
@@ -39,17 +39,17 @@ export class GeminiAIService {
   async analyzeAndRankCandidatesWithAI(candidates, jobRequirements = {}) {
     // Kiểm tra cấu hình
     if (!this.isConfigured) {
-      console.warn("⚠️ Real AI chưa được cấu hình, fallback về Local AI");
+      console.warn(" Real AI chưa được cấu hình, fallback về Local AI");
       return this.fallbackToLocalAI(candidates, jobRequirements);
     }
 
     try {
-      console.log("🤖 Bắt đầu phân tích ứng viên với Google Gemini AI...");
+      console.log("Bắt đầu phân tích ứng viên với Google Gemini AI...");
       console.log(
-        `⚠️ LƯU Ý: Free tier có giới hạn ${this.config.REQUESTS_PER_MINUTE} requests/minute`
+        ` LƯU Ý: Free tier có giới hạn ${this.config.REQUESTS_PER_MINUTE} requests/minute`
       );
       console.log(
-        `📊 Với ${candidates.length} ứng viên, ước tính thời gian: ~${Math.ceil(
+        `Với ${candidates.length} ứng viên, ước tính thời gian: ~${Math.ceil(
           candidates.length * 0.5
         )} giây`
       );
@@ -59,7 +59,7 @@ export class GeminiAIService {
       const results = [];
 
       console.log(
-        `📊 Sẽ xử lý ${candidates.length} ứng viên trong ${Math.ceil(
+        `Sẽ xử lý ${candidates.length} ứng viên trong ${Math.ceil(
           candidates.length / batchSize
         )} batches (${batchSize} ứng viên/batch)`
       );
@@ -70,7 +70,7 @@ export class GeminiAIService {
         const totalBatches = Math.ceil(candidates.length / batchSize);
 
         console.log(
-          `📦 Đang xử lý batch ${batchNum}/${totalBatches} (${batch.length} ứng viên)`
+          ` Đang xử lý batch ${batchNum}/${totalBatches} (${batch.length} ứng viên)`
         );
 
         try {
@@ -83,18 +83,18 @@ export class GeminiAIService {
           // Delay ngắn giữa các batch, chỉ khi cần thiết
           if (i + batchSize < candidates.length) {
             console.log(
-              `⏸️ Đợi ${this.config.DELAY_BETWEEN_BATCHES}ms giữa các batch...`
+              ` Đợi ${this.config.DELAY_BETWEEN_BATCHES}ms giữa các batch...`
             );
             await new Promise((resolve) =>
               setTimeout(resolve, this.config.DELAY_BETWEEN_BATCHES)
             );
           }
         } catch (error) {
-          console.error(`❌ Lỗi xử lý batch ${batchNum}:`, error);
+          console.error(` Lỗi xử lý batch ${batchNum}:`, error);
 
           // Nếu gặp quota limit, đợi ít hơn và retry
           if (error.message.includes("429")) {
-            console.warn("⚠️ Quota limit reached, đợi 10 giây và thử lại...");
+            console.warn(" Quota limit reached, đợi 10 giây và thử lại...");
             await new Promise((resolve) => setTimeout(resolve, 10000));
           }
 
@@ -114,13 +114,13 @@ export class GeminiAIService {
       const sortedResults = results.sort((a, b) => b.aiScore - a.aiScore);
 
       console.log(
-        "✅ Hoàn thành phân tích AI cho",
+        " Hoàn thành phân tích AI cho",
         candidates.length,
         "ứng viên"
       );
       return sortedResults;
     } catch (error) {
-      console.error("❌ Lỗi phân tích AI:", error);
+      console.error(" Lỗi phân tích AI:", error);
       // Fallback về AI cũ nếu API thất bại
       return this.fallbackToLocalAI(candidates, jobRequirements);
     }
@@ -146,7 +146,7 @@ export class GeminiAIService {
         await new Promise((resolve) => setTimeout(resolve, staggerDelay));
 
         console.log(
-          `📊 Phân tích ứng viên ${index + 1}/${candidates.length}: ${
+          `Phân tích ứng viên ${index + 1}/${candidates.length}: ${
             candidate.name
           }`
         );
@@ -162,7 +162,7 @@ export class GeminiAIService {
           aiProvider: "Google Gemini",
         };
       } catch (error) {
-        console.error(`❌ Lỗi phân tích ứng viên ${candidate.name}:`, error);
+        console.error(` Lỗi phân tích ứng viên ${candidate.name}:`, error);
         // Fallback với điểm thấp nếu AI thất bại
         return {
           ...candidate,
@@ -181,7 +181,7 @@ export class GeminiAIService {
     const batchResults = await Promise.all(promises);
 
     console.log(
-      `✅ Hoàn thành phân tích batch: ${batchResults.length} ứng viên`
+      ` Hoàn thành phân tích batch: ${batchResults.length} ứng viên`
     );
     return batchResults;
   }
@@ -200,7 +200,7 @@ export class GeminiAIService {
       // Kiểm tra nếu là lỗi quota limit (429)
       if (error.message.includes("429") && error.message.includes("quota")) {
         console.warn(
-          `⚠️ Quota limit reached for ${candidate.name}. Retry ${
+          ` Quota limit reached for ${candidate.name}. Retry ${
             retryCount + 1
           }/${this.config.MAX_RETRIES}`
         );
@@ -368,7 +368,7 @@ Chỉ trả lời JSON object trên, không thêm text hay giải thích gì kh�
       // Try to find JSON object
       const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.warn("⚠️ Không tìm thấy JSON trong response, dùng fallback");
+        console.warn(" Không tìm thấy JSON trong response, dùng fallback");
         return this.fallbackParseResponse(aiResponse, candidate);
       }
 
@@ -479,7 +479,7 @@ Chỉ trả lời JSON object trên, không thêm text hay giải thích gì kh�
    * Fallback về AI cũ nếu API thất bại
    */
   // async fallbackToLocalAI(candidates, jobRequirements) {
-  //   console.log("⚠️ Fallback về AI local do lỗi API");
+  //   console.log(" Fallback về AI local do lỗi API");
   //   const { EnhancedAIService } = await import("./EnhancedAIService.js");
   //   return EnhancedAIService.analyzeAndRankCandidates(
   //     candidates,
@@ -489,7 +489,7 @@ Chỉ trả lời JSON object trên, không thêm text hay giải thích gì kh�
 
   // Thay thế hàm cũ bằng hàm này:
   async fallbackToLocalAI(candidates, jobRequirements) {
-    console.log("⚠️ Fallback về AI local do lỗi API");
+    console.log(" Fallback về AI local do lỗi API");
 
     // KHÔNG CẦN import động nữa. Sử dụng trực tiếp đối tượng đã import ở đầu file.
     return EnhancedAIService.analyzeAndRankCandidates(

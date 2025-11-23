@@ -59,7 +59,7 @@ export class QuestionApiService {
       
       return Array.isArray(response.data) ? response.data[0] : response.data;
     } catch (error) {
-      console.error('❌ [QuestionApiService] Error grading answer:', error);
+      console.error(' [QuestionApiService] Error grading answer:', error);
       throw error;
     }
   }
@@ -80,34 +80,34 @@ export class QuestionApiService {
       );
       
       if (!response.data) {
-        console.warn('⚠️ [QuestionApiService] Empty response from uploadAudio');
+        console.warn(' [QuestionApiService] Empty response from uploadAudio');
         return { success: true, message: 'Audio uploaded successfully' };
       }
       
       return response.data;
     } catch (error) {
-      console.error('❌ [QuestionApiService] Error uploading audio:', error);
+      console.error(' [QuestionApiService] Error uploading audio:', error);
       throw error;
     }
   }
 
   static async transcribeAudio(userId, questionId) {
     try {
-      console.log(`🎤 Transcribing audio for user ${userId}, question ${questionId}`);
+      console.log(`Transcribing audio for user ${userId}, question ${questionId}`);
       
       const response = await apiClient.post(
         `${this.clientEndpoint}/transcribeAudio/${userId}/${questionId}`
       );
       
       if (!response.data) {
-        console.warn('⚠️ [QuestionApiService] Empty response from transcription');
+        console.warn(' [QuestionApiService] Empty response from transcription');
         throw new Error('Server returned empty response for transcription');
       }
       
       const data = Array.isArray(response.data) ? response.data[0] : response.data;
       
       if (!data.answer) {
-        console.warn('⚠️ [QuestionApiService] No answer field in transcription response');
+        console.warn(' [QuestionApiService] No answer field in transcription response');
         // Return a default answer instead of throwing error
         return {
           ...data,
@@ -115,10 +115,10 @@ export class QuestionApiService {
         };
       }
       
-      console.log('✅ [QuestionApiService] Transcription successful:', data.answer?.substring(0, 50) + '...');
+      console.log(' [QuestionApiService] Transcription successful:', data.answer?.substring(0, 50) + '...');
       return data;
     } catch (error) {
-      console.error('❌ [QuestionApiService] Error transcribing audio:', error);
+      console.error(' [QuestionApiService] Error transcribing audio:', error);
       
       // If it's a network error or server error, return a fallback response
       if (error.response?.status >= 500 || !error.response) {

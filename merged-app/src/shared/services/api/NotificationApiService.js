@@ -45,7 +45,7 @@ class NotificationApiService {
             // Ensure recipient_type is valid
             const validTypes = ['candidate', 'employer'];
             if (!validTypes.includes(notificationData.recipient_type)) {
-                console.warn(`⚠️ Invalid recipient_type: ${notificationData.recipient_type}, defaulting to 'candidate'`);
+                console.warn(` Invalid recipient_type: ${notificationData.recipient_type}, defaulting to 'candidate'`);
                 notificationData.recipient_type = 'candidate';
             }
             
@@ -68,19 +68,19 @@ class NotificationApiService {
                 recipientType: notificationData.recipient_type,
             };
             
-            console.log('🔔 [NotificationApiService] Creating notification for:', payload.recipient_type, payload.recipient_id);
+            console.log(' [NotificationApiService] Creating notification for:', payload.recipient_type, payload.recipient_id);
             
             const response = await apiClient.post(`${NotificationApiService.endpoint}/create`, payload);
             
-            console.log('✅ [NotificationApiService] Notification created successfully:', response.data);
+            console.log(' [NotificationApiService] Notification created successfully:', response.data);
             return response.data;
         } catch (error) {
             // Log detailed error info
-            console.error('❌ [NotificationApiService] Error creating notification:', error.message);
+            console.error(' [NotificationApiService] Error creating notification:', error.message);
             
             if (error.response) {
-                console.error('📋 Response status:', error.response.status);
-                console.error('📋 Response data:', error.response.data);
+                console.error(' Response status:', error.response.status);
+                console.error(' Response data:', error.response.data);
             }
             
             // Don't throw - return error object instead to prevent app crash

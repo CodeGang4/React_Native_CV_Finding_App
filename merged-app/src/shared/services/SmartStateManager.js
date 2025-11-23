@@ -34,7 +34,7 @@ class SmartStateManager {
     // Check cache first (instant response)
     const cached = this.getFromCache(key);
     if (cached && !forceRefresh) {
-      console.log(`📦 [SmartState] Cache hit for ${key}`);
+      console.log(` [SmartState] Cache hit for ${key}`);
 
       // Background refresh if cache is getting old
       if (this.shouldBackgroundRefresh(cached)) {
@@ -54,7 +54,7 @@ class SmartStateManager {
     }
 
     try {
-      console.log(`🔄 [SmartState] Fetching fresh data for ${key}`);
+      console.log(`[SmartState] Fetching fresh data for ${key}`);
 
       // Add to sync queue
       this.syncQueue.add(syncKey);
@@ -72,14 +72,14 @@ class SmartStateManager {
 
       return data;
     } catch (error) {
-      console.warn(`⚠️ [SmartState] Fetch failed for ${key}:`, error.message);
+      console.warn(` [SmartState] Fetch failed for ${key}:`, error.message);
 
       // Remove from sync queue
       this.syncQueue.delete(syncKey);
 
       // Return cached data if available, otherwise fallback
       if (cached) {
-        console.log(`📦 [SmartState] Using stale cache for ${key}`);
+        console.log(` [SmartState] Using stale cache for ${key}`);
         return cached.data;
       }
 
@@ -103,7 +103,7 @@ class SmartStateManager {
     try {
       // Optimistic update
       if (optimistic) {
-        console.log(`⚡ [SmartState] Optimistic update for ${key}`);
+        console.log(`[SmartState] Optimistic update for ${key}`);
         this.setState(key, data);
         this.setCache(key, data, ttl);
       }
@@ -121,12 +121,12 @@ class SmartStateManager {
 
       return data;
     } catch (error) {
-      console.error(`❌ [SmartState] Update failed for ${key}:`, error.message);
+      console.error(` [SmartState] Update failed for ${key}:`, error.message);
 
       // Rollback optimistic update
       if (optimistic && rollbackOnError && originalState !== undefined) {
         console.log(
-          `🔄 [SmartState] Rolling back optimistic update for ${key}`
+          `[SmartState] Rolling back optimistic update for ${key}`
         );
         this.setState(key, originalState);
         this.setCache(key, originalState, ttl);
@@ -182,14 +182,14 @@ class SmartStateManager {
 
     setTimeout(async () => {
       try {
-        console.log(`🔄 [SmartState] Background sync for ${key}`);
+        console.log(`[SmartState] Background sync for ${key}`);
         const data = await fetchFunction();
 
         this.setCache(key, data, options.ttl || this.config.defaultTTL);
         this.setState(key, data);
       } catch (error) {
         console.warn(
-          `⚠️ [SmartState] Background sync failed for ${key}:`,
+          ` [SmartState] Background sync failed for ${key}:`,
           error.message
         );
       }
@@ -270,7 +270,7 @@ class SmartStateManager {
       try {
         subscriber.callback(data);
       } catch (error) {
-        console.error(`❌ [SmartState] Subscriber error for ${key}:`, error);
+        console.error(` [SmartState] Subscriber error for ${key}:`, error);
       }
     });
   }

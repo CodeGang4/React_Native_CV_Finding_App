@@ -60,7 +60,7 @@ export const linking = {
     // Check if app was opened via deep link
     const url = await Linking.getInitialURL();
     if (url) {
-      console.log('📱 Initial deep link URL:', url);
+      console.log('Initial deep link URL:', url);
     }
     return url;
   },
@@ -68,7 +68,7 @@ export const linking = {
   subscribe(listener) {
     // Listen for deep link events while app is running
     const onReceiveURL = ({ url }) => {
-      console.log('📱 Received deep link URL:', url);
+      console.log('Received deep link URL:', url);
       listener(url);
     };
 
@@ -94,7 +94,7 @@ export const useDeepLinking = () => {
       try {
         const initialUrl = await Linking.getInitialURL();
         if (initialUrl) {
-          console.log('📱 Handling initial URL:', initialUrl);
+          console.log('Handling initial URL:', initialUrl);
           handleDeepLink(initialUrl);
         }
       } catch (error) {
@@ -104,7 +104,7 @@ export const useDeepLinking = () => {
 
     // Handle URL when app is already open
     const handleURL = (event) => {
-      console.log('📱 Handling URL event:', event.url);
+      console.log('Handling URL event:', event.url);
       handleDeepLink(event.url);
     };
 
@@ -136,7 +136,7 @@ export const useDeepLinking = () => {
       if (path?.includes('payment/success')) {
         const session_id = queryParams?.session_id;
         if (session_id) {
-          console.log('✅ Navigating to PaymentSuccess with session:', session_id);
+          console.log(' Navigating to PaymentSuccess with session:', session_id);
           navigation.navigate('CandidateApp', {
             screen: 'ProfileStack',
             params: {
@@ -145,14 +145,14 @@ export const useDeepLinking = () => {
             }
           });
         } else {
-          console.warn('⚠️ Payment success URL missing session_id');
+          console.warn(' Payment success URL missing session_id');
         }
       }
       
       // Handle payment failure/cancellation
       else if (path?.includes('payment/failed') || path?.includes('payment/cancel')) {
         const reason = queryParams?.reason || 'cancelled';
-        console.log('❌ Navigating to PaymentFailed with reason:', reason);
+        console.log(' Navigating to PaymentFailed with reason:', reason);
         navigation.navigate('CandidateApp', {
           screen: 'ProfileStack',
           params: {
@@ -164,7 +164,7 @@ export const useDeepLinking = () => {
       
       // Handle payment history
       else if (path?.includes('payment/history')) {
-        console.log('📋 Navigating to PaymentHistory');
+        console.log(' Navigating to PaymentHistory');
         navigation.navigate('CandidateApp', {
           screen: 'ProfileStack',
           params: {
@@ -186,7 +186,7 @@ export const useDeepLinking = () => {
       
       // Handle other paths
       else {
-        console.log('ℹ️ Unhandled deep link path:', path);
+        console.log('Unhandled deep link path:', path);
       }
     } catch (error) {
       console.error('Error parsing deep link:', error);

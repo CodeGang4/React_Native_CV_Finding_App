@@ -43,14 +43,14 @@ export class AIConfig {
 
   //     if (storedKey && this.isValidAPIKey(storedKey)) {
   //       this.GEMINI_CONFIG.API_KEY = storedKey;
-  //       console.log("✅ API key loaded from secure storage");
+  //       console.log(" API key loaded from secure storage");
   //       return true;
   //     }
 
-  //     console.log("⚠️ No valid API key found in storage");
+  //     console.log(" No valid API key found in storage");
   //     return false;
   //   } catch (error) {
-  //     console.error("❌ Failed to load API key from storage:", error);
+  //     console.error(" Failed to load API key from storage:", error);
   //     return false;
   //   }
   // }
@@ -63,14 +63,14 @@ static async loadAPIKeyFromStorage() {
 
         if (storedKey && this.isValidAPIKey(storedKey)) {
             this.GEMINI_CONFIG.API_KEY = storedKey;
-            console.log("✅ API key loaded from secure storage");
+            console.log(" API key loaded from secure storage");
             return true;
         }
 
-        console.log("⚠️ No valid API key found in storage");
+        console.log(" No valid API key found in storage");
         return false;
     } catch (error) {
-        console.error("❌ Failed to load API key from storage:", error);
+        console.error(" Failed to load API key from storage:", error);
         return false;
     }
 }
@@ -90,10 +90,10 @@ static async loadAPIKeyFromStorage() {
       await AsyncStorage.setItem("GEMINI_API_KEY", apiKey);
 
       this.GEMINI_CONFIG.API_KEY = apiKey;
-      console.log("✅ API key saved to secure storage");
+      console.log(" API key saved to secure storage");
       return true;
     } catch (error) {
-      console.error("❌ Failed to save API key to storage:", error);
+      console.error(" Failed to save API key to storage:", error);
       return false;
     }
   }
@@ -125,10 +125,10 @@ static async loadAPIKeyFromStorage() {
       await AsyncStorage.removeItem("GEMINI_API_KEY");
 
       this.GEMINI_CONFIG.API_KEY = "YOUR_API_KEY_HERE";
-      console.log("✅ API key cleared from storage");
+      console.log(" API key cleared from storage");
       return true;
     } catch (error) {
-      console.error("❌ Failed to clear API key:", error);
+      console.error(" Failed to clear API key:", error);
       return false;
     }
   }
@@ -137,13 +137,13 @@ static async loadAPIKeyFromStorage() {
    * Initialize API key from storage on app start
    */
   static async initialize() {
-    console.log("🔑 Initializing AI Config...");
+    console.log(" Initializing AI Config...");
 
     // Try to load from storage first
     const loaded = await this.loadAPIKeyFromStorage();
 
     if (!loaded) {
-      console.log("⚠️ Please configure your Gemini API key");
+      console.log(" Please configure your Gemini API key");
       console.log("📖 Run AIConfig.getAPIKeyGuide() for instructions");
     }
 
@@ -188,13 +188,13 @@ static async loadAPIKeyFromStorage() {
 
       const success = await this.saveAPIKeyToStorage(newAPIKey);
       if (success) {
-        console.log("✅ API key đã được cập nhật thành công");
+        console.log(" API key đã được cập nhật thành công");
         return { success: true, message: "API key updated successfully" };
       } else {
         throw new Error("Failed to save API key");
       }
     } catch (error) {
-      console.error("❌ API key update failed:", error);
+      console.error(" API key update failed:", error);
       return { success: false, message: error.message };
     }
   }
@@ -204,7 +204,7 @@ static async loadAPIKeyFromStorage() {
    */
   static getAPIKeyGuide() {
     return {
-      title: "🔑 Hướng dẫn lấy Google Gemini API Key (MIỄN PHÍ)",
+      title: " Hướng dẫn lấy Google Gemini API Key (MIỄN PHÍ)",
       steps: [
         "1. Truy cập: https://makersuite.google.com/app/apikey",
         "2. Đăng nhập tài khoản Google của bạn",
@@ -214,10 +214,10 @@ static async loadAPIKeyFromStorage() {
         "6. Khởi động lại ứng dụng để áp dụng",
       ],
       notes: [
-        "✅ Gemini API hoàn toàn miễn phí với giới hạn 60 requests/minute",
-        "✅ Không cần thẻ tín dụng để đăng ký",
-        "✅ API key không hết hạn (trừ khi bạn xóa)",
-        "⚠️ Bảo mật API key, không chia sẻ với người khác",
+        " Gemini API hoàn toàn miễn phí với giới hạn 60 requests/minute",
+        " Không cần thẻ tín dụng để đăng ký",
+        " API key không hết hạn (trừ khi bạn xóa)",
+        " Bảo mật API key, không chia sẻ với người khác",
       ],
       troubleshooting: [
         "Nếu không truy cập được → Thử VPN hoặc đổi mạng",
@@ -295,13 +295,13 @@ static async loadAPIKeyFromStorage() {
     const testKey = apiKey || this.GEMINI_CONFIG.API_KEY;
 
     if (!this.isValidAPIKey(testKey)) {
-      console.error("❌ API key không hợp lệ");
+      console.error(" API key không hợp lệ");
       return [];
     }
 
     try {
       // List some popular available models
-      console.log("📋 Recommended Gemini models:");
+      console.log(" Recommended Gemini models:");
       console.log("- models/gemini-2.5-flash (current, fastest)");
       console.log("- models/gemini-2.5-pro (more powerful)");
       console.log("- models/gemini-flash-latest (auto-updated)");
@@ -314,7 +314,7 @@ static async loadAPIKeyFromStorage() {
         "models/gemini-pro-latest",
       ];
     } catch (error) {
-      console.error("❌ Không thể list models:", error.message);
+      console.error(" Không thể list models:", error.message);
       return [];
     }
   }

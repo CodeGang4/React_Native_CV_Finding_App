@@ -1,5 +1,5 @@
 /**
- * ⚡ Centralized Candidate Count Manager for merged-app
+ * Centralized Candidate Count Manager for merged-app
  * Giải quyết hoàn toàn HTTP 429 errors
  */
 
@@ -36,19 +36,19 @@ class CentralizedCandidateManager {
         "../../repositories/ApplicationRepository"
       );
       this.applicationRepository = ApplicationRepository;
-      console.log("✅ ApplicationRepository initialized successfully");
+      console.log(" ApplicationRepository initialized successfully");
     } catch (error) {
-      console.error("❌ Failed to initialize ApplicationRepository:", error);
+      console.error(" Failed to initialize ApplicationRepository:", error);
       // Try alternative import path
       try {
         const ApplicationRepository = await import(
           "../../repositories/ApplicationRepository"
         ).then((module) => module.ApplicationRepository || module.default);
         this.applicationRepository = ApplicationRepository;
-        console.log("✅ ApplicationRepository initialized with fallback");
+        console.log(" ApplicationRepository initialized with fallback");
       } catch (fallbackError) {
         console.error(
-          "❌ Fallback ApplicationRepository import also failed:",
+          " Fallback ApplicationRepository import also failed:",
           fallbackError
         );
       }
@@ -110,7 +110,7 @@ class CentralizedCandidateManager {
     // Check if ApplicationRepository is available
     if (!this.applicationRepository) {
       console.warn(
-        "⚠️ ApplicationRepository not available, skipping batch update"
+        " ApplicationRepository not available, skipping batch update"
       );
       // Still notify subscribers with default data to prevent hanging UI
       const jobIds = Array.from(this.pendingJobIds);
@@ -171,11 +171,11 @@ class CentralizedCandidateManager {
 
       this.lastUpdateTime = Date.now();
       console.log(
-        `✅ [CentralizedCandidateManager] Updated ${results.size} job counts`
+        ` [CentralizedCandidateManager] Updated ${results.size} job counts`
       );
     } catch (error) {
       console.error(
-        "❌ [CentralizedCandidateManager] Batch update failed:",
+        " [CentralizedCandidateManager] Batch update failed:",
         error
       );
 
@@ -222,7 +222,7 @@ class CentralizedCandidateManager {
           // Fetch from repository with safety check
           if (!this.applicationRepository) {
             console.warn(
-              `⚠️ ApplicationRepository not available for job ${jobId}, using default counts`
+              ` ApplicationRepository not available for job ${jobId}, using default counts`
             );
             results.set(jobId, this.getDefaultCounts());
             continue;

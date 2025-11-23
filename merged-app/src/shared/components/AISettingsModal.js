@@ -57,13 +57,13 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
 
       if (result.success) {
         Alert.alert(
-          "Thành công! 🎉",
+          "Thành công! ",
           "API key hoạt động tốt. Bạn có thể sử dụng Real AI ngay bây giờ!",
           [{ text: "OK", onPress: () => handleSaveConfig() }]
         );
       } else {
         Alert.alert(
-          "Lỗi API Key ❌",
+          "Lỗi API Key ",
           `${result.error}\n\n💡 Gợi ý: ${result.suggestion}`,
           [
             { text: "Thử lại", style: "default" },
@@ -92,7 +92,7 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
     Alert.alert(
       guide.title,
       guide.steps.join("\n\n") +
-        "\n\n📝 Lưu ý:\n" +
+        "\n\n Lưu ý:\n" +
         guide.notes.join("\n") +
         "\n\n🔧 Khắc phục sự cố:\n" +
         guide.troubleshooting.join("\n"),
@@ -109,7 +109,7 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
 
   const FeatureComparison = () => (
     <View style={styles.comparisonSection}>
-      <Text style={styles.comparisonTitle}>🔥 So sánh tính năng AI</Text>
+      <Text style={styles.comparisonTitle}>So sánh tính năng AI</Text>
 
       <View style={styles.featureRow}>
         <Text style={styles.featureLabel}>Local AI (Rule-based)</Text>
@@ -154,7 +154,7 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Current Status */}
           <View style={styles.statusSection}>
-            <Text style={styles.sectionTitle}>📊 Trạng thái hiện tại</Text>
+            <Text style={styles.sectionTitle}>Trạng thái hiện tại</Text>
             <View style={styles.statusRow}>
               <Text style={styles.statusLabel}>Gemini AI:</Text>
               <View style={styles.statusBadge(currentConfig?.hasValidKey)}>
@@ -181,7 +181,7 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
 
           {/* API Key Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.sectionTitle}>🔑 Google Gemini API Key</Text>
+            <Text style={styles.sectionTitle}> Google Gemini API Key</Text>
             <TextInput
               style={styles.apiKeyInput}
               placeholder="Nhập API key của bạn..."
@@ -235,7 +235,7 @@ export const AISettingsModal = ({ visible, onClose, onSave }) => {
 
           {/* Quick Setup Guide */}
           <View style={styles.quickGuideSection}>
-            <Text style={styles.sectionTitle}>⚡ Thiết lập nhanh</Text>
+            <Text style={styles.sectionTitle}>Thiết lập nhanh</Text>
             <Text style={styles.quickGuideText}>
               1. Truy cập makersuite.google.com/app/apikey{"\n"}
               2. Tạo API key mới (100% miễn phí){"\n"}

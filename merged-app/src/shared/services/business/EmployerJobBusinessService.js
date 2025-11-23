@@ -32,7 +32,7 @@ export class EmployerJobBusinessService {
 
       // Check feature flag for application counting
       if (!isApplicationCountingEnabled()) {
-        console.log("⚠️ Application count enrichment disabled by feature flag");
+        console.log(" Application count enrichment disabled by feature flag");
 
         // Return jobs với applications = 0 để tránh API calls
         const jobsWithDefaults = filteredJobs.map((job) => ({
@@ -46,7 +46,7 @@ export class EmployerJobBusinessService {
       // Enrich với application counts - với feature flag enabled
       try {
         console.log(
-          "🔄 Starting application count enrichment (feature enabled)"
+          "Starting application count enrichment (feature enabled)"
         );
         const jobsWithApplications =
           await this.applicationService.enrichJobsWithApplicationCounts(
@@ -57,7 +57,7 @@ export class EmployerJobBusinessService {
         return jobsWithApplications;
       } catch (enrichError) {
         console.warn(
-          "⚠️ Application count enrichment failed, returning jobs with 0 applications:",
+          " Application count enrichment failed, returning jobs with 0 applications:",
           enrichError.message
         );
 
@@ -248,7 +248,7 @@ export class EmployerJobBusinessService {
     }
 
     console.log(
-      "🔍 Generate job stats - jobs with applications:",
+      "Generate job stats - jobs with applications:",
       jobs.map((job) => ({
         id: job.id,
         title: job.title,
@@ -268,7 +268,7 @@ export class EmployerJobBusinessService {
       pendingApproval: jobs.filter((job) => job.status === "Chờ duyệt").length,
     };
 
-    console.log("📊 Final job stats:", stats);
+    console.log("Final job stats:", stats);
     return stats;
   }
 
@@ -302,7 +302,7 @@ export class EmployerJobBusinessService {
           .length,
       };
 
-      console.log("📊 Job stats with unique count:", stats);
+      console.log("Job stats with unique count:", stats);
       console.log("👥 Unique candidate IDs:", uniqueStats.uniqueCandidateIds);
 
       return stats;

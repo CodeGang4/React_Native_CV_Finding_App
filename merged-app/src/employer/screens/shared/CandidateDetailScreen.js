@@ -104,7 +104,7 @@ export default function CandidateDetailScreen({ route, navigation }) {
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>
-                  {candidate.avatar || name.charAt(0).toUpperCase() || "👤"}
+                  {candidate.avatar || name.charAt(0).toUpperCase() || ""}
                 </Text>
               </View>
             )}

@@ -243,7 +243,7 @@ const EmployerAccountPage = () => {
     scrollY.setValue(0);
 
     // Refresh jobs data when returning from JobDetail (views might have increased)
-    console.log("🔄 Refreshing jobs data after returning from JobDetail");
+    console.log("Refreshing jobs data after returning from JobDetail");
 
     // Refresh job data directly from useEmployerJobs
     refreshJobs();

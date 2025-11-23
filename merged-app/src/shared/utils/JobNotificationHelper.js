@@ -12,12 +12,12 @@ export class JobNotificationHelper {
      */
     static async autoNotifyJobPosted(jobData, employerId) {
         try {
-            console.log('🔔 Auto-sending job posted notification to ALL CANDIDATES...', { jobId: jobData.id, employerId });
+            console.log(' Auto-sending job posted notification to ALL CANDIDATES...', { jobId: jobData.id, employerId });
             
             // Gửi thông báo cho TẤT CẢ candidates về công việc mới
             const response = await notificationApiService.sendSystemNotification({
                 recipient_type: 'candidate', // Gửi cho tất cả candidates
-                title: `💼 Việc làm mới: ${jobData.title}`,
+                title: `Việc làm mới: ${jobData.title}`,
                 message: `Có cơ hội việc làm mới tại ${jobData.company || 'Công ty'}. Mức lương: ${jobData.salary || 'Thỏa thuận'}. Địa điểm: ${jobData.location || 'Chưa cập nhật'}.`,
                 type: 'job_alert',
                 data: {
@@ -33,13 +33,13 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Job posted notification sent to all candidates:', response);
+            console.log(' Job posted notification sent to all candidates:', response);
             
             // Cũng gửi thông báo xác nhận cho employer
             await notificationApiService.createNotification({
                 recipient_id: employerId,
                 recipient_type: 'employer',
-                title: `✅ Tin tuyển dụng đã đăng`,
+                title: ` Tin tuyển dụng đã đăng`,
                 message: `Tin tuyển dụng "${jobData.title}" đã được đăng thành công và ứng viên có thể xem được.`,
                 type: 'job_posted',
                 sender_type: 'system',
@@ -52,7 +52,7 @@ export class JobNotificationHelper {
                 }
             });
             
-            console.log('🔔 Triggering global notification refresh for all users...');
+            console.log(' Triggering global notification refresh for all users...');
             // Trigger refresh cho tất cả users đang active
             if (global.refreshNotifications) {
                 global.refreshNotifications();
@@ -60,7 +60,7 @@ export class JobNotificationHelper {
 
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send job notification:', error);
+            console.error(' Failed to auto-send job notification:', error);
             return null;
         }
     }
@@ -71,12 +71,12 @@ export class JobNotificationHelper {
      */
     static async autoNotifyJobApplication(applicationData) {
         try {
-            console.log('🔄 Auto-sending application notification...');
+            console.log('Auto-sending application notification...');
             
             const response = await notificationApiService.createNotification({
                 recipient_id: applicationData.employerId,
                 recipient_type: 'employer',
-                title: `📝 Ứng viên mới ứng tuyển`,
+                title: ` Ứng viên mới ứng tuyển`,
                 message: `${applicationData.candidateName || 'Một ứng viên'} đã ứng tuyển vào vị trí ${applicationData.jobTitle}`,
                 type: 'application_status',
                 sender_id: applicationData.candidateId,
@@ -93,10 +93,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto application notification sent:', response);
+            console.log(' Auto application notification sent:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send application notification:', error);
+            console.error(' Failed to auto-send application notification:', error);
             return null;
         }
     }
@@ -107,11 +107,11 @@ export class JobNotificationHelper {
      */
     static async autoNotifyNewUserWelcome(userData) {
         try {
-            console.log('🔄 Auto-sending welcome notification...');
+            console.log('Auto-sending welcome notification...');
             
             const welcomeMessages = {
                 'candidate': {
-                    title: '🎉 Chào mừng đến với JobBridge!',
+                    title: ' Chào mừng đến với JobBridge!',
                     message: 'Cảm ơn bạn đã đăng ký! Hãy hoàn thiện hồ sơ để tìm được công việc phù hợp nhất.'
                 },
                 'employer': {
@@ -138,10 +138,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto welcome notification sent:', response);
+            console.log(' Auto welcome notification sent:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send welcome notification:', error);
+            console.error(' Failed to auto-send welcome notification:', error);
             return null;
         }
     }
@@ -154,12 +154,12 @@ export class JobNotificationHelper {
      */
     static async autoNotifyEmailVerified(userId, userRole, email) {
         try {
-            console.log('🔄 Auto-sending email verification notification...');
+            console.log('Auto-sending email verification notification...');
             
             const response = await notificationApiService.createNotification({
                 recipient_id: userId,
                 recipient_type: userRole,
-                title: '✅ Email đã được xác thực',
+                title: ' Email đã được xác thực',
                 message: `Email ${email} của bạn đã được xác thực thành công. Tài khoản của bạn hiện đã được kích hoạt đầy đủ.`,
                 type: 'account_verification',
                 sender_type: 'system',
@@ -172,10 +172,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto email verification notification sent:', response);
+            console.log(' Auto email verification notification sent:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send email verification notification:', error);
+            console.error(' Failed to auto-send email verification notification:', error);
             return null;
         }
     }
@@ -185,11 +185,11 @@ export class JobNotificationHelper {
      */
     static async autoNotifyDailyReminder() {
         try {
-            console.log('🔄 Auto-sending daily reminder...');
+            console.log('Auto-sending daily reminder...');
             
             const candidateResponse = await notificationApiService.sendSystemNotification({
                 recipient_type: 'candidate',
-                title: '💼 Cơ hội việc làm mới hôm nay',
+                title: 'Cơ hội việc làm mới hôm nay',
                 message: 'Hãy khám phá những cơ hội việc làm mới được đăng tuyển hôm nay!',
                 type: 'system_announcement',
                 data: {
@@ -202,7 +202,7 @@ export class JobNotificationHelper {
 
             const employerResponse = await notificationApiService.sendSystemNotification({
                 recipient_type: 'employer',
-                title: '📊 Theo dõi tin tuyển dụng',
+                title: 'Theo dõi tin tuyển dụng',
                 message: 'Kiểm tra các ứng viên mới và quản lý tin tuyển dụng của bạn.',
                 type: 'system_announcement', 
                 data: {
@@ -213,10 +213,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto daily reminders sent');
+            console.log(' Auto daily reminders sent');
             return { candidateResponse, employerResponse };
         } catch (error) {
-            console.error('❌ Failed to auto-send daily reminders:', error);
+            console.error(' Failed to auto-send daily reminders:', error);
             return null;
         }
     }
@@ -228,12 +228,12 @@ export class JobNotificationHelper {
      */
     static async autoNotifyProfileIncomplete(userId, userRole) {
         try {
-            console.log('🔄 Auto-sending profile incomplete reminder...');
+            console.log('Auto-sending profile incomplete reminder...');
             
             const response = await notificationApiService.createNotification({
                 recipient_id: userId,
                 recipient_type: userRole,
-                title: '📝 Hoàn thiện hồ sơ của bạn',
+                title: ' Hoàn thiện hồ sơ của bạn',
                 message: 'Hồ sơ của bạn chưa đầy đủ. Hãy hoàn thiện để tăng cơ hội tìm được việc làm phù hợp!',
                 type: 'profile_update',
                 sender_type: 'system',
@@ -245,10 +245,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto profile incomplete notification sent:', response);
+            console.log(' Auto profile incomplete notification sent:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send profile incomplete notification:', error);
+            console.error(' Failed to auto-send profile incomplete notification:', error);
             return null;
         }
     }
@@ -262,12 +262,12 @@ export class JobNotificationHelper {
      */
     static async autoNotifyJobApplicationToEmployer(employerId, candidateName, jobTitle, applicationData = {}) {
         try {
-            console.log('🔔 Auto-sending job application notification to employer:', employerId);
+            console.log(' Auto-sending job application notification to employer:', employerId);
             
             const response = await notificationApiService.createNotification({
                 recipient_id: employerId,
                 recipient_type: 'employer',
-                title: '💼 Có đơn ứng tuyển mới!',
+                title: 'Có đơn ứng tuyển mới!',
                 message: `${candidateName} vừa ứng tuyển vào vị trí "${jobTitle}"`,
                 type: 'application_received',
                 sender_id: applicationData.candidate_id,
@@ -284,10 +284,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Job application notification sent to employer:', response);
+            console.log(' Job application notification sent to employer:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send job application notification:', error);
+            console.error(' Failed to auto-send job application notification:', error);
             return null;
         }
     }
@@ -301,11 +301,11 @@ export class JobNotificationHelper {
      */
     static async autoNotifyApplicationStatus(candidateId, status, jobTitle, extraData = {}) {
         try {
-            console.log('🔄 Auto-sending application status notification...');
+            console.log('Auto-sending application status notification...');
             
             const statusMessages = {
                 'accepted': {
-                    title: '🎉 Chúc mừng!',
+                    title: ' Chúc mừng!',
                     message: `Bạn đã được chấp nhận cho vị trí "${jobTitle}"`
                 },
                 'rejected': {
@@ -344,10 +344,10 @@ export class JobNotificationHelper {
                 }
             });
 
-            console.log('✅ Auto application status notification sent:', response);
+            console.log(' Auto application status notification sent:', response);
             return response;
         } catch (error) {
-            console.error('❌ Failed to auto-send application status notification:', error);
+            console.error(' Failed to auto-send application status notification:', error);
             return null;
         }
     }

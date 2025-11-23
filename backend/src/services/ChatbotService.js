@@ -211,7 +211,7 @@ class ChatbotService {
      * Extract intent and entities from user message
      */
     async analyzeMessage(message) {
-        console.log('🤖 Analyzing message:', message);
+        console.log('Analyzing message:', message);
         return this.fallbackAnalyze(message);
     }
 
@@ -355,7 +355,7 @@ class ChatbotService {
             entities.companyName = companyMatch[1].trim();
         }
 
-        console.log('📊 Fallback analyzed:', { intent, entities });
+        console.log('Fallback analyzed:', { intent, entities });
         return { intent, entities };
     }
 
@@ -459,7 +459,7 @@ class ChatbotService {
 
             // Analyze user intent
             const analysis = await this.analyzeMessage(message);
-            console.log('🎯 Intent analysis:', analysis);
+            console.log(' Intent analysis:', analysis);
 
             let jobs = [];
             let companies = [];
@@ -467,7 +467,7 @@ class ChatbotService {
             // Fetch relevant data based on intent
             if (analysis.intent === 'find_job') {
                 jobs = await this.getJobs(analysis.entities);
-                console.log('💼 Found jobs:', jobs.length);
+                console.log('Found jobs:', jobs.length);
             } else if (analysis.intent === 'find_company') {
                 companies = await this.getCompanies(analysis.entities);
                 console.log('🏢 Found companies:', companies.length);
@@ -481,7 +481,7 @@ class ChatbotService {
                 entities: analysis.entities
             });
 
-            console.log('✅ Generated response');
+            console.log(' Generated response');
 
             return {
                 message: response,
@@ -492,7 +492,7 @@ class ChatbotService {
                 }
             };
         } catch (error) {
-            console.error('❌ Chatbot error:', error);
+            console.error(' Chatbot error:', error);
             throw error;
         }
     }

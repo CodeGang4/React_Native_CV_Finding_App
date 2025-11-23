@@ -56,13 +56,13 @@ export const RateLimitMonitor = ({ enabled = __DEV__ }) => {
           ⏳ Queue: {status.queueLength || 0}
         </Text>
         <Text style={styles.stat}>
-          ✅ Success: {status.successCount || 0}
+           Success: {status.successCount || 0}
         </Text>
         <Text style={styles.stat}>
-          ❌ Failed: {status.failedCount || 0}
+           Failed: {status.failedCount || 0}
         </Text>
         <Text style={styles.stat}>
-          🔄 Retries: {status.retryCount || 0}
+          Retries: {status.retryCount || 0}
         </Text>
         
         {status.isThrottled && (
@@ -73,7 +73,7 @@ export const RateLimitMonitor = ({ enabled = __DEV__ }) => {
         
         {status.lastError && (
           <Text style={[styles.stat, styles.error]}>
-            💥 Last Error: {status.lastError}
+             Last Error: {status.lastError}
           </Text>
         )}
       </View>

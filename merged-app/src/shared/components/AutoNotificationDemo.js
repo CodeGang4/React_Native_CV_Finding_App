@@ -17,7 +17,7 @@ const AutoNotificationDemo = () => {
 
   const testAutoNotifications = [
     {
-      title: '🔥 Test Job Posted Notification',
+      title: 'Test Job Posted Notification',
       description: 'Gửi thông báo tự động khi employer đăng job mới',
       onPress: async () => {
         try {
@@ -33,16 +33,16 @@ const AutoNotificationDemo = () => {
           };
 
           await JobNotificationHelper.autoNotifyJobPosted(jobData);
-          Alert.alert('✅ Success', 'Job posted notification sent!');
+          Alert.alert(' Success', 'Job posted notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
       }
     },
     {
-      title: '👋 Test New User Welcome',
+      title: 'Test New User Welcome',
       description: 'Gửi thông báo chào mừng user mới đăng ký',
       onPress: async () => {
         try {
@@ -55,46 +55,46 @@ const AutoNotificationDemo = () => {
           };
 
           await JobNotificationHelper.autoNotifyNewUserWelcome(userData);
-          Alert.alert('✅ Success', 'Welcome notification sent!');
+          Alert.alert(' Success', 'Welcome notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
       }
     },
     {
-      title: '📧 Test Email Verified',
+      title: 'Test Email Verified',
       description: 'Gửi thông báo khi user verify email thành công',
       onPress: async () => {
         try {
           setLoading(true);
           await JobNotificationHelper.autoNotifyEmailVerified(testUserId, 'candidate');
-          Alert.alert('✅ Success', 'Email verified notification sent!');
+          Alert.alert(' Success', 'Email verified notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
       }
     },
     {
-      title: '📝 Test Profile Incomplete',
+      title: ' Test Profile Incomplete',
       description: 'Gửi thông báo nhắc nhở hoàn thiện profile',
       onPress: async () => {
         try {
           setLoading(true);
           await JobNotificationHelper.autoNotifyProfileIncomplete(testUserId, 'candidate');
-          Alert.alert('✅ Success', 'Profile incomplete notification sent!');
+          Alert.alert(' Success', 'Profile incomplete notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
       }
     },
     {
-      title: '💼 Test Job Application',
+      title: 'Test Job Application',
       description: 'Gửi thông báo khi có ứng viên apply job (tới employer)',
       onPress: async () => {
         try {
@@ -109,16 +109,16 @@ const AutoNotificationDemo = () => {
               job_id: 'job-123'
             }
           );
-          Alert.alert('✅ Success', 'Job application notification sent to employer!');
+          Alert.alert(' Success', 'Job application notification sent to employer!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
       }
     },
     {
-      title: '🎉 Test Application Accepted',
+      title: ' Test Application Accepted',
       description: 'Gửi thông báo khi đơn ứng tuyển được chấp nhận',
       onPress: async () => {
         try {
@@ -132,9 +132,9 @@ const AutoNotificationDemo = () => {
               next_steps: 'Chúng tôi sẽ liên hệ với bạn trong 2-3 ngày tới'
             }
           );
-          Alert.alert('✅ Success', 'Application accepted notification sent!');
+          Alert.alert(' Success', 'Application accepted notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
@@ -156,9 +156,9 @@ const AutoNotificationDemo = () => {
               interview_location: 'Tầng 5, Tòa nhà ABC'
             }
           );
-          Alert.alert('✅ Success', 'Interview invitation sent!');
+          Alert.alert(' Success', 'Interview invitation sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
@@ -178,9 +178,9 @@ const AutoNotificationDemo = () => {
               feedback: 'Cảm ơn bạn đã quan tâm. Chúng tôi sẽ lưu hồ sơ cho các cơ hội khác.'
             }
           );
-          Alert.alert('✅ Success', 'Application rejected notification sent!');
+          Alert.alert(' Success', 'Application rejected notification sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
@@ -193,9 +193,9 @@ const AutoNotificationDemo = () => {
         try {
           setLoading(true);
           await JobNotificationHelper.autoNotifyDailyReminder(testUserId, 'candidate');
-          Alert.alert('✅ Success', 'Daily reminder sent!');
+          Alert.alert(' Success', 'Daily reminder sent!');
         } catch (error) {
-          Alert.alert('❌ Error', error.message);
+          Alert.alert(' Error', error.message);
         } finally {
           setLoading(false);
         }
@@ -205,7 +205,7 @@ const AutoNotificationDemo = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>🔥 Auto Notification Testing</Text>
+      <Text style={styles.title}>Auto Notification Testing</Text>
       <Text style={styles.subtitle}>Test các notification tự động trong app</Text>
 
       {/* User ID Input */}
@@ -248,7 +248,7 @@ const AutoNotificationDemo = () => {
 
       {/* Info Section */}
       <View style={styles.infoContainer}>
-        <Text style={styles.infoTitle}>ℹ️ Thông tin</Text>
+        <Text style={styles.infoTitle}>Thông tin</Text>
         <Text style={styles.infoText}>
           • Các notification này sẽ được gửi tự động trong app
         </Text>

@@ -182,7 +182,7 @@ const CompanyDetailScreen = ({ company, onBack }) => {
 
         {/* Company Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Thông tin công ty</Text>
+          <Text style={styles.sectionTitle}> Thông tin công ty</Text>
 
           <View style={styles.infoGrid}>
             {/* Quy mô */}
@@ -247,7 +247,7 @@ const CompanyDetailScreen = ({ company, onBack }) => {
                 <Text style={styles.infoItemTitle}>Thông tin liên hệ</Text>
                 {displayCompany.contact_person && (
                   <Text style={styles.infoItemValue}>
-                    👤 {displayCompany.contact_person}
+                     {displayCompany.contact_person}
                   </Text>
                 )}
                 {displayCompany.company_phone && (

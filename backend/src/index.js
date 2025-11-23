@@ -60,6 +60,6 @@ const host = '0.0.0.0'; // Listen on all network interfaces
 app.listen(port, host, () => {
     console.log(`Server is running on:`);
     console.log(`  - Local:   http://localhost:${port}`);
-    console.log(`  - Network: http://172.20.10.10:${port}`);
+    console.log(`  - Network: http://172.20.x.x:${port}`);
     console.log(`  - Network: http://192.168.x.x:${port} (if connected to WiFi)`);
 });

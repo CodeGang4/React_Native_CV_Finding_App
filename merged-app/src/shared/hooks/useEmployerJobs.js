@@ -95,7 +95,7 @@ export const useEmployerJobs = () => {
             employerJobBusinessService.generateJobStats(updatedJobs);
           setJobStats(stats);
 
-          // 🔥 AUTO: Gửi notification cho candidates khi có job mới
+          // AUTO: Gửi notification cho candidates khi có job mới
           AutoNotificationService.notifyJobPosted(newJob, user.id);
 
           // Đồng bộ với các trang khác

@@ -15,7 +15,7 @@ class ChatbotController {
                 return res.status(400).json({ error: 'Message is required' });
             }
 
-            console.log(`💬 User ${userId} sent message: "${message}"`);
+            console.log(`User ${userId} sent message: "${message}"`);
 
             // Get chatbot response
             const response = await ChatbotService.chat(message, userId);
@@ -41,7 +41,7 @@ class ChatbotController {
                 ...response
             });
         } catch (error) {
-            console.error('❌ Chatbot message error:', error);
+            console.error(' Chatbot message error:', error);
             return res.status(500).json({ 
                 error: 'Failed to process message',
                 details: error.message 
@@ -79,7 +79,7 @@ class ChatbotController {
                 conversations: data || []
             });
         } catch (error) {
-            console.error('❌ Get history error:', error);
+            console.error(' Get history error:', error);
             return res.status(500).json({ 
                 error: 'Failed to fetch conversation history',
                 details: error.message 
@@ -114,7 +114,7 @@ class ChatbotController {
                 message: 'Conversation history cleared'
             });
         } catch (error) {
-            console.error('❌ Clear history error:', error);
+            console.error(' Clear history error:', error);
             return res.status(500).json({ 
                 error: 'Failed to clear conversation history',
                 details: error.message 
@@ -161,7 +161,7 @@ class ChatbotController {
                 suggestions
             });
         } catch (error) {
-            console.error('❌ Get suggestions error:', error);
+            console.error(' Get suggestions error:', error);
             return res.status(500).json({ 
                 error: 'Failed to fetch suggestions',
                 details: error.message 

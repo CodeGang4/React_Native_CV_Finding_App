@@ -27,7 +27,7 @@ export default function ProfileScreen() {
         const data = await CandidateApiService.getCandidateById(user.id);
         setProfile(data);
       } catch (error) {
-        console.error("❌ Lỗi fetch profile:", error);
+        console.error(" Lỗi fetch profile:", error);
         Alert.alert("Lỗi", "Không thể lấy thông tin profile.");
       } finally {
         setLoading(false);
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
         const updatedProfile = await CandidateApiService.getUserById(user.id);
         setProfile(updatedProfile);
       } catch (error) {
-        console.error("❌ Lỗi upload portfolio:", error);
+        console.error(" Lỗi upload portfolio:", error);
         Alert.alert("Lỗi", "Không thể upload ảnh portfolio.");
       }
     }

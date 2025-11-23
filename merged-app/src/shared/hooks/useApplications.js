@@ -40,7 +40,7 @@ export default function useApplications() {
       
       setApplications((prev) => [...prev, data]);
       
-      // 🔥 AUTO: Send notification to employer
+      // AUTO: Send notification to employer
       if (jobData.employer_id) {
         await AutoNotificationService.notifyJobApplication({
           candidateId: candidateId,
@@ -50,7 +50,7 @@ export default function useApplications() {
           jobTitle: jobData.title || jobData.position || 'Công việc',
           applicationId: data.id
         });
-        console.log('[useApplications] ✅ Application notification sent');
+        console.log('[useApplications]  Application notification sent');
       }
       
       return data;

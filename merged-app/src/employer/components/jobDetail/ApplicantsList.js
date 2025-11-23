@@ -58,7 +58,7 @@ export default function ApplicantsList({
   if (error && applicants.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
+        <Text style={styles.errorText}> {error}</Text>
         <Text style={styles.errorSubText}>Vui lòng kéo xuống để thử lại</Text>
       </View>
     );
@@ -102,7 +102,7 @@ export default function ApplicantsList({
 
       {error && (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorBannerText}>⚠️ {error}</Text>
+          <Text style={styles.errorBannerText}> {error}</Text>
         </View>
       )}
 

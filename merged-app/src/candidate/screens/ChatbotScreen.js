@@ -161,7 +161,7 @@ export default function ChatbotScreen() {
     <View style={styles.companyCard} key={company.id}>
       <Text style={styles.companyName}>{company.name}</Text>
       <Text style={styles.companyIndustry}>🏢 {company.industry}</Text>
-      <Text style={styles.companyJobs}>📋 Đang tuyển: {company.jobs?.length || 0} vị trí</Text>
+      <Text style={styles.companyJobs}> Đang tuyển: {company.jobs?.length || 0} vị trí</Text>
     </View>
   );
 
@@ -226,7 +226,7 @@ export default function ChatbotScreen() {
             Tôi là trợ lý AI của bạn. Tôi có thể giúp bạn:
           </Text>
           <View style={styles.featureList}>
-            <Text style={styles.featureItem}>🔍 Tìm việc làm phù hợp</Text>
+            <Text style={styles.featureItem}>Tìm việc làm phù hợp</Text>
             <Text style={styles.featureItem}>🏢 Tìm hiểu về các công ty</Text>
             <Text style={styles.featureItem}>💰 Tìm việc theo mức lương</Text>
             <Text style={styles.featureItem}>📍 Tìm việc theo địa điểm</Text>

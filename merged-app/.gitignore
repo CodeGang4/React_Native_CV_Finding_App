@@ -3,3 +3,5 @@ app.config.js
 package-lock.json
 package.json
 API_ENDPOINTS_MAPPING.md
+PAYMENT_INTERGRATION_GUIDE.md
+RATE_LIMITING_INTEGRATION.md

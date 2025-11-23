@@ -9,19 +9,19 @@ export default function JobCandidatesDebug({ jobId }) {
 
   useEffect(() => {
     if (jobId) {
-      console.log("🔍 JobCandidatesDebug: Testing with jobId:", jobId);
+      console.log("JobCandidatesDebug: Testing with jobId:", jobId);
     }
   }, [jobId]);
 
   useEffect(() => {
     if (candidates && candidates.length > 0) {
-      console.log("✅ JobCandidatesDebug: Candidates loaded:", candidates);
+      console.log(" JobCandidatesDebug: Candidates loaded:", candidates);
     }
   }, [candidates]);
 
   useEffect(() => {
     if (error) {
-      console.log("❌ JobCandidatesDebug: Error:", error);
+      console.log(" JobCandidatesDebug: Error:", error);
       Alert.alert("Debug Error", error);
     }
   }, [error]);
@@ -29,7 +29,7 @@ export default function JobCandidatesDebug({ jobId }) {
   if (!jobId) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>🔍 Debug: No Job ID</Text>
+        <Text style={styles.title}>Debug: No Job ID</Text>
         <Text style={styles.text}>Job ID is required to fetch candidates</Text>
       </View>
     );
@@ -37,7 +37,7 @@ export default function JobCandidatesDebug({ jobId }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔍 Candidates Debug</Text>
+      <Text style={styles.title}>Candidates Debug</Text>
       <Text style={styles.text}>Job ID: {jobId}</Text>
       <Text style={styles.text}>Loading: {loading ? "Yes" : "No"}</Text>
       <Text style={styles.text}>Error: {error || "None"}</Text>

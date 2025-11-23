@@ -24,7 +24,7 @@ export default function AppNavigator() {
       linking={linking}
       fallback={<LoadingScreen />}
       onReady={() => {
-        console.log('✅ Navigation ready with deep linking');
+        console.log(' Navigation ready with deep linking');
       }}
       onStateChange={(state) => {
         // Log navigation state changes for debugging

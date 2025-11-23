@@ -34,10 +34,10 @@ export const useJobCardStats = (job) => {
 
   //       if (CentralizedCandidateManager && !fallbackMode.current) {
   //         managerRef.current = CentralizedCandidateManager.getInstance();
-  //         console.log("✅ CentralizedCandidateManager initialized");
+  //         console.log(" CentralizedCandidateManager initialized");
   //       } else {
   //         fallbackMode.current = true;
-  //         console.log("⚠️ Using fallback mode for job card stats");
+  //         console.log(" Using fallback mode for job card stats");
   //       }
   //     } catch (error) {
   //       console.error(
@@ -62,19 +62,19 @@ export const useJobCardStats = (job) => {
           managerRef.current = CentralizedCandidateManager.getInstance();
 
           if (managerRef.current) {
-            console.log("✅ CentralizedCandidateManager initialized");
+            console.log(" CentralizedCandidateManager initialized");
           } else {
             // Xảy ra lỗi trong getInstance() hoặc CentralizedCandidateManager không đúng định dạng
             fallbackMode.current = true;
             console.log(
-              "⚠️ Using fallback mode for job card stats (Manager instance is null)"
+              " Using fallback mode for job card stats (Manager instance is null)"
             );
           }
         } else {
           // Trường hợp này KHÔNG nên xảy ra với import tĩnh, nhưng để an toàn.
           fallbackMode.current = true;
           console.log(
-            "⚠️ Using fallback mode for job card stats (Module not available)"
+            " Using fallback mode for job card stats (Module not available)"
           );
         }
       } catch (error) {

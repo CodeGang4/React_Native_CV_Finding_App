@@ -49,10 +49,10 @@ export class AnalysisCacheManager {
       // Cập nhật danh sách cache keys
       await this.updateCacheIndex(cacheKey);
 
-      console.log(`💾 Cached analysis for candidate ${candidateId}`);
+      console.log(`Cached analysis for candidate ${candidateId}`);
       return true;
     } catch (error) {
-      console.error("❌ Error saving analysis cache:", error);
+      console.error(" Error saving analysis cache:", error);
       return false;
     }
   }
@@ -79,10 +79,10 @@ export class AnalysisCacheManager {
         return null;
       }
 
-      console.log(`📂 Cache hit for candidate ${candidateId}`);
+      console.log(` Cache hit for candidate ${candidateId}`);
       return parsedData.result;
     } catch (error) {
-      console.error("❌ Error getting analysis cache:", error);
+      console.error(" Error getting analysis cache:", error);
       return null;
     }
   }
@@ -101,7 +101,7 @@ export class AnalysisCacheManager {
       console.log(`🗑️ Removed cache for candidate ${candidateId}`);
       return true;
     } catch (error) {
-      console.error("❌ Error removing analysis cache:", error);
+      console.error(" Error removing analysis cache:", error);
       return false;
     }
   }
@@ -135,7 +135,7 @@ export class AnalysisCacheManager {
 
       await AsyncStorage.setItem(indexKey, JSON.stringify(cacheIndex));
     } catch (error) {
-      console.error("❌ Error updating cache index:", error);
+      console.error(" Error updating cache index:", error);
     }
   }
 
@@ -152,7 +152,7 @@ export class AnalysisCacheManager {
         await AsyncStorage.setItem(indexKey, JSON.stringify(cacheIndex));
       }
     } catch (error) {
-      console.error("❌ Error removing from cache index:", error);
+      console.error(" Error removing from cache index:", error);
     }
   }
 
@@ -165,10 +165,10 @@ export class AnalysisCacheManager {
         this.saveAnalysis(candidate.id, candidate, searchCriteria)
       );
       await Promise.all(promises);
-      console.log(`💾 Cached ${candidates.length} candidate analyses`);
+      console.log(`Cached ${candidates.length} candidate analyses`);
       return true;
     } catch (error) {
-      console.error("❌ Error saving batch analysis:", error);
+      console.error(" Error saving batch analysis:", error);
       return false;
     }
   }
@@ -195,11 +195,11 @@ export class AnalysisCacheManager {
       });
 
       console.log(
-        `📂 Found ${cachedResults.length} cached, ${missingIds.length} missing`
+        ` Found ${cachedResults.length} cached, ${missingIds.length} missing`
       );
       return { cachedResults, missingIds };
     } catch (error) {
-      console.error("❌ Error getting batch analysis:", error);
+      console.error(" Error getting batch analysis:", error);
       return { cachedResults: [], missingIds: candidateIds };
     }
   }
@@ -223,7 +223,7 @@ export class AnalysisCacheManager {
 
       return true;
     } catch (error) {
-      console.error("❌ Error clearing cache:", error);
+      console.error(" Error clearing cache:", error);
       return false;
     }
   }
@@ -257,7 +257,7 @@ export class AnalysisCacheManager {
         cacheDuration: this.CACHE_DURATION / (1000 * 60 * 60) + " hours",
       };
     } catch (error) {
-      console.error("❌ Error getting cache stats:", error);
+      console.error(" Error getting cache stats:", error);
       return { totalEntries: 0, totalSize: 0 };
     }
   }

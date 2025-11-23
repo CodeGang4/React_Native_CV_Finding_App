@@ -41,7 +41,7 @@ const bestJobsList = [
     company: "Ngân hàng TMCP Hàng Hải Việt Nam (MSB)",
     salary: "1,000 - 2,000 USD",
     location: "Hà Nội",
-    logo: "🎯",
+    logo: "",
     verified: true,
   },
 ];

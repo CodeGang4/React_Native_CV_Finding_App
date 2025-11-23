@@ -9,11 +9,11 @@ class DebugUtils {
   showRecentErrors(count = 10) {
     if (!__DEV__) return;
 
-    console.group("🔍 Recent Errors");
+    console.group("Recent Errors");
     const errors = errorTracker.getRecentErrors(count);
 
     if (errors.length === 0) {
-      console.log("✅ No recent errors");
+      console.log(" No recent errors");
     } else {
       errors.forEach((error, index) => {
         console.group(`${index + 1}. ${error.message} (${error.timestamp})`);
@@ -32,7 +32,7 @@ class DebugUtils {
     console.group("🌐 API Errors");
 
     if (apiErrors.length === 0) {
-      console.log("✅ No API errors");
+      console.log(" No API errors");
     } else {
       apiErrors.forEach((error, index) => {
         console.group(
@@ -52,7 +52,7 @@ class DebugUtils {
     if (!__DEV__) return;
 
     const summary = errorTracker.getSummary();
-    console.group("📊 Error Summary");
+    console.group("Error Summary");
     console.log("Total Errors:", summary.totalErrors);
     console.log("Errors by Type:", summary.errorsByType);
     console.log("Recent Errors:", summary.recentErrors.length);

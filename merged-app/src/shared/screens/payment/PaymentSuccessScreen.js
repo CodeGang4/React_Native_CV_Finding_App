@@ -35,13 +35,13 @@ export default function PaymentSuccessScreen() {
     // Refresh user data ONCE after successful payment
     const updateUserData = async () => {
       try {
-        console.log('💳 [PaymentSuccess] Refreshing user profile after payment...');
+        console.log('[PaymentSuccess] Refreshing user profile after payment...');
         const result = await refreshUser();
         if (result?.success) {
-          console.log('✅ [PaymentSuccess] User profile updated! New level:', result.user?.level);
+          console.log(' [PaymentSuccess] User profile updated! New level:', result.user?.level);
         }
       } catch (error) {
-        console.error('❌ [PaymentSuccess] Failed to refresh user:', error);
+        console.error(' [PaymentSuccess] Failed to refresh user:', error);
       }
     };
 
@@ -70,7 +70,7 @@ export default function PaymentSuccessScreen() {
   const verifyPayment = async () => {
     // Payment is already confirmed by Stripe SDK and backend /payment/confirm endpoint
     // No need for additional verification - just show success
-    console.log('✅ Payment confirmed, payment_id:', payment_id);
+    console.log(' Payment confirmed, payment_id:', payment_id);
     
     setPaymentData({
       payment: {
@@ -88,7 +88,7 @@ export default function PaymentSuccessScreen() {
 
   const handleContinue = () => {
     // Go back to previous screens (safer than reset)
-    console.log('✅ Navigate back to employer home');
+    console.log(' Navigate back to employer home');
     navigation.goBack(); // Go back to payment screen
     navigation.goBack(); // Go back to wherever it came from
   };

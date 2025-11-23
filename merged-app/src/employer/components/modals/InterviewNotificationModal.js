@@ -166,7 +166,7 @@ Chúng tôi muốn mời bạn tham gia buổi phỏng vấn trực tuyến:
 📅 Thời gian: [Ngày giờ phỏng vấn]
 💻 Nền tảng: Google Meet/Zoom
 ⏰ Thời lượng: 30-45 phút
-📋 Nội dung: Trao đổi về kinh nghiệm và kỹ năng
+ Nội dung: Trao đổi về kinh nghiệm và kỹ năng
 
 Link meeting sẽ được gửi trước buổi phỏng vấn 15 phút.
 
@@ -321,7 +321,7 @@ TCC & Partners`,
                   <Text style={styles.emailText}>{candidateEmail}</Text>
                 ) : (
                   <Text style={[styles.emailText, { color: "#F44336" }]}>
-                    ⚠️ Không tìm thấy email
+                     Không tìm thấy email
                   </Text>
                 )}
               </View>

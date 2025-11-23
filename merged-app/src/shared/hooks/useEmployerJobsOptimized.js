@@ -10,7 +10,7 @@ import {
 import { useJobData } from "../contexts/JobDataContext";
 
 /**
- * ⚡ Enhanced Employer Jobs Hook - ZERO HTTP 429 solution
+ * Enhanced Employer Jobs Hook - ZERO HTTP 429 solution
  * Integrated with CentralizedCandidateManager for optimal performance
  */
 export const useEmployerJobsOptimized = () => {
@@ -120,7 +120,7 @@ export const useEmployerJobsOptimized = () => {
             employerJobBusinessService.generateJobStats(updatedJobs);
           setJobStats(stats);
 
-          // 🔥 AUTO: Gửi notification cho candidates khi có job mới
+          // AUTO: Gửi notification cho candidates khi có job mới
           JobNotificationHelper.autoNotifyJobPosted(newJob, user.id);
 
           // Subscribe job mới với candidate manager

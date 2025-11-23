@@ -30,7 +30,7 @@ export default function NativePaymentScreen() {
     console.log('🚀 START handlePayment');
     
     if (!cardComplete) {
-      console.log('⚠️ Card not complete');
+      console.log(' Card not complete');
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin thẻ');
       return;
     }
@@ -38,8 +38,8 @@ export default function NativePaymentScreen() {
     setLoading(true);
 
     try {
-      console.log('💳 Creating payment intent for Premium $49');
-      console.log('💳 Amount:', PRICE, 'Currency:', CURRENCY);
+      console.log('Creating payment intent for Premium $49');
+      console.log('Amount:', PRICE, 'Currency:', CURRENCY);
 
       // 1. Create payment intent on backend
       const response = await PaymentApiService.createPaymentIntent(
@@ -47,34 +47,34 @@ export default function NativePaymentScreen() {
         CURRENCY
       );
 
-      console.log('📦 Backend response:', response);
+      console.log(' Backend response:', response);
       const { clientSecret, payment_id } = response;
-      console.log('✅ Payment intent created:', payment_id);
-      console.log('🔑 Client Secret:', clientSecret?.substring(0, 20) + '...');
+      console.log(' Payment intent created:', payment_id);
+      console.log(' Client Secret:', clientSecret?.substring(0, 20) + '...');
 
       if (!clientSecret) {
         throw new Error('No client secret received from backend');
       }
 
       // 2. Confirm payment with card details
-      console.log('🔒 About to call confirmPayment...');
-      console.log('🔒 confirmPayment type:', typeof confirmPayment);
+      console.log(' About to call confirmPayment...');
+      console.log(' confirmPayment type:', typeof confirmPayment);
       
       const confirmResult = await confirmPayment(clientSecret, {
         paymentMethodType: 'Card',
       });
 
-      console.log('📊 Confirm Result:', confirmResult);
-      console.log('📊 Result keys:', Object.keys(confirmResult || {}));
+      console.log('Confirm Result:', confirmResult);
+      console.log('Result keys:', Object.keys(confirmResult || {}));
 
       const { error, paymentIntent } = confirmResult;
 
       if (error) {
-        console.error('❌ Payment error object:', error);
-        console.error('❌ Error code:', error.code);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error type:', error.type);
-        console.error('❌ Full error:', JSON.stringify(error, null, 2));
+        console.error(' Payment error object:', error);
+        console.error(' Error code:', error.code);
+        console.error(' Error message:', error.message);
+        console.error(' Error type:', error.type);
+        console.error(' Full error:', JSON.stringify(error, null, 2));
         
         Alert.alert(
           'Thanh toán thất bại',
@@ -82,17 +82,17 @@ export default function NativePaymentScreen() {
           [{ text: 'OK' }]
         );
       } else if (paymentIntent) {
-        console.log('✅ Payment successful!');
-        console.log('✅ PaymentIntent ID:', paymentIntent.id);
-        console.log('✅ PaymentIntent status:', paymentIntent.status);
+        console.log(' Payment successful!');
+        console.log(' PaymentIntent ID:', paymentIntent.id);
+        console.log(' PaymentIntent status:', paymentIntent.status);
         
         // Confirm payment on backend to update status and upgrade user
         try {
-          console.log('🔄 Confirming payment on backend...');
+          console.log('Confirming payment on backend...');
           const confirmResponse = await PaymentApiService.confirmPayment(paymentIntent.id);
-          console.log('✅ Backend confirmed:', confirmResponse);
+          console.log(' Backend confirmed:', confirmResponse);
         } catch (confirmError) {
-          console.error('⚠️ Backend confirmation failed:', confirmError);
+          console.error(' Backend confirmation failed:', confirmError);
           // Still navigate to success even if confirmation fails
           // Webhook will eventually update the status
         }
@@ -104,21 +104,21 @@ export default function NativePaymentScreen() {
           plan: 'Premium',
         });
       } else {
-        console.log('⚠️ No error but no paymentIntent either');
+        console.log(' No error but no paymentIntent either');
         Alert.alert('Lỗi', 'Không nhận được kết quả từ Stripe');
       }
     } catch (error) {
-      console.error('❌ CATCH block error:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
+      console.error(' CATCH block error:', error);
+      console.error(' Error name:', error.name);
+      console.error(' Error message:', error.message);
+      console.error(' Error stack:', error.stack);
       
       Alert.alert(
         'Lỗi', 
         `${error.message || 'Đã xảy ra lỗi khi thanh toán'}\n\n${error.name || ''}`
       );
     } finally {
-      console.log('🏁 FINISH handlePayment');
+      console.log('FINISH handlePayment');
       setLoading(false);
     }
   };

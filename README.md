@@ -72,7 +72,6 @@ Mọi đóng góp đều được hoan nghênh! Vui lòng tạo Pull Request ho�
     - Vũ Tuấn Kiên
     - Vũ Hồng Đăng
     - Nguyễn Thế Hưng
-    - Đỗ Minh Nhật
 
 ## License
 

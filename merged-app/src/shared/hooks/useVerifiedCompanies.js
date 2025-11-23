@@ -13,12 +13,12 @@ export const useVerifiedCompanies = () => {
 
   const fetchVerifiedCompanies = useCallback(async () => {
     try {
-      console.log("🔄 [useVerifiedCompanies] START fetching companies...");
+      console.log("[useVerifiedCompanies] START fetching companies...");
       setLoading(true);
       setError(null);
 
       const response = await CompanyApiService.getVerifiedCompanies();
-      console.log("✅ [useVerifiedCompanies] API response:", response);
+      console.log(" [useVerifiedCompanies] API response:", response);
 
       // Kiểm tra response có hợp lệ không
       if (!response) {
@@ -26,7 +26,7 @@ export const useVerifiedCompanies = () => {
       }
 
       if (!Array.isArray(response)) {
-        console.error("❌ [useVerifiedCompanies] Response is not array:", response);
+        console.error(" [useVerifiedCompanies] Response is not array:", response);
         setError("Dữ liệu công ty không hợp lệ");
         setCompanies([]);
         setFilteredCompanies([]);
@@ -46,18 +46,18 @@ export const useVerifiedCompanies = () => {
         created_at: company.created_at,
       }));
 
-      console.log(`📊 [useVerifiedCompanies] Formatted ${formatted.length} companies`);
+      console.log(`[useVerifiedCompanies] Formatted ${formatted.length} companies`);
       
       setCompanies(formatted);
       setFilteredCompanies(formatted);
 
     } catch (err) {
-      console.error("❌ [useVerifiedCompanies] Error:", err);
+      console.error(" [useVerifiedCompanies] Error:", err);
       setError(err.message || "Không thể tải danh sách công ty");
       setCompanies([]);
       setFilteredCompanies([]);
     } finally {
-      console.log("🏁 [useVerifiedCompanies] Loading finished");
+      console.log("[useVerifiedCompanies] Loading finished");
       setLoading(false);
     }
   }, []);
@@ -83,7 +83,7 @@ export const useVerifiedCompanies = () => {
   );
 
   useEffect(() => {
-    console.log("🎯 [useVerifiedCompanies] Component mounted, fetching companies...");
+    console.log(" [useVerifiedCompanies] Component mounted, fetching companies...");
     fetchVerifiedCompanies();
   }, [fetchVerifiedCompanies]);
 

@@ -62,8 +62,8 @@ class NotificationApiService {
     async createNotification(notificationData) {
         try {
             console.log('🚀 NotificationApiService: START - Creating notification');
-            console.log('📋 URL:', `${BASE_URL}/notice/create`);
-            console.log('📧 Notification data:', JSON.stringify(notificationData, null, 2));
+            console.log(' URL:', `${BASE_URL}/notice/create`);
+            console.log('Notification data:', JSON.stringify(notificationData, null, 2));
 
             const response = await fetch(`${BASE_URL}/notice/create`, {
                 method: 'POST',
@@ -77,17 +77,17 @@ class NotificationApiService {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ HTTP Error response body:', errorText);
+                console.error(' HTTP Error response body:', errorText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('✅ NotificationApiService: Response data:', JSON.stringify(data, null, 2));
+            console.log(' NotificationApiService: Response data:', JSON.stringify(data, null, 2));
             return data;
 
         } catch (error) {
-            console.error('💥 NotificationApiService: Error creating notification:', error);
-            console.error('📋 Error details:', error.message);
+            console.error(' NotificationApiService: Error creating notification:', error);
+            console.error(' Error details:', error.message);
             throw error;
         }
     }

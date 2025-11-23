@@ -30,7 +30,7 @@ export const QuotaLimitNotice = ({ visible, onClose }) => {
   return (
     <View style={styles.container}>
       <View style={styles.notice}>
-        <Text style={styles.title}>⚠️ Quota Limit Reached</Text>
+        <Text style={styles.title}> Quota Limit Reached</Text>
         <Text style={styles.message}>
           Bạn đã vượt quá giới hạn API của Gemini AI Free Tier (10
           requests/minute).

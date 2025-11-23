@@ -28,11 +28,11 @@ export class ApplicationRepository extends BaseRepository {
 
       const response = await this.apiService.getAllCandidates(jobId);
 
-      console.log(`🔍 Raw backend response for job ${jobId}:`, { data: response });
-      console.log(`🔍 Response data type:`, typeof response);
-      console.log(`🔍 Response data:`, JSON.stringify(response, null, 2));
+      console.log(`Raw backend response for job ${jobId}:`, { data: response });
+      console.log(`Response data type:`, typeof response);
+      console.log(`Response data:`, JSON.stringify(response, null, 2));
       console.log(
-        `🔍 Response data length:`,
+        `Response data length:`,
         Array.isArray(response) ? response.length : "Not array"
       );
 
@@ -40,10 +40,10 @@ export class ApplicationRepository extends BaseRepository {
       const transformedData = this.transformCandidatesData(response || []);
 
       console.log(
-        `🔄 Transformed data for job ${jobId}:`,
+        `Transformed data for job ${jobId}:`,
         JSON.stringify(transformedData, null, 2)
       );
-      console.log(`🔄 Transformed data length:`, transformedData.length);
+      console.log(`Transformed data length:`, transformedData.length);
 
       // Cache kết quả
       this.setCache(cacheKey, transformedData);
@@ -58,24 +58,24 @@ export class ApplicationRepository extends BaseRepository {
   // Transform data từ backend format sang UI format
   transformCandidatesData(backendData) {
     console.log(
-      `🔄 transformCandidatesData input:`,
+      `transformCandidatesData input:`,
       JSON.stringify(backendData, null, 2)
     );
-    console.log(`🔄 Is array:`, Array.isArray(backendData));
+    console.log(`Is array:`, Array.isArray(backendData));
 
     if (!Array.isArray(backendData)) {
-      console.log(`❌ BackendData is not array, returning empty array`);
+      console.log(` BackendData is not array, returning empty array`);
       return [];
     }
 
     if (backendData.length === 0) {
-      console.log(`⚠️ BackendData is empty array`);
+      console.log(` BackendData is empty array`);
       return [];
     }
 
     return backendData.map((item, index) => {
       console.log(
-        `🔄 Processing item ${index}:`,
+        `Processing item ${index}:`,
         JSON.stringify(item, null, 2)
       );
       // Backend trả về structure: { candidates: {...}, applied_at, status }
@@ -85,8 +85,8 @@ export class ApplicationRepository extends BaseRepository {
       // Get user data if available (might have avatar in users table)
       const user = candidate.users || candidate.user || {};
 
-      console.log(`🔄 Application:`, JSON.stringify(application, null, 2));
-      console.log(`🔄 Candidate:`, JSON.stringify(candidate, null, 2));
+      console.log(`Application:`, JSON.stringify(application, null, 2));
+      console.log(`Candidate:`, JSON.stringify(candidate, null, 2));
 
       // Debug avatar mapping
       console.log(
@@ -174,13 +174,13 @@ export class ApplicationRepository extends BaseRepository {
     if (!forceRefresh && jobIds.length > 0) {
       const cached = this.getFromCache(cacheKey);
       if (cached) {
-        console.log("💾 Cache hit for application counts");
+        console.log("Cache hit for application counts");
         return cached;
       }
     }
 
     try {
-      console.log(`🔄 Fetching application counts for ${jobIds.length} jobs`);
+      console.log(`Fetching application counts for ${jobIds.length} jobs`);
 
       // Use ApplicationApiService with rate limiting protection
       const batchResults = await this.apiService.batchGetApplications(jobIds, {
@@ -200,7 +200,7 @@ export class ApplicationRepository extends BaseRepository {
 
       const result = { applicationCounts, totalApplications };
 
-      console.log("✅ Application counts fetched:", result);
+      console.log(" Application counts fetched:", result);
 
       // Cache kết quả
       this.setCache(cacheKey, result);

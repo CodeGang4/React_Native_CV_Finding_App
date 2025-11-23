@@ -135,11 +135,11 @@ class PaymentRepository {
             .single();
 
         if (error) {
-            console.error('❌ Failed to update user to premium:', error);
+            console.error(' Failed to update user to premium:', error);
             throw error;
         }
 
-        console.log('✅ User updated to premium:', data);
+        console.log(' User updated to premium:', data);
         return data;
     }
 

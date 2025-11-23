@@ -89,7 +89,7 @@ export default function CandidateCard({
               }}
             />
           ) : (
-            <Text style={styles.avatarText}>{candidate.avatar || "👤"}</Text>
+            <Text style={styles.avatarText}>{candidate.avatar || ""}</Text>
           )}
         </View>
         <View style={{ flex: 1 }}>

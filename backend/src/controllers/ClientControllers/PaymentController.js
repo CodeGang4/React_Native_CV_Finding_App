@@ -11,7 +11,7 @@ class PaymentController {
     createPaymentIntent = asyncHandler(async (req, res) => {
         const { amount, currency = 'usd' } = req.body;
         
-        console.log('💳 [PaymentController] createPaymentIntent called:', {
+        console.log('[PaymentController] createPaymentIntent called:', {
             userId: req.user?.id,
             hasUser: !!req.user,
             amount,
@@ -20,7 +20,7 @@ class PaymentController {
         });
         
         if (!req.user || !req.user.id) {
-            console.error('❌ [PaymentController] No user found in request');
+            console.error(' [PaymentController] No user found in request');
             return sendData(res, { error: 'User not authenticated' }, 401);
         }
         

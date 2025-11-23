@@ -15,8 +15,8 @@ class NotificationTriggerService {
      */
     async triggerJobSavedNotification(candidateId, jobId, jobData, employerId) {
         try {
-            console.log('🔔 NotificationTriggerService: START - Triggering job saved notification');
-            console.log('📝 Input params:', {
+            console.log(' NotificationTriggerService: START - Triggering job saved notification');
+            console.log(' Input params:', {
                 candidateId,
                 jobId,
                 employerId,
@@ -41,7 +41,7 @@ class NotificationTriggerService {
                 }
             };
 
-            console.log('📧 Notification data to send:', JSON.stringify(notificationData, null, 2));
+            console.log('Notification data to send:', JSON.stringify(notificationData, null, 2));
 
             const response = await notificationApiService.createNotification(notificationData);
             
@@ -49,17 +49,17 @@ class NotificationTriggerService {
             
             // Check if response indicates success
             if (response && !response.error && response.success !== false) {
-                console.log('✅ NotificationTriggerService: Job saved notification created successfully');
+                console.log(' NotificationTriggerService: Job saved notification created successfully');
                 return response;
             } else {
-                console.error('❌ NotificationTriggerService: Failed to create job saved notification:', response);
-                console.warn('⚠️ Notification failed but app will continue normally');
+                console.error(' NotificationTriggerService: Failed to create job saved notification:', response);
+                console.warn(' Notification failed but app will continue normally');
                 return null;
             }
 
         } catch (error) {
-            console.error('💥 NotificationTriggerService: Error triggering job saved notification:', error);
-            console.error('📋 Error details:', error.message, error.stack);
+            console.error(' NotificationTriggerService: Error triggering job saved notification:', error);
+            console.error(' Error details:', error.message, error.stack);
             return null;
         }
     }
@@ -79,7 +79,7 @@ class NotificationTriggerService {
             const notificationData = {
                 recipient_id: employerId,
                 recipient_type: 'employer',
-                title: '📋 Đơn ứng tuyển mới',
+                title: ' Đơn ứng tuyển mới',
                 message: `${candidateData?.name || 'Một ứng viên'} đã ứng tuyển vào vị trí "${jobData?.title || 'Không xác định'}"`,
                 type: 'application_status',
                 data: {
@@ -117,7 +117,7 @@ class NotificationTriggerService {
                 const notificationData = {
                     recipient_id: candidateId,
                     recipient_type: 'candidate',
-                    title: '💼 Công việc mới phù hợp',
+                    title: 'Công việc mới phù hợp',
                     message: `Có công việc mới "${jobData?.title || 'Không xác định'}" có thể phù hợp với bạn`,
                     type: 'job_posted',
                     data: {
@@ -201,7 +201,7 @@ class NotificationTriggerService {
             const finalUserType = validTypes.includes(userType) ? userType : 'candidate';
             
             if (userType !== finalUserType) {
-                console.warn(`⚠️ Invalid userType: ${userType}, using 'candidate' instead`);
+                console.warn(` Invalid userType: ${userType}, using 'candidate' instead`);
             }
 
             const notificationData = {
@@ -244,12 +244,12 @@ class NotificationTriggerService {
             const finalUserType = validTypes.includes(userType) ? userType : 'candidate';
             
             if (!userType || userType !== finalUserType) {
-                console.warn(`⚠️ Invalid or missing userType: ${userType}, using 'candidate'`);
+                console.warn(` Invalid or missing userType: ${userType}, using 'candidate'`);
             }
 
             const testMessages = {
                 candidate: {
-                    title: '🎯 Test thông báo ứng viên',
+                    title: ' Test thông báo ứng viên',
                     message: 'Đây là thông báo test cho ứng viên. Hệ thống hoạt động bình thường!'
                 },
                 employer: {

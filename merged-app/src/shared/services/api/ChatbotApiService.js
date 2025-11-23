@@ -13,7 +13,7 @@ class ChatbotApiService {
       });
       return response.data;
     } catch (error) {
-      console.error('❌ [ChatbotApiService] Error sending message:', error);
+      console.error(' [ChatbotApiService] Error sending message:', error);
       throw error;
     }
   }
@@ -28,7 +28,7 @@ class ChatbotApiService {
       });
       return response.data;
     } catch (error) {
-      console.error('❌ [ChatbotApiService] Error fetching history:', error);
+      console.error(' [ChatbotApiService] Error fetching history:', error);
       throw error;
     }
   }
@@ -41,7 +41,7 @@ class ChatbotApiService {
       const response = await apiClient.delete(`${this.endpoint}/history`);
       return response.data;
     } catch (error) {
-      console.error('❌ [ChatbotApiService] Error clearing history:', error);
+      console.error(' [ChatbotApiService] Error clearing history:', error);
       throw error;
     }
   }
@@ -54,7 +54,7 @@ class ChatbotApiService {
       const response = await apiClient.get(`${this.endpoint}/suggestions`);
       return response.data;
     } catch (error) {
-      console.error('❌ [ChatbotApiService] Error fetching suggestions:', error);
+      console.error(' [ChatbotApiService] Error fetching suggestions:', error);
       throw error;
     }
   }

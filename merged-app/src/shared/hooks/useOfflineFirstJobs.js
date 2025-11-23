@@ -77,13 +77,13 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
         }
 
         console.log(
-          `✅ [OfflineFirstJobs] Loaded ${
+          ` [OfflineFirstJobs] Loaded ${
             jobsData?.length || 0
           } jobs for employer ${employerId}`
         );
         return jobsData;
       } catch (error) {
-        console.warn(`⚠️ [OfflineFirstJobs] Fetch failed:`, error.message);
+        console.warn(` [OfflineFirstJobs] Fetch failed:`, error.message);
 
         if (mounted.current) {
           setIsOffline(true);
@@ -93,7 +93,7 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
           const cachedJobs = await getCachedJobs(jobsKey);
           if (cachedJobs.length > 0) {
             console.log(
-              `📦 [OfflineFirstJobs] Using cached data: ${cachedJobs.length} jobs`
+              ` [OfflineFirstJobs] Using cached data: ${cachedJobs.length} jobs`
             );
             setJobs(cachedJobs);
             setError({
@@ -194,11 +194,11 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
           smartStateManager.setCache(jobsKey, finalJobs, 300000);
         }
 
-        console.log("✅ [OfflineFirstJobs] Job created successfully");
+        console.log(" [OfflineFirstJobs] Job created successfully");
         return newJob;
       } catch (error) {
         console.error(
-          "❌ [OfflineFirstJobs] Failed to create job:",
+          " [OfflineFirstJobs] Failed to create job:",
           error.message
         );
 
@@ -227,7 +227,7 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
 
       try {
         console.log(
-          `🔄 [OfflineFirstJobs] Updating job ${jobId} with optimistic update`
+          `[OfflineFirstJobs] Updating job ${jobId} with optimistic update`
         );
 
         // Optimistic update
@@ -264,11 +264,11 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
           smartStateManager.setCache(jobsKey, finalJobs, 300000);
         }
 
-        console.log("✅ [OfflineFirstJobs] Job updated successfully");
+        console.log(" [OfflineFirstJobs] Job updated successfully");
         return updatedJob;
       } catch (error) {
         console.error(
-          `❌ [OfflineFirstJobs] Failed to update job ${jobId}:`,
+          ` [OfflineFirstJobs] Failed to update job ${jobId}:`,
           error.message
         );
 
@@ -322,10 +322,10 @@ export const useOfflineFirstJobs = (employerId, options = {}) => {
           }
         );
 
-        console.log("✅ [OfflineFirstJobs] Job deleted successfully");
+        console.log(" [OfflineFirstJobs] Job deleted successfully");
       } catch (error) {
         console.error(
-          `❌ [OfflineFirstJobs] Failed to delete job ${jobId}:`,
+          ` [OfflineFirstJobs] Failed to delete job ${jobId}:`,
           error.message
         );
 

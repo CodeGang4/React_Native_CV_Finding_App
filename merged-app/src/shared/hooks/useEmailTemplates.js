@@ -16,7 +16,7 @@ export const useEmailTemplates = () => {
   // Fetch templates for current employer
   const fetchTemplates = useCallback(async () => {
     if (!user?.id) {
-      console.warn("⚠️ No user ID available for fetching templates");
+      console.warn(" No user ID available for fetching templates");
       return;
     }
 
@@ -24,7 +24,7 @@ export const useEmailTemplates = () => {
       setLoading(true);
       setError(null);
 
-      console.log("🔄 Fetching templates for employer:", user.id);
+      console.log("Fetching templates for employer:", user.id);
       const fetchedTemplates =
         await emailTemplateRepository.getTemplatesByEmployer(user.id);
 
@@ -36,12 +36,12 @@ export const useEmailTemplates = () => {
         : [];
 
       console.log(
-        "✅ Templates fetched successfully:",
+        " Templates fetched successfully:",
         transformedTemplates.length
       );
       setTemplates(transformedTemplates);
     } catch (err) {
-      console.error("❌ Error fetching templates:", err);
+      console.error(" Error fetching templates:", err);
       setError(err.message || "Không thể tải danh sách mẫu email");
 
       // For now, don't show error alert to avoid disrupting UX
@@ -64,7 +64,7 @@ export const useEmailTemplates = () => {
         setCreating(true);
         setError(null);
 
-        console.log("🔄 Creating template:", templateData.name);
+        console.log("Creating template:", templateData.name);
 
         // Transform data for backend
         const backendData = emailTemplateRepository.transformTemplateForBackend(
@@ -84,10 +84,10 @@ export const useEmailTemplates = () => {
           ...prevTemplates,
         ]);
 
-        console.log("✅ Template created successfully");
+        console.log(" Template created successfully");
         return true;
       } catch (err) {
-        console.error("❌ Error creating template:", err);
+        console.error(" Error creating template:", err);
         setError(err.message || "Không thể tạo mẫu email mới");
 
         Alert.alert("Lỗi", "Không thể tạo mẫu email mới. Vui lòng thử lại.", [
@@ -119,7 +119,7 @@ export const useEmailTemplates = () => {
       setDeleting(true);
       setError(null);
 
-      console.log("🔄 Deleting template:", templateId);
+      console.log("Deleting template:", templateId);
       await emailTemplateRepository.deleteTemplate(templateId);
 
       // Remove from local state
@@ -127,10 +127,10 @@ export const useEmailTemplates = () => {
         prevTemplates.filter((template) => template.id !== templateId)
       );
 
-      console.log("✅ Template deleted successfully");
+      console.log(" Template deleted successfully");
       return true;
     } catch (err) {
-      console.error("❌ Error deleting template:", err);
+      console.error(" Error deleting template:", err);
       setError(err.message || "Không thể xóa mẫu email");
 
       Alert.alert("Lỗi", "Không thể xóa mẫu email. Vui lòng thử lại.", [

@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
                 // If stored user.id doesn't match JWT sub, it's likely a record ID (wrong!)
                 // Fetch correct user data from backend
                 if (parsedUserData.id !== supabaseUserId) {
-                  console.warn('⚠️ [AuthContext] User ID mismatch detected. Fetching correct user data...');
+                  console.warn(' [AuthContext] User ID mismatch detected. Fetching correct user data...');
                   console.log(`   Stored ID: ${parsedUserData.id}`);
                   console.log(`   JWT sub (correct): ${supabaseUserId}`);
                   
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
                     // Update stored data with correct user info
                     setUser(correctedUser);
                     await SecureStore.setItemAsync("user_data", JSON.stringify(correctedUser));
-                    console.log('✅ [AuthContext] User data corrected and saved');
+                    console.log(' [AuthContext] User data corrected and saved');
                   } else {
                     setUser(parsedUserData);
                   }
@@ -77,22 +77,22 @@ export const AuthProvider = ({ children }) => {
                 setUser(parsedUserData);
               }
             } catch (migrationError) {
-              console.error('⚠️ [AuthContext] Migration fix failed:', migrationError);
+              console.error(' [AuthContext] Migration fix failed:', migrationError);
               setUser(parsedUserData);
             }
             
             setUserRole(role);
-            console.log('✅ [AuthContext] User authenticated:', parsedUserData.email);
+            console.log(' [AuthContext] User authenticated:', parsedUserData.email);
           } else {
-            console.warn('⚠️ [AuthContext] Token verification failed, clearing data');
+            console.warn(' [AuthContext] Token verification failed, clearing data');
             // Token invalid, clear stored data
             await clearStoredData();
           }
         } else {
-          console.log('ℹ️ [AuthContext] No stored credentials found');
+          console.log('[AuthContext] No stored credentials found');
         }
       } catch (error) {
-        console.log("❌ [AuthContext] Auth check error:", error);
+        console.log(" [AuthContext] Auth check error:", error);
         await clearStoredData();
       } finally {
         setLoading(false);
@@ -160,7 +160,7 @@ export const AuthProvider = ({ children }) => {
         await SecureStore.setItemAsync("user_role", data.user.role || role);
         await SecureStore.setItemAsync("user_data", JSON.stringify(data.user));
 
-        // 🔥 AUTO: Gửi thông báo nhắc nhở profile nếu chưa hoàn thiện (simulated check)
+        // AUTO: Gửi thông báo nhắc nhở profile nếu chưa hoàn thiện (simulated check)
         const profileComplete = data.user.profile_completed || false;
         if (!profileComplete && data.user.id) {
           setTimeout(() => {
@@ -283,7 +283,7 @@ export const AuthProvider = ({ children }) => {
       console.log("Signup response:", data);
 
       if (res.ok && data.user) {
-        // 🔥 AUTO: Gửi notification chào mừng user mới
+        // AUTO: Gửi notification chào mừng user mới
         if (data.user.id && role) {
           JobNotificationHelper.autoNotifyNewUserWelcome({
             id: data.user.id,
@@ -347,25 +347,25 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      console.log('🔄 [AuthContext] Refreshing user data...');
+      console.log('[AuthContext] Refreshing user data...');
       const token = await SecureStore.getItemAsync("user_token");
       
       if (!token) {
-        console.warn('⚠️ [AuthContext] No token available');
+        console.warn(' [AuthContext] No token available');
         return { success: false, error: 'No token' };
       }
 
       // Decode JWT to get the real Supabase user ID (not the record ID)
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {
-        console.error('❌ [AuthContext] Invalid token format');
+        console.error(' [AuthContext] Invalid token format');
         return { success: false, error: 'Invalid token' };
       }
 
       const payload = JSON.parse(atob(tokenParts[1]));
       const supabaseUserId = payload.sub; // This is the real user_id from Supabase auth
       
-      console.log('🔍 [AuthContext] Using Supabase user ID:', supabaseUserId);
+      console.log('[AuthContext] Using Supabase user ID:', supabaseUserId);
       
       // Use /user/getInfor endpoint which queries the users table directly
       const response = await fetch(`${API}/client/user/getInfor/${supabaseUserId}`, {
@@ -379,7 +379,7 @@ export const AuthProvider = ({ children }) => {
         setUser(updatedUser);
         await SecureStore.setItemAsync("user_data", JSON.stringify(updatedUser));
         
-        console.log('✅ [AuthContext] User refreshed:', {
+        console.log(' [AuthContext] User refreshed:', {
           id: updatedUser.id,
           level: updatedUser.level,
           email: updatedUser.email
@@ -387,11 +387,11 @@ export const AuthProvider = ({ children }) => {
         
         return { success: true, user: updatedUser };
       } else {
-        console.warn('⚠️ [AuthContext] Failed to refresh user:', response.status);
+        console.warn(' [AuthContext] Failed to refresh user:', response.status);
         return { success: false };
       }
     } catch (error) {
-      console.error('❌ [AuthContext] Refresh user error:', error);
+      console.error(' [AuthContext] Refresh user error:', error);
       return { success: false, error: error.message };
     }
   };

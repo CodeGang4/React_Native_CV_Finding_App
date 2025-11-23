@@ -14,12 +14,12 @@ export class ApplicationBusinessService {
   // Apply job với auto notification
   async applyToJob(jobId, applicationData, candidateInfo = {}) {
     try {
-      console.log('🔄 Processing job application...', { jobId, candidateId: candidateInfo.id });
+      console.log('Processing job application...', { jobId, candidateId: candidateInfo.id });
 
       // Gọi API apply job
       const result = await this.jobRepository.applyToJob(jobId, applicationData);
 
-      // 🔥 AUTO: Gửi thông báo cho employer khi có ứng viên mới apply
+      // AUTO: Gửi thông báo cho employer khi có ứng viên mới apply
       if (result && candidateInfo.id) {
         try {
           // Lấy thông tin job để có employer_id và job_title
@@ -37,10 +37,10 @@ export class ApplicationBusinessService {
                 applied_at: new Date().toISOString()
               }
             );
-            console.log('✅ [AUTO] Job application notification sent to employer:', job.employer_id);
+            console.log(' [AUTO] Job application notification sent to employer:', job.employer_id);
           }
         } catch (notifError) {
-          console.error('❌ [AUTO] Failed to send job application notification:', notifError);
+          console.error(' [AUTO] Failed to send job application notification:', notifError);
           // Không throw error để không ảnh hưởng tới việc apply job chính
         }
       }
@@ -148,7 +148,7 @@ export class ApplicationBusinessService {
 
       await this.repository.updateApplicationStatus(applicationId, status);
 
-      // 🔥 AUTO: Gửi thông báo trạng thái ứng tuyển cho candidate
+      // AUTO: Gửi thông báo trạng thái ứng tuyển cho candidate
       if (candidateData.candidateId && candidateData.jobTitle) {
         try {
           await JobNotificationHelper.autoNotifyApplicationStatus(
@@ -161,9 +161,9 @@ export class ApplicationBusinessService {
               updated_at: new Date().toISOString()
             }
           );
-          console.log('✅ [AUTO] Application status notification sent for status:', status);
+          console.log(' [AUTO] Application status notification sent for status:', status);
         } catch (notifError) {
-          console.error('❌ [AUTO] Failed to send application status notification:', notifError);
+          console.error(' [AUTO] Failed to send application status notification:', notifError);
           // Không throw error để không ảnh hưởng tới việc cập nhật status chính
         }
       }
@@ -211,13 +211,13 @@ export class ApplicationBusinessService {
       }
 
       // Lấy application counts với rate limiting protection
-      console.log(`🔄 Getting application stats for ${jobIds.length} jobs`);
+      console.log(`Getting application stats for ${jobIds.length} jobs`);
       const result = await this.repository.getApplicationCountByJobIds(
         jobIds,
         forceRefresh
       );
 
-      console.log("📊 Application stats result:", {
+      console.log("Application stats result:", {
         total: result.totalApplications,
         jobCounts: Object.keys(result.applicationCounts || {}).length,
       });
@@ -243,7 +243,7 @@ export class ApplicationBusinessService {
         return [];
       }
 
-      console.log(`🔄 Enriching ${jobs.length} jobs with application counts`);
+      console.log(`Enriching ${jobs.length} jobs with application counts`);
 
       const stats = await this.getApplicationStatsForEmployer(
         jobs,
@@ -256,7 +256,7 @@ export class ApplicationBusinessService {
       }));
 
       console.log(
-        "✅ Enrichment completed. Application counts:",
+        " Enrichment completed. Application counts:",
         enrichedJobs.map((job) => ({
           id: job.id,
           applications: job.applications,
@@ -272,7 +272,7 @@ export class ApplicationBusinessService {
         error.message?.includes("429") ||
         error.message?.includes("Too Many Requests")
       ) {
-        console.warn("⚠️ Rate limited - returning jobs with 0 applications");
+        console.warn(" Rate limited - returning jobs with 0 applications");
         throw error; // Re-throw để outer catch xử lý
       }
 

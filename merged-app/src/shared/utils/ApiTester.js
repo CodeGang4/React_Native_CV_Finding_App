@@ -45,10 +45,10 @@ export const testNotificationEndpoints = async (userId = 'test-user-123') => {
         
         if (notificationsResponse.ok) {
             const notifications = await notificationsResponse.json();
-            console.log('✅ getUserNotifications response:', notifications);
+            console.log(' getUserNotifications response:', notifications);
         } else {
             const errorText = await notificationsResponse.text();
-            console.log('❌ getUserNotifications failed:', errorText);
+            console.log(' getUserNotifications failed:', errorText);
         }
         
         // Test 2: Create test notification
@@ -72,7 +72,7 @@ export const testNotificationEndpoints = async (userId = 'test-user-123') => {
         
         if (createResponse.ok) {
             const createData = await createResponse.json();
-            console.log('✅ createNotification response:', createData);
+            console.log(' createNotification response:', createData);
             
             // Test 3: Mark as read (if we have a notification ID)
             if (createData.data && createData.data.id) {
@@ -87,20 +87,20 @@ export const testNotificationEndpoints = async (userId = 'test-user-123') => {
                 
                 if (markReadResponse.ok) {
                     const markReadData = await markReadResponse.json();
-                    console.log('✅ markAsRead response:', markReadData);
+                    console.log(' markAsRead response:', markReadData);
                 } else {
                     const errorText = await markReadResponse.text();
-                    console.log('❌ markAsRead failed:', errorText);
+                    console.log(' markAsRead failed:', errorText);
                 }
             }
         } else {
             const errorText = await createResponse.text();
-            console.log('❌ createNotification failed:', errorText);
+            console.log(' createNotification failed:', errorText);
         }
         
         return true;
     } catch (error) {
-        console.error('❌ Notification endpoints test failed:', error);
+        console.error(' Notification endpoints test failed:', error);
         return false;
     }
 };

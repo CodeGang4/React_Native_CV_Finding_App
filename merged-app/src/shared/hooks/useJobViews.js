@@ -41,14 +41,14 @@ export const useJobViews = (jobId, initialViews = 0) => {
         }
       } else {
         console.warn(
-          `⚠️ Failed to increment views for job ${jobId}:`,
+          ` Failed to increment views for job ${jobId}:`,
           response.status
         );
         // Fallback: increment local state
         setViews((prev) => prev + 1);
       }
     } catch (error) {
-      console.error(`❌ Error incrementing views for job ${jobId}:`, error);
+      console.error(` Error incrementing views for job ${jobId}:`, error);
       // Fallback: increment local state
       setViews((prev) => prev + 1);
     } finally {

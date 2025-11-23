@@ -35,14 +35,14 @@ const AICandidateInsights = ({
 
   useEffect(() => {
     console.log(
-      "🔥 useEffect triggered: visible =",
+      "useEffect triggered: visible =",
       visible,
       "candidates.length =",
       candidates.length
     );
     if (visible && candidates.length > 0) {
       // Reset states khi modal mở
-      console.log("🔥 useEffect: Resetting states and starting analysis");
+      console.log("useEffect: Resetting states and starting analysis");
       setLoading(true);
       setError(null);
       setAnalyzedCandidates([]);
@@ -54,7 +54,7 @@ const AICandidateInsights = ({
       analyzeAllCandidates(false, 0);
     } else if (!visible) {
       // Reset states khi modal đóng
-      console.log("🔥 useEffect: Modal closed, resetting states");
+      console.log("useEffect: Modal closed, resetting states");
       setLoading(false);
       setError(null);
       setAnalyzedCandidates([]);
@@ -62,7 +62,7 @@ const AICandidateInsights = ({
       setShowAllMode(false);
       setLoadingMore(false);
     }
-  }, [visible]); // 🔥 REMOVE candidates dependency để tránh re-trigger
+  }, [visible]); // REMOVE candidates dependency để tránh re-trigger
 
   const analyzeAllCandidates = async (showAll = false, offset = 0) => {
     try {
@@ -76,7 +76,7 @@ const AICandidateInsights = ({
       }
 
       console.log(
-        "🤖 Bắt đầu phân tích AI cho",
+        "Bắt đầu phân tích AI cho",
         candidates.length,
         "ứng viên",
         showAll ? "(Tất cả)" : "(Top 20)",
@@ -84,7 +84,7 @@ const AICandidateInsights = ({
         offset
       );
 
-      // 📂 Kiểm tra cache trước khi gọi API
+      //  Kiểm tra cache trước khi gọi API
       const candidateIds = candidates.map((c) => c.id || c.candidate_id);
       const cacheResult = await AnalysisCacheManager.getBatchAnalysis(
         candidateIds,
@@ -92,13 +92,13 @@ const AICandidateInsights = ({
       );
 
       console.log(
-        `📂 Cache check: ${cacheResult.cachedResults.length} cached, ${cacheResult.missingIds.length} need analysis`
+        ` Cache check: ${cacheResult.cachedResults.length} cached, ${cacheResult.missingIds.length} need analysis`
       );
 
       let result;
       if (cacheResult.missingIds.length === 0) {
-        // ✅ Tất cả đều có trong cache
-        console.log("🎯 All candidates found in cache!");
+        //  Tất cả đều có trong cache
+        console.log(" All candidates found in cache!");
         result = {
           candidates: cacheResult.cachedResults,
           performance: {
@@ -108,7 +108,7 @@ const AICandidateInsights = ({
           },
         };
       } else {
-        // 🤖 Chỉ phân tích những ứng viên chưa có cache
+        // Chỉ phân tích những ứng viên chưa có cache
         const candidatesToAnalyze = candidates.filter((c) =>
           cacheResult.missingIds.includes(c.id || c.candidate_id)
         );
@@ -123,7 +123,7 @@ const AICandidateInsights = ({
           }
         );
 
-        // 💾 Cache kết quả mới
+        // Cache kết quả mới
         if (result.candidates && result.candidates.length > 0) {
           await AnalysisCacheManager.saveBatchAnalysis(
             result.candidates,
@@ -131,53 +131,53 @@ const AICandidateInsights = ({
           );
         }
 
-        // 🔄 Kết hợp cache với kết quả mới
+        // Kết hợp cache với kết quả mới
         result.candidates = [
           ...cacheResult.cachedResults,
           ...result.candidates,
         ];
         console.log(
-          `💾 Saved ${
+          `Saved ${
             result.candidates.length - cacheResult.cachedResults.length
           } new analyses to cache`
         );
       }
 
-      console.log("🔥 AI Analysis Result:", result);
+      console.log("AI Analysis Result:", result);
       console.log(
-        "🔥 AI Analysis Candidates count:",
+        "AI Analysis Candidates count:",
         result.candidates?.length
       );
-      console.log("🔥 First candidate example:", result.candidates?.[0]);
+      console.log("First candidate example:", result.candidates?.[0]);
 
       if (isLoadingMore) {
         // Thêm ứng viên mới vào danh sách hiện tại
         setAnalyzedCandidates((prev) => [...prev, ...result.candidates]);
-        console.log("✅ Đã tải thêm", result.candidates.length, "ứng viên");
+        console.log(" Đã tải thêm", result.candidates.length, "ứng viên");
       } else {
         // Thiết lập kết quả phân tích ban đầu
         setAnalysisResult(result);
         setAnalyzedCandidates(result.candidates);
         setShowAllMode(showAll);
         console.log(
-          "✅ Hoàn thành phân tích AI:",
+          " Hoàn thành phân tích AI:",
           result.candidates.length,
           "ứng viên"
         );
-        console.log("📊 Performance:", result.performance);
+        console.log("Performance:", result.performance);
         console.log(
-          "🔥 About to set loading to false, analyzedCandidates count:",
+          "About to set loading to false, analyzedCandidates count:",
           result.candidates.length
         );
 
-        // 🔥 Force update loading state với timeout
+        // Force update loading state với timeout
         setTimeout(() => {
           setLoading(false);
-          console.log("🔥 TIMEOUT: Force set loading to false");
+          console.log("TIMEOUT: Force set loading to false");
         }, 100);
       }
     } catch (error) {
-      console.error("❌ Lỗi phân tích AI:", error);
+      console.error(" Lỗi phân tích AI:", error);
 
       // Kiểm tra nếu là lỗi quota limit
       if (
@@ -185,7 +185,7 @@ const AICandidateInsights = ({
         error.message.includes("429") &&
         error.message.includes("quota")
       ) {
-        console.warn("⚠️ Quota limit detected, showing notice");
+        console.warn(" Quota limit detected, showing notice");
         setShowQuotaNotice(true);
         setError("Đã vượt quá giới hạn API. Hệ thống sẽ retry tự động.");
       } else {
@@ -194,11 +194,11 @@ const AICandidateInsights = ({
     } finally {
       if (isLoadingMore) {
         setLoadingMore(false);
-        console.log("🔥 Set loadingMore to false");
+        console.log("Set loadingMore to false");
       } else {
-        console.log("🔥 FINALLY: About to set loading to false");
-        setLoading(false); // 🔥 QUAN TRỌNG: Set loading = false để hiển thị kết quả
-        console.log("🔥 FINALLY: Called setLoading(false)");
+        console.log("FINALLY: About to set loading to false");
+        setLoading(false); // QUAN TRỌNG: Set loading = false để hiển thị kết quả
+        console.log("FINALLY: Called setLoading(false)");
       }
     }
   };
@@ -258,7 +258,7 @@ const AICandidateInsights = ({
 
       {/* Key Insights */}
       <View style={styles.insightsContainer}>
-        <Text style={styles.insightsTitle}>🎯 Điểm nổi bật:</Text>
+        <Text style={styles.insightsTitle}> Điểm nổi bật:</Text>
         {(candidate.aiRecommendations || [])
           .slice(0, 2)
           .map((recommendation, index) => (
@@ -270,7 +270,7 @@ const AICandidateInsights = ({
 
       {/* Skills Analysis */}
       <View style={styles.skillsContainer}>
-        <Text style={styles.skillsTitle}>💼 Phân tích kỹ năng:</Text>
+        <Text style={styles.skillsTitle}>Phân tích kỹ năng:</Text>
         <View style={styles.skillsRow}>
           <View style={styles.skillStat}>
             <Text style={styles.skillNumber}>
@@ -296,7 +296,7 @@ const AICandidateInsights = ({
       {/* Risk Factors */}
       {candidate.riskFactors?.length > 0 && (
         <View style={styles.riskContainer}>
-          <Text style={styles.riskTitle}>⚠️ Cần lưu ý:</Text>
+          <Text style={styles.riskTitle}> Cần lưu ý:</Text>
           {candidate.riskFactors.slice(0, 1).map((risk, index) => (
             <Text key={index} style={styles.riskItem}>
               • {risk}
@@ -310,7 +310,7 @@ const AICandidateInsights = ({
         <TouchableOpacity
           style={styles.selectButton}
           onPress={() => {
-            // 📱 Navigate to candidate detail screen
+            // Navigate to candidate detail screen
             navigation.navigate("CandidateDetail", {
               candidate: candidate,
               analysisResult: candidate, // Pass analysis result
@@ -348,7 +348,7 @@ const AICandidateInsights = ({
               {/* Overall Score */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  📊 Điểm số tổng quan
+                  Điểm số tổng quan
                 </Text>
                 <View style={styles.scoreDetail}>
                   <Text style={styles.scoreDetailText}>
@@ -373,7 +373,7 @@ const AICandidateInsights = ({
               {/* Skills Analysis */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  💼 Phân tích kỹ năng
+                  Phân tích kỹ năng
                 </Text>
                 <Text style={styles.detailText}>
                   Kỹ năng khớp yêu cầu:{" "}
@@ -396,7 +396,7 @@ const AICandidateInsights = ({
               {/* Experience Analysis */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  💼 Phân tích kinh nghiệm
+                  Phân tích kinh nghiệm
                 </Text>
                 <Text style={styles.detailText}>
                   Tổng số năm kinh nghiệm:{" "}
@@ -421,7 +421,7 @@ const AICandidateInsights = ({
               {/* Education Analysis */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  🎓 Phân tích học vấn
+                  Phân tích học vấn
                 </Text>
                 <Text style={styles.detailText}>
                   Bằng cấp cao nhất:{" "}
@@ -448,7 +448,7 @@ const AICandidateInsights = ({
               {/* Strengths & Weaknesses */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  ⚖️ Điểm mạnh & Điểm yếu
+                  Điểm mạnh & Điểm yếu
                 </Text>
                 <Text style={styles.subTitle}>Điểm mạnh:</Text>
                 {selectedInsight.strengthsAndWeaknesses.strengths.map(
@@ -476,7 +476,7 @@ const AICandidateInsights = ({
 
               {/* AI Recommendations */}
               <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>🎯 Gợi ý từ AI</Text>
+                <Text style={styles.detailSectionTitle}> Gợi ý từ AI</Text>
                 {selectedInsight.aiRecommendations.map(
                   (recommendation, index) => (
                     <Text key={index} style={styles.detailListItem}>
@@ -489,7 +489,7 @@ const AICandidateInsights = ({
               {/* Interview Questions */}
               <View style={styles.detailSection}>
                 <Text style={styles.detailSectionTitle}>
-                  ❓ Câu hỏi phỏng vấn gợi ý
+                   Câu hỏi phỏng vấn gợi ý
                 </Text>
                 {selectedInsight.suggestedInterviewQuestions.map(
                   (question, index) => (
@@ -523,12 +523,12 @@ const AICandidateInsights = ({
     return { color: "#fff" };
   };
 
-  // 📊 Show cache statistics
+  // Show cache statistics
   const showCacheStats = async () => {
     try {
       const stats = await AnalysisCacheManager.getCacheStats();
       Alert.alert(
-        "📊 Cache Statistics",
+        "Cache Statistics",
         `Cached Analyses: ${stats.totalEntries}/${stats.maxEntries}\n` +
           `Cache Size: ${(stats.totalSize / 1024).toFixed(2)} KB\n` +
           `Cache Duration: ${stats.cacheDuration}\n\n` +
@@ -547,10 +547,10 @@ const AICandidateInsights = ({
   const clearCache = async () => {
     try {
       await AnalysisCacheManager.clearAllCache();
-      Alert.alert("✅ Success", "Cache cleared successfully!");
+      Alert.alert(" Success", "Cache cleared successfully!");
     } catch (error) {
       console.error("Error clearing cache:", error);
-      Alert.alert("❌ Error", "Failed to clear cache");
+      Alert.alert(" Error", "Failed to clear cache");
     }
   };
 
@@ -693,7 +693,7 @@ const AICandidateInsights = ({
                     color="#4CAF50"
                   />
                   <Text style={styles.completeText}>
-                    ✅ Đã phân tích tất cả {analyzedCandidates.length} ứng viên
+                     Đã phân tích tất cả {analyzedCandidates.length} ứng viên
                   </Text>
                 </View>
               )}

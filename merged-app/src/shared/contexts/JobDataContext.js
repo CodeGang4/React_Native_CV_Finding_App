@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef } from "react";
 import CentralizedCandidateManager from "../services/utils/CentralizedCandidateManager";
 
 /**
- * ⚡ Global Job Data Provider
+ * Global Job Data Provider
  * Khởi tạo và quản lý CentralizedCandidateManager ở app level
  * Đảm bảo ZERO HTTP 429 errors
  */

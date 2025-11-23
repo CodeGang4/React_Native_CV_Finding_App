@@ -33,7 +33,7 @@ export class EnhancedAIService extends AIService {
     } = options;
 
     console.log(
-      `🤖 ${useRealAI ? "Gemini AI" : "Local AI"} Analysis: Processing ${
+      `${useRealAI ? "Gemini AI" : "Local AI"} Analysis: Processing ${
         candidates.length
       } candidates`
     );
@@ -84,7 +84,7 @@ export class EnhancedAIService extends AIService {
         return await this.analyzeWithLocalAI(candidates, criteria, options);
       }
     } catch (error) {
-      console.error("❌ Gemini AI thất bại, fallback về Local AI:", error);
+      console.error(" Gemini AI thất bại, fallback về Local AI:", error);
       return await this.analyzeWithLocalAI(candidates, criteria, options);
     }
   }
@@ -111,7 +111,7 @@ export class EnhancedAIService extends AIService {
       : sortedCandidates.slice(offset, offset + limit);
 
     console.log(
-      `🎯 Deep analyzing top ${candidatesToAnalyze.length} candidates with Local AI`
+      ` Deep analyzing top ${candidatesToAnalyze.length} candidates with Local AI`
     );
 
     // Phân tích chi tiết chỉ cho top candidates

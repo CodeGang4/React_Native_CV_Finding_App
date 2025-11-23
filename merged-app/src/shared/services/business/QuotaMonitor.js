@@ -13,7 +13,7 @@ export class QuotaMonitor {
     this.lastMinuteReset = Date.now();
     this.dailyResetTime = this.getNextDailyReset();
 
-    console.log("🔄 Quota counters reset");
+    console.log("Quota counters reset");
   }
 
   // Daily reset at 0:00 UTC (7:00 AM Vietnam time)
@@ -91,7 +91,7 @@ export class QuotaMonitor {
     this.minuteUsage++;
 
     console.log(
-      `📊 Quota usage: Daily ${this.dailyUsage}/200, Minute ${this.minuteUsage}/30`
+      `Quota usage: Daily ${this.dailyUsage}/200, Minute ${this.minuteUsage}/30`
     );
   }
 
@@ -137,14 +137,14 @@ export class QuotaMonitor {
   logUsageStats() {
     const stats = this.getUsageStats();
     console.log(`
-📊 Gemini API Quota Status (${stats.model}):
+Gemini API Quota Status (${stats.model}):
    📅 Daily: ${stats.daily.used}/${stats.daily.limit} (${
       stats.daily.remaining
     } remaining)
-   ⏱️  Minute: ${stats.minute.used}/${stats.minute.limit} (${
+    Minute: ${stats.minute.used}/${stats.minute.limit} (${
       stats.minute.remaining
     } remaining)
-   🔄 Next daily reset: ${stats.daily.resetTime}
+   Next daily reset: ${stats.daily.resetTime}
    ⏰ Next minute reset: ${Math.ceil(stats.minute.resetIn / 1000)}s
     `);
   }

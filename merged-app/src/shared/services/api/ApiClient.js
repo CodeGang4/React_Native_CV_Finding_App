@@ -18,23 +18,10 @@ class ApiClient {
 
     // Initialize rate limit handler with balanced settings
     this.rateLimitHandler = new RateLimitHandler({
-<<<<<<< HEAD
       maxConcurrentRequests: 5, // Allow 5 concurrent requests
       requestDelay: 200, // 200ms delay between requests
       maxRetries: 3, // Retry up to 3 times for 429 errors
       retryDelays: [1000, 2000, 4000], // Shorter backoff: 1s, 2s, 4s
-=======
-      maxConcurrentRequests: 2,
-      requestDelay: 500,
-      maxRetries: 0, // Giảm xuống 3 lần thôi
-      retryDelays: [1000, 3000, 5000], // Giảm thời gian retry
-      // Thêm config để chỉ retry với certain status codes
-      shouldRetry: (error) => {
-        // Chỉ retry với lỗi 429 (Rate Limit) hoặc network errors
-        const status = error.response?.status;
-        return status === 429 || status === 408 || !status; // 408: Timeout, !status: network error
-      },
->>>>>>> ff7279fe6446d64e272719840e603c32998e4957
     });
   }
 

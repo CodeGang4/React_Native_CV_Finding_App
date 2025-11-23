@@ -68,7 +68,7 @@ export const useVirtualJobLoading = (jobs = [], options = {}) => {
       if (jobsNeedingLoad.length === 0) return;
 
       console.log(
-        `📊 [VirtualLoading] Loading candidates for ${jobsNeedingLoad.length} visible jobs`
+        `[VirtualLoading] Loading candidates for ${jobsNeedingLoad.length} visible jobs`
       );
 
       // Update loading states
@@ -108,7 +108,7 @@ export const useVirtualJobLoading = (jobs = [], options = {}) => {
           return { jobId: job.id, count, success: true };
         } catch (error) {
           console.warn(
-            `⚠️ [VirtualLoading] Failed to load candidates for job ${job.id}:`,
+            ` [VirtualLoading] Failed to load candidates for job ${job.id}:`,
             error.message
           );
 
@@ -141,7 +141,7 @@ export const useVirtualJobLoading = (jobs = [], options = {}) => {
       const results = await executeWithConcurrencyLimit(loadPromises, 2);
 
       console.log(
-        `✅ [VirtualLoading] Loaded candidates for ${
+        ` [VirtualLoading] Loaded candidates for ${
           results.filter((r) => r.success).length
         }/${results.length} jobs`
       );
@@ -198,7 +198,7 @@ export const useVirtualJobLoading = (jobs = [], options = {}) => {
 
       if (jobsToPreload.length > 0) {
         console.log(
-          `🔄 [VirtualLoading] Preloading ${count} jobs in ${direction} direction`
+          `[VirtualLoading] Preloading ${count} jobs in ${direction} direction`
         );
         await loadCandidateCountsForVisible(jobsToPreload);
       }
@@ -259,7 +259,7 @@ export const useVirtualJobLoading = (jobs = [], options = {}) => {
         return count;
       } catch (error) {
         console.warn(
-          `⚠️ [VirtualLoading] Failed to refresh candidates for job ${jobId}:`,
+          ` [VirtualLoading] Failed to refresh candidates for job ${jobId}:`,
           error.message
         );
         throw error;
